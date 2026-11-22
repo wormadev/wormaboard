@@ -346,8 +346,8 @@ struct FullKeyboardSettings {
         }
     }
 
-    /// Settings › Experiments › New dictation key (off by default): the strip's Hex key becomes
-    /// a mic on an orange keycap with no slide menu, and a chevron beside it opens a shortcut
+    /// Settings › Experiments › New dictation key (off by default): the strip's Hex key loses
+    /// its slide menu, and a chevron beside it opens a shortcut
     /// tray (`WormaDictationTrayView`).
     var wormaDictationKey: Bool {
         get { defaults?.bool(forKey: Key.wormaDictationKey) ?? false }

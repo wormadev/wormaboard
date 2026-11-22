@@ -1,13 +1,13 @@
 import UIKit
 
-/// Settings › Experiments › New dictation key in the full keyboard: the Hex key draws a mic on
-/// an orange keycap and loses its slide menu, and a chevron beside it opens a shortcut tray
+/// Settings › Experiments › New dictation key in the full keyboard: the Hex key loses its slide
+/// menu, and a chevron beside it opens a shortcut tray
 /// in place of the suggestions (`WormaDictationTrayView`). Off, there is no tray and the
 /// Hex key is upstream's.
 extension FullKeyboardView {
     func syncWormaDictationKey() {
         let on = FullKeyboardSettings().wormaDictationKey
-        hexKey.drawsMic = on
+        hexKey.hasTray = on
         guard on != (wormaTray != nil) else { return }
         if on {
             let tray = WormaDictationTrayView()

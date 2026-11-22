@@ -783,7 +783,7 @@ struct ExperimentsSettingsPage: View {
         // Off by default: the Hex key and its slide menu stay as they are.
         SettingsToggleRow(
             title: String(localized: "New dictation key"),
-            detail: String(localized: "A mic key, with a chevron beside it that opens shortcuts in place of the suggestions"),
+            detail: String(localized: "A chevron beside the dictation key opens shortcuts in place of the suggestions"),
             isOn: $wormaDictationKey
         )
 
