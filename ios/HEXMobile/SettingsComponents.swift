@@ -284,6 +284,7 @@ enum SettingsSnapshotFixture {
         keyboard.germanSpatialAutocorrect = on
         keyboard.koreanKeyboard = on
         keyboard.dvorakPunctuation = on
+        keyboard.clipboardHistory = on
         keyboard.emojiLettersUnderEmojiKey = on
         keyboard.keyboardThemesEnabled = false
         keyboard.keyboardTheme = .automatic

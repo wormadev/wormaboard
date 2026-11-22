@@ -4,6 +4,16 @@
     "" : {
       "shouldTranslate" : false
     },
+    "Back to the keys" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回键盘"
+          }
+        }
+      }
+    },
     "Checking the speech model" : {
       "localizations" : {
         "zh-Hans" : {
@@ -44,12 +54,62 @@
         }
       }
     },
+    "Clear all" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部清除"
+          }
+        }
+      }
+    },
+    "Clear all?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部清除？"
+          }
+        }
+      }
+    },
+    "Clipboard" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪贴板"
+          }
+        }
+      }
+    },
+    "Clipboard history" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪贴板历史"
+          }
+        }
+      }
+    },
     "Couldn't translate the last dictation. If it keeps happening, reinstall Apple's Translate app." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "上一次听写未能翻译。如果反复出现，请重新安装 Apple 的“翻译” App。"
+          }
+        }
+      }
+    },
+    "Keeps your last 20 copied texts on this iPhone. Each new copy can ask Allow Paste unless Paste from Other Apps is Allow." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在这台 iPhone 上保留你最近复制的 20 段文本。除非“从其他 App 粘贴”设为“允许”，每次新的复制都可能询问“允许粘贴”。"
           }
         }
       }
@@ -220,6 +280,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在设置中选择其他语言"
+          }
+        }
+      }
+    },
+    "Shows the texts you copied recently" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示你最近复制的文本"
           }
         }
       }

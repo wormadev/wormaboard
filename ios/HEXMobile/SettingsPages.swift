@@ -607,6 +607,7 @@ struct ExperimentsSettingsPage: View {
     @State private var germanSpatialAutocorrect = FullKeyboardSettings().germanSpatialAutocorrect
     @State private var koreanKeyboard = FullKeyboardSettings().koreanKeyboard
     @State private var dvorakPunctuation = FullKeyboardSettings().dvorakPunctuation
+    @State private var clipboardHistory = FullKeyboardSettings().clipboardHistory
     @State private var emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
     @State private var keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
     @State private var keyboardTheme = FullKeyboardSettings().keyboardTheme
@@ -676,6 +677,9 @@ struct ExperimentsSettingsPage: View {
             }
             .onChange(of: dvorakPunctuation) { _, enabled in
                 FullKeyboardSettings().dvorakPunctuation = enabled
+            }
+            .onChange(of: clipboardHistory) { _, enabled in
+                FullKeyboardSettings().clipboardHistory = enabled
             }
             .onChange(of: emojiLettersUnderEmojiKey) { _, enabled in
                 FullKeyboardSettings().emojiLettersUnderEmojiKey = enabled
@@ -799,6 +803,15 @@ struct ExperimentsSettingsPage: View {
 
         SettingsDivider()
 
+        // Off by default: nothing reads the clipboard; turning it off deletes what was kept.
+        SettingsToggleRow(
+            title: String(localized: "Clipboard history"),
+            detail: String(localized: "Keeps your last 20 copied texts on this iPhone. Each new copy can ask Allow Paste unless Paste from Other Apps is Allow."),
+            isOn: $clipboardHistory
+        )
+
+        SettingsDivider()
+
         // Off by default: the emoji panel's ABC stays where it always was.
         SettingsToggleRow(
             title: String(localized: "ABC under the emoji key"),
@@ -901,6 +914,7 @@ struct ExperimentsSettingsPage: View {
         germanSpatialAutocorrect = FullKeyboardSettings().germanSpatialAutocorrect
         koreanKeyboard = FullKeyboardSettings().koreanKeyboard
         dvorakPunctuation = FullKeyboardSettings().dvorakPunctuation
+        clipboardHistory = FullKeyboardSettings().clipboardHistory
         emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
         keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
         keyboardTheme = FullKeyboardSettings().keyboardTheme

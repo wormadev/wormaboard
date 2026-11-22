@@ -54,6 +54,8 @@ final class KeyboardStripView: UIView {
     var onHoldSuggestion: ((KeyboardSuggestion) -> Void)?
     var onUndoDictation: (() -> Void)?
     var onPaste: (() -> Void)?
+    /// Settings › Experiments › Clipboard history: the Clipboard chip opens the kept copies.
+    var onClipboardHistory: (() -> Void)?
     var onNextKeyboard: (() -> Void)?
     /// The Full Access hint's Open Hex was tapped (it opens Hex's setup).
     var onOpenHexFromHint: (() -> Void)?
@@ -67,6 +69,7 @@ final class KeyboardStripView: UIView {
     private var showsUndo = false
     private var statusText: String?
     private var clipboard: KeyboardClipboardOffer?
+    private var clipboardHistory = false
     private var showsFullAccessHint = false
     /// Built the first time the Hex key is tapped without Full Access.
     private var fullAccessHintView: FullAccessHintView?
@@ -107,6 +110,8 @@ final class KeyboardStripView: UIView {
     /// (`KeyboardClipboardTracker`).
     private let pasteControl = UIButton(type: .custom)
     private let nextKeyboardChip = UIButton(type: .custom)
+    /// Clipboard history's way in, drawn as Paste is, beside it when both show.
+    private let historyChip = UIButton(type: .custom)
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -152,6 +157,17 @@ final class KeyboardStripView: UIView {
         pasteControl.isHidden = true
         pasteControl.addTarget(self, action: #selector(handlePaste), for: .touchUpInside)
         addSubview(pasteControl)
+        var history = paste
+        history.image = UIImage(
+            systemName: "list.clipboard",
+            withConfiguration: UIImage.SymbolConfiguration(font: Self.pasteFont, scale: .small)
+        )
+        history.title = String(localized: "Clipboard")
+        historyChip.configuration = history
+        historyChip.accessibilityHint = String(localized: "Shows the texts you copied recently")
+        historyChip.isHidden = true
+        historyChip.addTarget(self, action: #selector(handleClipboardHistory), for: .touchUpInside)
+        addSubview(historyChip)
         addSubview(undoChip)
 
         var next = UIButton.Configuration.plain()
@@ -190,17 +206,20 @@ final class KeyboardStripView: UIView {
         showsUndo: Bool,
         statusText: String?,
         clipboard: KeyboardClipboardOffer? = nil,
+        clipboardHistory: Bool = false,
         fullAccessHint: Bool = false,
         notice: KeyboardStripNotice? = nil
     ) {
         let changed = suggestions != currentSuggestions || showsUndo != self.showsUndo
             || statusText != self.statusText || clipboard != self.clipboard
+            || clipboardHistory != self.clipboardHistory
             || fullAccessHint != showsFullAccessHint || notice != self.notice
         guard changed else { return }
         currentSuggestions = suggestions
         self.showsUndo = showsUndo
         self.statusText = statusText
         self.clipboard = clipboard
+        self.clipboardHistory = clipboardHistory
         showsFullAccessHint = fullAccessHint
         self.notice = notice
 
@@ -220,6 +239,7 @@ final class KeyboardStripView: UIView {
         }
         show(pasteControl, showsPasteChip)
         show(nextKeyboardChip, showsNextKeyboardChip)
+        show(historyChip, showsHistoryChip)
         // Words swap letter by letter (and leave the same way when a chip or status takes the
         // strip); the strip being shown for the first time just draws them.
         let animated = window != nil
@@ -288,6 +308,18 @@ final class KeyboardStripView: UIView {
         return true
     }
 
+    /// Beside Paste in a strip with no words, never where a code is expected.
+    private var showsHistoryChip: Bool {
+        guard clipboardHistory, !showsUndo, statusText == nil, !showsFullAccessHint, notice == nil,
+              currentSuggestions.isEmpty else { return false }
+        if case .code = clipboard { return false }
+        return true
+    }
+
+    @objc private func handleClipboardHistory() {
+        onClipboardHistory?()
+    }
+
     @objc private func handlePaste() {
         onPaste?()
     }
@@ -325,6 +357,9 @@ final class KeyboardStripView: UIView {
         var paste = pasteControl.configuration
         paste?.baseForegroundColor = palette.stripText
         pasteControl.configuration = paste
+        var history = historyChip.configuration
+        history?.baseForegroundColor = palette.stripText
+        historyChip.configuration = history
         var next = nextKeyboardChip.configuration
         next?.baseForegroundColor = palette.textMuted
         next?.background.backgroundColor = palette.chipFill
@@ -358,25 +393,20 @@ final class KeyboardStripView: UIView {
             width: chipSize.width,
             height: chipH
         )
-        let pasteW = pasteControl.sizeThatFits(CGSize(width: bounds.width, height: chipH)).width
-        let nextSize = nextKeyboardChip.sizeThatFits(CGSize(width: bounds.width, height: chipH))
-        // Laid out for what is shown, not what is still fading out.
-        let pasteShown = showsPasteChip
-        let nextShown = showsNextKeyboardChip
-        let pair = pasteShown && nextShown
+        // Laid out for what is shown, not what is still fading out, which keeps its frame.
+        let chips = [(pasteControl, showsPasteChip), (nextKeyboardChip, showsNextKeyboardChip), (historyChip, showsHistoryChip)]
+            .filter(\.1)
+            .map { ($0.0, $0.0.sizeThatFits(CGSize(width: bounds.width, height: chipH)).width) }
         let gap: CGFloat = 8
-        let total = pair ? pasteW + gap + nextSize.width : (pasteShown ? pasteW : nextSize.width)
+        let total = chips.map(\.1).reduce(0, +) + gap * CGFloat(max(0, chips.count - 1))
         // On the keyboard's middle, as the middle slot's word, kept inside the strip.
         let midX = barMidX ?? bounds.width / 2
-        let startX = max(0, min(bounds.width - total, midX - total / 2))
+        var chipX = max(0, min(bounds.width - total, midX - total / 2))
         let chipY = max(0, midY - chipH / 2)
-        pasteControl.frame = CGRect(x: startX, y: chipY, width: pasteW, height: chipH)
-        nextKeyboardChip.frame = CGRect(
-            x: pair ? startX + pasteW + gap : startX,
-            y: chipY,
-            width: nextSize.width,
-            height: chipH
-        )
+        for (chip, width) in chips {
+            chip.frame = CGRect(x: chipX, y: chipY, width: width, height: chipH)
+            chipX += width + gap
+        }
         // The hint's two lines and chip centre on the words' line, as everything in the strip.
         let hintHalf = min(midY, bounds.height - midY)
         let hintY = midY - hintHalf
@@ -414,7 +444,7 @@ final class KeyboardStripView: UIView {
     }
 
     override func draw(_ rect: CGRect) {
-        guard !showsUndo, !showsClipboard, !showsFullAccessHint, notice == nil, statusLabel.isHidden, bounds.width > 60 else { return }
+        guard !showsUndo, !showsClipboard, !showsHistoryChip, !showsFullAccessHint, notice == nil, statusLabel.isHidden, bounds.width > 60 else { return }
         // A chip sits inside its slot, so the dividers stay beside it, but for the one beside a
         // revert, which Apple's bar hides.
         let reverting = currentSuggestions.first?.kind == .revert

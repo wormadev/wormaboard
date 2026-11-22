@@ -1,0 +1,152 @@
+import UIKit
+
+/// Settings › Experiments › Clipboard history's list: it covers the keys as the emoji panel
+/// does, with ABC (back to the keys) and Clear all on the strip's line and the copies below,
+/// newest first. Tapping a copy inserts it; its ✕ forgets it. Clear all asks once more first.
+@MainActor
+final class ClipboardHistoryPanelView: UIView, UITableViewDataSource, UITableViewDelegate {
+    var palette = FullKeyboardPalette(isDark: false) { didSet { if palette != oldValue { applyPalette() } } }
+    var metrics = KeyboardMetrics.portrait { didSet { if metrics != oldValue { setNeedsLayout() } } }
+    var horizontalInset: CGFloat = 0 { didSet { if horizontalInset != oldValue { setNeedsLayout() } } }
+    var onInsert: ((String) -> Void)?
+    var onRemove: ((String) -> Void)?
+    var onClear: (() -> Void)?
+    var onLetters: (() -> Void)?
+    var onKeyDown: (() -> Void)?
+
+    private(set) var items: [String]
+    private let lettersChip = UIButton(type: .custom)
+    private let clearChip = UIButton(type: .custom)
+    private let table = UITableView(frame: .zero, style: .plain)
+    private var confirmingClear = false
+
+    init(items: [String]) {
+        self.items = items
+        super.init(frame: .zero)
+        lettersChip.configuration = Self.chip(title: "ABC")
+        lettersChip.accessibilityLabel = String(localized: "Back to the keys")
+        lettersChip.addTarget(self, action: #selector(handleLetters), for: .touchUpInside)
+        clearChip.configuration = Self.chip(title: String(localized: "Clear all"))
+        clearChip.addTarget(self, action: #selector(handleClear), for: .touchUpInside)
+        table.backgroundColor = .clear
+        table.dataSource = self
+        table.delegate = self
+        table.rowHeight = UITableView.automaticDimension
+        table.estimatedRowHeight = 44
+        table.register(UITableViewCell.self, forCellReuseIdentifier: "copy")
+        for view in [table, lettersChip, clearChip] as [UIView] { addSubview(view) }
+        applyPalette()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    private static func chip(title: String) -> UIButton.Configuration {
+        var chip = UIButton.Configuration.plain()
+        chip.title = title
+        chip.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 13, bottom: 0, trailing: 13)
+        chip.background.cornerRadius = 15
+        return chip
+    }
+
+    func setItems(_ items: [String]) {
+        self.items = items
+        table.reloadData()
+    }
+
+    private func applyPalette() {
+        for button in [lettersChip, clearChip] {
+            var chip = button.configuration
+            chip?.baseForegroundColor = palette.textMuted
+            chip?.background.backgroundColor = palette.chipFill
+            button.configuration = chip
+        }
+        table.separatorColor = palette.separator
+        table.reloadData()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let band = metrics.stripLineBand
+        let chipH = min(30, band.height)
+        let chipY = metrics.stripTop + band.top + (band.height - chipH) / 2
+        let left = horizontalInset + metrics.side
+        let right = bounds.width - horizontalInset - metrics.side
+        let lettersW = lettersChip.sizeThatFits(CGSize(width: bounds.width, height: chipH)).width
+        lettersChip.frame = CGRect(x: left, y: chipY, width: lettersW, height: chipH)
+        let clearW = clearChip.sizeThatFits(CGSize(width: bounds.width, height: chipH)).width
+        clearChip.frame = CGRect(x: right - clearW, y: chipY, width: clearW, height: chipH)
+        let top = metrics.stripTop + metrics.stripHeight
+        table.frame = CGRect(x: horizontalInset, y: top, width: bounds.width - 2 * horizontalInset, height: max(0, bounds.height - top))
+    }
+
+    // MARK: - Actions
+
+    @objc private func handleLetters() {
+        onKeyDown?()
+        onLetters?()
+    }
+
+    /// The first tap asks "Clear all?" for three seconds; a second one in that time clears.
+    @objc private func handleClear() {
+        onKeyDown?()
+        guard confirmingClear else {
+            confirmingClear = true
+            setClearTitle(String(localized: "Clear all?"))
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                guard let self, self.confirmingClear else { return }
+                self.confirmingClear = false
+                self.setClearTitle(String(localized: "Clear all"))
+            }
+            return
+        }
+        confirmingClear = false
+        onClear?()
+    }
+
+    private func setClearTitle(_ title: String) {
+        var chip = clearChip.configuration
+        chip?.title = title
+        clearChip.configuration = chip
+        setNeedsLayout()
+    }
+
+    @objc private func handleRemove(_ sender: UIButton) {
+        guard items.indices.contains(sender.tag) else { return }
+        onKeyDown?()
+        onRemove?(items[sender.tag])
+    }
+
+    // MARK: - Table
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { items.count }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "copy", for: indexPath)
+        var content = cell.defaultContentConfiguration()
+        content.text = items[indexPath.row]
+        content.textProperties.color = palette.textBase
+        content.textProperties.font = .systemFont(ofSize: 16)
+        content.textProperties.numberOfLines = 2
+        cell.contentConfiguration = content
+        cell.backgroundColor = .clear
+        cell.selectedBackgroundView = UIView()
+        cell.selectedBackgroundView?.backgroundColor = palette.selectFill
+        let remove = UIButton(type: .system)
+        remove.setImage(UIImage(systemName: "xmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .medium)), for: .normal)
+        remove.tintColor = palette.textMuted
+        remove.frame = CGRect(x: 0, y: 0, width: 44, height: 44)
+        remove.tag = indexPath.row
+        remove.accessibilityLabel = String(localized: "Remove")
+        remove.addTarget(self, action: #selector(handleRemove(_:)), for: .touchUpInside)
+        cell.accessoryView = remove
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: false)
+        guard items.indices.contains(indexPath.row) else { return }
+        onKeyDown?()
+        onInsert?(items[indexPath.row])
+    }
+}
