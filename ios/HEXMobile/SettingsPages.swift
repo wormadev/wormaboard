@@ -702,6 +702,11 @@ struct ExperimentsSettingsPage: View {
             }
             .onChange(of: arabicKeyboard) { _, enabled in
                 FullKeyboardSettings().arabicKeyboard = enabled
+                // Turning it on adds العربية after the chosen languages so the space bar
+                // switches to it at once (empty is Automatic, so English goes first).
+                let languages = LanguageSettings()
+                guard enabled, !languages.keyboardLanguages.contains(.arabic) else { return }
+                languages.keyboardLanguages = (languages.keyboardLanguages.isEmpty ? [.english] : languages.keyboardLanguages) + [.arabic]
             }
             .onChange(of: dvorakPunctuation) { _, enabled in
                 FullKeyboardSettings().dvorakPunctuation = enabled
