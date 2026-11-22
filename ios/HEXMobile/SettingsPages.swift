@@ -517,6 +517,15 @@ struct PrivacySettingsPage: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 2)
 
+            // The one exception, and only while its experiment is on.
+            if GifSearchSettings().isEnabled {
+                Text("Except GIF searches: Experiments › GIFs sends what you search to GIPHY.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(HexTheme.textMuted)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 2)
+            }
+
             SettingsCard {
                 // Not only for the full keyboard: it also learns from dictations the
                 // dictation bar inserts. On until turned off (`TypingJournalSettings`).
@@ -608,6 +617,8 @@ struct ExperimentsSettingsPage: View {
     @State private var koreanKeyboard = FullKeyboardSettings().koreanKeyboard
     @State private var dvorakPunctuation = FullKeyboardSettings().dvorakPunctuation
     @State private var emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
+    @State private var gifSearch = GifSearchSettings().isEnabled
+    private let hasGiphyKey = GifSearchSettings.apiKey() != nil
     @State private var keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
     @State private var keyboardTheme = FullKeyboardSettings().keyboardTheme
     @State private var twoThumbSelection = FullKeyboardSettings().twoThumbSelection
@@ -679,6 +690,9 @@ struct ExperimentsSettingsPage: View {
             }
             .onChange(of: emojiLettersUnderEmojiKey) { _, enabled in
                 FullKeyboardSettings().emojiLettersUnderEmojiKey = enabled
+            }
+            .onChange(of: gifSearch) { _, enabled in
+                GifSearchSettings().isEnabled = enabled
             }
             .onChange(of: keyboardThemes) { _, enabled in
                 FullKeyboardSettings().keyboardThemesEnabled = enabled
@@ -808,6 +822,19 @@ struct ExperimentsSettingsPage: View {
 
         SettingsDivider()
 
+        // Off by default, and the only part of Hex that goes online for typing: what you
+        // search is sent to GIPHY, and only with Full Access.
+        SettingsToggleRow(
+            title: String(localized: "GIFs"),
+            detail: hasGiphyKey
+                ? String(localized: "Search GIPHY from the emoji panel. Needs Full Access; what you search is sent to GIPHY.")
+                : String(localized: "GIFs aren't set up in this build"),
+            isOn: hasGiphyKey ? $gifSearch : .constant(false)
+        )
+        .disabled(!hasGiphyKey)
+
+        SettingsDivider()
+
         // Off by default: the full keyboard keeps iOS's glass.
         SettingsToggleRow(
             title: String(localized: "Keyboard themes"),
@@ -902,6 +929,7 @@ struct ExperimentsSettingsPage: View {
         koreanKeyboard = FullKeyboardSettings().koreanKeyboard
         dvorakPunctuation = FullKeyboardSettings().dvorakPunctuation
         emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
+        gifSearch = GifSearchSettings().isEnabled
         keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
         keyboardTheme = FullKeyboardSettings().keyboardTheme
         twoThumbSelection = FullKeyboardSettings().twoThumbSelection

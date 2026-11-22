@@ -407,6 +407,7 @@ final class EmojiCategoryBar: UIView {
 final class EmojiSearchField: UIView {
     var palette = FullKeyboardPalette(isDark: false) { didSet { if palette != oldValue { refresh() } } }
     var query = "" { didSet { if query != oldValue { refresh() } } }
+    var placeholder = "Search emoji" { didSet { if placeholder != oldValue { refresh() } } }
     var onClose: (() -> Void)?
 
     private let well = UIView()
@@ -450,9 +451,9 @@ final class EmojiSearchField: UIView {
         icon.tintColor = palette.textMuted
         closeButton.tintColor = palette.textMuted
         caret.backgroundColor = palette.actionFill
-        label.text = query.isEmpty ? "Search emoji" : query
+        label.text = query.isEmpty ? placeholder : query
         label.textColor = query.isEmpty ? palette.textMuted : palette.textBase
-        label.accessibilityLabel = "Search emoji"
+        label.accessibilityLabel = placeholder
         label.accessibilityValue = query
         setNeedsLayout()
     }

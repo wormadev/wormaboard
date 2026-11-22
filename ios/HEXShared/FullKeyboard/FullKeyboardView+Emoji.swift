@@ -70,6 +70,8 @@ extension FullKeyboardView {
             self?.closeEmojiPanel()
         }
         panel.onSearch = { [weak self] in self?.beginEmojiSearch() }
+        panel.showsGifs = makeGiphyClient() != nil
+        panel.onGifs = { [weak self] in self?.beginGifSearch() }
         insertSubview(panel, belowSubview: callout)
         emojiPanel = panel
         for view in [plane, stripView, hexKey, globeButton] as [UIView] { view.isHidden = true }
@@ -169,6 +171,10 @@ extension FullKeyboardView {
 
     /// Typing changed the query: the results follow, your suggestions while it's empty.
     func refreshEmojiSearch() {
+        if gifSearch != nil {
+            refreshGifSearch()
+            return
+        }
         guard let panel = emojiPanel, let query = routedTarget.query else { return }
         emojiSearchField?.query = query
         let library = panel.library
@@ -194,6 +200,7 @@ extension FullKeyboardView {
         emojiResults?.removeFromSuperview()
         emojiResults = nil
         emojiResultEntries = []
+        endGifSearch()
         emojiSearchLift = 0
         onPreferredHeightChange?()
         engine.configureForField()
@@ -227,6 +234,7 @@ extension FullKeyboardView {
         let band = m.stripLineBand
         emojiSearchField?.frame = CGRect(x: inset, y: m.stripTop + lift + band.top, width: bounds.width - 2 * inset, height: band.height)
         emojiResults?.frame = CGRect(x: inset + m.side, y: 0, width: bounds.width - 2 * (inset + m.side), height: lift)
+        gifSearch?.results.frame = CGRect(x: inset + m.side, y: 0, width: bounds.width - 2 * (inset + m.side), height: lift)
     }
 
     // MARK: - Strip

@@ -5,6 +5,9 @@ options:
   deploymentTarget:
     iOS: "18.0"
   xcodeVersion: "2660"
+configFiles:
+  Debug: Shared.xcconfig
+  Release: Shared.xcconfig
 packages:
   FluidAudio:
     url: https://github.com/FluidInference/FluidAudio.git
@@ -47,6 +50,7 @@ targets:
         NSMicrophoneUsageDescription: Hex turns what you say into text on this iPhone. Audio never leaves it and is deleted once it's transcribed.
         NSSpeechRecognitionUsageDescription: Hex uses Apple's on-device speech recognition to turn what you say into text. Nothing you say is sent to a server.
         NSSupportsLiveActivities: true
+        GiphyAPIKey: $(GIPHY_API_KEY)
         ITSAppUsesNonExemptEncryption: false
         UIBackgroundModes:
           - audio
@@ -96,6 +100,7 @@ targets:
         NSSpeechRecognitionUsageDescription: Hex uses Apple's on-device speech recognition to turn what you say into text. Nothing you say is sent to a server.
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        GiphyAPIKey: $(GIPHY_API_KEY)
         NSExtension:
           NSExtensionAttributes:
             IsASCIICapable: true
