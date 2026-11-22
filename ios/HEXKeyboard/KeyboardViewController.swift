@@ -174,6 +174,8 @@ final class KeyboardViewController: UIInputViewController {
         // Onboarding's practice tells Hex's keyboard on screen from another one, or iOS's
         // dictation, by these.
         bridge.recordKeyboardShown(at: Date().timeIntervalSince1970)
+        // After the keys are up: reading the clipboard can wait on iOS's Allow Paste.
+        fullKeyboard?.captureClipboardForHistory()
         scheduleLaunchWork()
     }
 

@@ -111,6 +111,9 @@ final class FullKeyboardView: UIView {
     }
     private let selectionHaptics = UISelectionFeedbackGenerator()
     let clipboard = KeyboardClipboardTracker()
+    /// Settings › Experiments › Clipboard history (`FullKeyboardView+ClipboardHistory`).
+    var clipboardHistory = ClipboardHistory()
+    var clipboardHistoryPanel: ClipboardHistoryPanelView?
     /// What the strip's Paste chip offers now.
     var stripOffer: KeyboardClipboardOffer?
     /// Settings › Experiments › Hide word suggestions: the strip keeps its height, chips,
@@ -183,6 +186,7 @@ final class FullKeyboardView: UIView {
         stripView.onHoldSuggestion = { [weak self] suggestion in self?.offerVocabulary(suggestion) }
         stripView.onUndoDictation = { [weak self] in self?.undoDictation() }
         stripView.onPaste = { [weak self] in self?.pasteFromClipboard() }
+        stripView.onClipboardHistory = { [weak self] in self?.openClipboardHistory() }
         stripView.onOpenHexFromHint = { [weak self] in self?.openSetupFromHint() }
         stripView.onOpenNotice = { [weak self] in
             guard let self else { return }
@@ -674,6 +678,7 @@ final class FullKeyboardView: UIView {
     /// The keyboard came on screen for a (possibly new) field.
     func prepareForField() {
         closeEmojiPanel()
+        closeClipboardHistory()
         refreshLanguageSignals()
         syncSettings()
         plane.cancelAllTouches()
@@ -766,13 +771,14 @@ final class FullKeyboardView: UIView {
             hexKey.keycapFrame = hex.frame.offsetBy(dx: -hex.hitFrame.minX, dy: -hex.hitFrame.minY)
             hexKey.markCenterY = layout.metrics.stripTop + layout.metrics.stripTextCenter - hex.hitFrame.minY
         }
-        if let globe = layout.key(.globe), emojiPanel == nil || routedTarget.isSearching {
+        if let globe = layout.key(.globe), emojiPanel == nil || routedTarget.isSearching, clipboardHistoryPanel == nil {
             globeButton.isHidden = false
             globeButton.frame = globe.hitFrame.offsetBy(dx: 0, dy: lift)
         } else {
             globeButton.isHidden = true
         }
         layoutEmoji(content: content, lift: lift)
+        layoutClipboardHistory()
 
         if let panel = recordingPanel {
             panel.frame = recordingPanelFrame
@@ -817,6 +823,7 @@ final class FullKeyboardView: UIView {
         emojiPanel?.palette = next
         emojiSearchField?.palette = next
         emojiResults?.palette = next
+        clipboardHistoryPanel?.palette = next
     }
 
     func refreshReturnKey() {
@@ -894,12 +901,13 @@ final class FullKeyboardView: UIView {
             if case .code = clipboardOffer {} else { clipboardOffer = .dictation }
         }
         stripOffer = clipboardOffer
+        let offersHistory = offersClipboardHistory
         var suggestions = engine.suggestions
         if showsAllowPasteHint, status != nil {
             // The pasted text's last word would otherwise hide where to stop Allow Paste.
             suggestions = []
         } else if suggestions.isEmpty || suggestions.first?.kind == .nextWord {
-            if lastDictation != nil || status != nil || clipboardOffer != nil {
+            if lastDictation != nil || status != nil || clipboardOffer != nil || (offersHistory && !engine.target.hasText) {
                 suggestions = []
             } else {
                 let emoji = emojiForFinishedWord()
@@ -925,6 +933,7 @@ final class FullKeyboardView: UIView {
             showsUndo: lastDictation != nil,
             statusText: status,
             clipboard: clipboardOffer,
+            clipboardHistory: offersHistory,
             fullAccessHint: showsFullAccessHint && !model.hasFullAccess,
             notice: vocabularyNotice ?? translationNotice
         )
@@ -948,7 +957,10 @@ final class FullKeyboardView: UIView {
     private func setRecording(_ recording: Bool) {
         showsRecording = recording
         dismissStyleMenu()
-        if recording { closeEmojiPanel() }
+        if recording {
+            closeEmojiPanel()
+            closeClipboardHistory()
+        }
         let closingFrames = recording ? nil : morphFrames()
         if recording {
             plane.cancelAllTouches()
@@ -1225,7 +1237,7 @@ final class FullKeyboardView: UIView {
     private func takesBarHold(at point: CGPoint) -> Bool {
         let m = engine.layout.metrics
         let bar = CGRect(x: 0, y: appliedLift, width: bounds.width, height: m.stripTop + m.stripHeight)
-        guard bar.contains(point), !showsRecording, emojiPanel == nil, styleMenu == nil,
+        guard bar.contains(point), !showsRecording, emojiPanel == nil, clipboardHistoryPanel == nil, styleMenu == nil,
               !(showsFullAccessHint && !model.hasFullAccess), vocabularyNotice == nil, translationNotice == nil
         else { return false }
         return model.stagePhase == .idle || model.stagePhase == .failed

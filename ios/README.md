@@ -742,8 +742,8 @@ never at a launch by itself.
     letters), Two-language dictation,
     Clean up with Apple Intelligence, Adaptive touch (its status and Reset touch learning
     below the switch), German spatial autocorrect, Korean keyboard (두벌식), Dvorak punctuation
-    keys, ABC under the emoji key, Keyboard themes (its Theme menu below the switch while
-    it's on), Two-thumb selection, Delete swiped words letter by letter, Hide word
+    keys, Clipboard history, ABC under the emoji key, Keyboard themes (its Theme menu below the
+    switch while it's on), Two-thumb selection, Delete swiped words letter by letter, Hide word
     suggestions, Join the keyboard when unfolded, and Multilingual model (Parakeet).
 
   Simulator scenes: `--snap-state settings-home` (ready), `setup` (keyboard
@@ -1306,6 +1306,21 @@ never at a launch by itself.
   stays after Delete. With no words offered, tapping the left slot to keep what you typed
   mid-word and holding a word to add it to Custom vocabulary are gone. Off, the strip suggests
   exactly as it did.
+- **Clipboard history (full keyboard, Settings › Experiments › Clipboard history):** Off by
+  default (`experiments.clipboardHistory`, App Group), and while off nothing reads the
+  clipboard. On, with Full Access, each time the keyboard appears it reads the clipboard's text
+  if `UIPasteboard.changeCount` moved since the last look (once per copy, refused or not; each
+  read can ask Allow Paste unless Settings › Apps › Hex › Paste from Other Apps is Allow), and
+  two-thumb selection's Cut and Copy add their text without a read. It keeps the last 20
+  distinct texts, newest first (a copy made again moves to the front), skipping blank ones and
+  any over 8 KB of UTF-8 (a text is kept whole or not at all); on this device only, in the App
+  Group (`keyboard.clipboardHistory.items`), never logged or sent. A Clipboard chip sits beside
+  Paste in a strip with no words (an empty field drops its next-word suggestions for it, as it
+  does for Paste; never in a code field) and opens the list over the keys, as the emoji panel
+  does: tap a text to insert it, ✕ to forget it, Clear all (tapped twice) to empty it, ABC to
+  go back. Turning the experiment off deletes the list (`ClipboardHistory`,
+  `ClipboardHistoryPanelView`). Scenes: `--snap-state full-keyboard-clipboard` (the chip) and
+  `full-keyboard-clipboard-list` (the list), from a fixture store of their own.
 - **Background (full keyboard and dictation bar):** Hex draws nothing behind its keys, so
   the keyboard's background is iOS's own glass panel: the same colour as the band iOS adds
   above a third-party keyboard and the globe row under it, over any app or wallpaper, with

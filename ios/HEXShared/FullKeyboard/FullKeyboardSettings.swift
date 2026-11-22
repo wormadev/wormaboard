@@ -92,6 +92,7 @@ struct FullKeyboardSettings {
         static let dictationBarAutoStart = "settings.dictationBarAutoStart"
         static let joinKeyboardWhenUnfolded = "experiments.joinKeyboardWhenUnfolded"
         static let dvorakPunctuation = "experiments.dvorakPunctuation"
+        static let clipboardHistory = "experiments.clipboardHistory"
     }
 
     private let defaults: UserDefaults?
@@ -320,6 +321,17 @@ struct FullKeyboardSettings {
     var dvorakPunctuation: Bool {
         get { defaults?.bool(forKey: Key.dvorakPunctuation) ?? false }
         nonmutating set { defaults?.set(newValue, forKey: Key.dvorakPunctuation) }
+    }
+
+    /// Settings › Experiments › Clipboard history (off by default): with Full Access the full
+    /// keyboard keeps the last texts copied (`ClipboardHistory`). Turning it off deletes them.
+    /// Stored as `experiments.clipboardHistory`.
+    var clipboardHistory: Bool {
+        get { defaults?.bool(forKey: Key.clipboardHistory) ?? false }
+        nonmutating set {
+            defaults?.set(newValue, forKey: Key.clipboardHistory)
+            if !newValue { ClipboardHistory(defaults: defaults).clear() }
+        }
     }
 
     /// Settings › Keyboard › Auto-start: when the dictation bar starts dictating by itself.

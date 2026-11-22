@@ -64,6 +64,8 @@ struct FullKeyboardSnapshotStage: View {
     }
 
     private var draft: String {
+        // Clipboard history's chip shows in an empty field.
+        if state.hasPrefix("clipboard") { return "" }
         switch Self.layout {
         case .norwegian:
             return switch state {
@@ -318,6 +320,9 @@ private struct FullKeyboardFixture: UIViewRepresentable {
             let usage = EmojiFixture.usage()
             view.makeEmojiUsage = { usage }
         }
+        if state.hasPrefix("clipboard") {
+            view.clipboardHistory = ClipboardHistoryFixture.history()
+        }
         let args = ProcessInfo.processInfo.arguments
         if let p = args.firstIndex(of: "--hex-placement"), p + 1 < args.count {
             view.hexPlacementOverride = HexKeyPlacement(rawValue: args[p + 1])
@@ -389,6 +394,8 @@ private struct FullKeyboardFixture: UIViewRepresentable {
             case "strip-selection":
                 view.stripView.isHidden = true
                 view.selectionStrip.update(TrackpadSelectionSession.Presentation(phase: .actions, before: "Running 10 ", selected: "min late", after: ", home by"), canUseClipboard: true)
+            case "clipboard-list":
+                view.openClipboardHistory()
             case "emoji":
                 view.debugOpenEmoji()
             case "emoji-search":
@@ -667,5 +674,25 @@ class FixtureTextTarget: KeyboardTextTarget {
 
     func adjustTextPosition(byCharacterOffset offset: Int) {
         cursorIndex = max(0, min(text.count, cursorIndex + offset))
+    }
+}
+/// Settings › Experiments › Clipboard history's scenes: a few copies in a store of their own,
+/// so a scene never touches the App Group's.
+@MainActor
+enum ClipboardHistoryFixture {
+    static func history() -> ClipboardHistory {
+        let suite = "HEXClipboardHistoryFixture"
+        let defaults = UserDefaults(suiteName: suite)
+        defaults?.removePersistentDomain(forName: suite)
+        FullKeyboardSettings(defaults: defaults).clipboardHistory = true
+        let history = ClipboardHistory(defaults: defaults)
+        let copies = [
+            "https://anoma.ly/hex",
+            "Running 10 min late, should be home by 7:30. Start without me.",
+            "221B Baker Street, London",
+            "Table for four at 8, under Sam",
+        ]
+        for text in copies.reversed() { history.add(text) }
+        return history
     }
 }
