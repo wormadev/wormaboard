@@ -112,7 +112,7 @@ struct OnboardingView: View {
         let english = SpeechModelUnavailable.interfaceName("en-US")
         if fixture == .failed {
             return OnboardingModel(
-                stage: .failed(String(localized: "Hex couldn't download the speech model. Check your connection and try again.")),
+                stage: .failed(String(localized: "WormaBoard couldn't download the speech model. Check your connection and try again.")),
                 language: english
             )
         }
@@ -289,7 +289,7 @@ private struct OnboardingSetupPage: View {
                 HexMarkView(size: 56)
                     .padding(.bottom, 10)
                     .onboardingStagger(0)
-                OnboardingTitle("Setting up Hex")
+                OnboardingTitle("Setting up WormaBoard")
                     .onboardingStagger(1)
                 HStack(spacing: 6) {
                     Text(model.isReady ? "Ready" : model.downloads ? "Downloading" : "Preparing")
@@ -349,8 +349,8 @@ private struct OnboardingDemoPage: View {
         VStack(spacing: 0) {
             OnboardingTopBar(model: model, onSkip: onNext)
             VStack(spacing: 10) {
-                OnboardingTitle("With Hex")
-                Text("Tap the Hex key and say it.")
+                OnboardingTitle("With WormaBoard")
+                Text("Tap the WormaBoard key and say it.")
                     .font(.system(size: 15))
                     .foregroundStyle(HexTheme.textMuted)
             }
@@ -484,8 +484,8 @@ private struct OnboardingPermissionsPage: View {
             OnboardingTopBar(model: model, onSkip: nil)
             Spacer(minLength: 16)
             VStack(spacing: 10) {
-                OnboardingTitle("Let Hex hear you")
-                Text("Hex listens only after you tap the Hex key.")
+                OnboardingTitle("Let WormaBoard hear you")
+                Text("WormaBoard listens only after you tap the WormaBoard key.")
                     .font(.system(size: 15))
                     .foregroundStyle(HexTheme.textMuted)
                     .multilineTextAlignment(.center)
@@ -511,7 +511,7 @@ private struct OnboardingPermissionsPage: View {
                 Rectangle().fill(HexTheme.borderWeak).frame(height: 0.5)
                 OnboardingPermissionRow(
                     icon: "keyboard",
-                    title: "Hex Keyboard",
+                    title: "WormaBoard Keyboard",
                     detail: "With Full Access",
                     done: keyboardDone,
                     actionTitle: "Open Settings"
@@ -524,7 +524,7 @@ private struct OnboardingPermissionsPage: View {
             .onboardingStagger(2)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Keyboards  ›  Hex Keyboard  ›  Allow Full Access")
+                Text("Keyboards  ›  WormaBoard Keyboard  ›  Allow Full Access")
                 Button {
                     withAnimation(HexMotion.reducedFade) { showsKeyboardFallback.toggle() }
                 } label: {
@@ -533,7 +533,7 @@ private struct OnboardingPermissionsPage: View {
                 }
                 .buttonStyle(.plain)
                 if showsKeyboardFallback {
-                    Text("General  ›  Keyboard  ›  Keyboards  ›  Add New Keyboard  ›  Hex")
+                    Text("General  ›  Keyboard  ›  Keyboards  ›  Add New Keyboard  ›  WormaBoard")
                         .transition(.opacity)
                 }
             }
@@ -719,7 +719,7 @@ private struct OnboardingPracticePage: View {
                                 .foregroundStyle(HexTheme.success)
                                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
                         }
-                        OnboardingTitle(complete ? "That's Hex" : "Your turn")
+                        OnboardingTitle(complete ? "That's WormaBoard" : "Your turn")
                             .contentTransition(.opacity)
                     }
                     .onboardingStagger(1)
@@ -728,7 +728,7 @@ private struct OnboardingPracticePage: View {
                         if complete {
                             Text("It types wherever your cursor is, in any app.")
                         } else {
-                            Text("Switch to Hex with \(Image(systemName: "globe")), then tap the Hex key.")
+                            Text("Switch to WormaBoard with \(Image(systemName: "globe")), then tap the WormaBoard key.")
                         }
                     }
                     .font(.system(size: 15))
@@ -748,18 +748,18 @@ private struct OnboardingPracticePage: View {
                         .onboardingStagger(3)
 
                     if heardNothing && !complete {
-                        practiceNote(icon: "waveform", Text("Hex didn't hear any words. Try speaking louder."))
+                        practiceNote(icon: "waveform", Text("WormaBoard didn't hear any words. Try speaking louder."))
                     }
 
                     if otherInput && !complete && monitor.fullAccessOn {
                         practiceNote(
                             icon: "hand.raised",
-                            Text("That wasn't Hex. Tap the Hex key on the Hex keyboard.")
+                            Text("That wasn't WormaBoard. Tap the WormaBoard key on the WormaBoard keyboard.")
                         )
                     } else if hexKeyboardMissing && !complete {
                         practiceNote(
                             icon: "keyboard",
-                            Text("Don't see the Hex key? Tap \(Image(systemName: "globe")) until the Hex keyboard appears.")
+                            Text("Don't see the WormaBoard key? Tap \(Image(systemName: "globe")) until the WormaBoard keyboard appears.")
                         )
                     }
 
@@ -972,7 +972,7 @@ private struct OnboardingReadyPage: View {
                             HexMarkView(size: 56)
                                 .padding(.bottom, 10)
                         }
-                        OnboardingTitle(left == .nothing ? "Hex is ready" : "Almost ready")
+                        OnboardingTitle(left == .nothing ? "WormaBoard is ready" : "Almost ready")
                         subtitle
                             .font(.system(size: 15))
                             .foregroundStyle(HexTheme.textMuted)
@@ -993,7 +993,7 @@ private struct OnboardingReadyPage: View {
                     .padding(.bottom, 8)
                     .onboardingStagger(2)
             }
-            OnboardingPrimaryButton(title: "Start using Hex", action: onStart)
+            OnboardingPrimaryButton(title: "Start using WormaBoard", action: onStart)
                 .padding(.bottom, 12)
                 .onboardingStagger(3)
         }
@@ -1002,10 +1002,10 @@ private struct OnboardingReadyPage: View {
     @ViewBuilder
     private var subtitle: some View {
         switch left {
-        case .nothing, .model: Text("Tap the Hex key in any app to talk.")
+        case .nothing, .model: Text("Tap the WormaBoard key in any app to talk.")
         case .microphone: Text("Allow the microphone in Settings.")
-        case .keyboard: Text("Add the Hex keyboard in Settings.")
-        case .fullAccess: Text("Use the Hex keyboard once to finish.")
+        case .keyboard: Text("Add the WormaBoard keyboard in Settings.")
+        case .fullAccess: Text("Use the WormaBoard keyboard once to finish.")
         }
     }
 }

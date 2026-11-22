@@ -951,7 +951,7 @@ final class FullKeyboardView: UIView {
     /// the fix, and Open Hex, which opens Settings › Dictation.
     private var translationNotice: KeyboardStripNotice? {
         guard model.hasFullAccess, let note = model.translationNote else { return nil }
-        return KeyboardStripNotice(title: TranslationFailure.note, detail: note.fix, button: String(localized: "Open Hex"))
+        return KeyboardStripNotice(title: TranslationFailure.note, detail: note.fix, button: String(localized: "Open WormaBoard"))
     }
 
     private func refreshRecordingPanel() {

@@ -61,7 +61,7 @@ final class HexKeyControl: UIControl {
     }
 
     private func updateAccessibility() {
-        let label = isWarm ? "Dictate with Hex" : "Open Hex to dictate"
+        let label = isWarm ? "Dictate with WormaBoard" : "Open WormaBoard to dictate"
         accessibilityLabel = translatingTo.map { "\(label), \(TranslationPasteChoice.translatingLabel(target: $0))" } ?? label
         accessibilityHint = "Tap to dictate, hold to talk, slide for styles"
     }

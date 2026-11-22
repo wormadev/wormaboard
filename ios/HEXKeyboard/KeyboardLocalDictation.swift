@@ -413,7 +413,7 @@ final class KeyboardLocalDictation {
         let appAllowed = KeyboardBridge().appMicrophoneAllowed
         guard Self.microphoneAllowed else {
             log.write("start(web\(armed ? ", touch-down" : "")): mic=\(Self.describe(AVAudioApplication.shared.recordPermission)) app=no")
-            fail("Allow the microphone in Hex first")
+            fail("Allow the microphone in WormaBoard first")
             return nil
         }
         let jobID = UUID().uuidString
@@ -550,7 +550,7 @@ final class KeyboardLocalDictation {
             capture?.stop()
             pcmFile = nil
             fail(
-                message.hasPrefix("NotAllowedError") ? "Allow the microphone in Hex first" : UserFacingError.Context.microphone.fallback,
+                message.hasPrefix("NotAllowedError") ? "Allow the microphone in WormaBoard first" : UserFacingError.Context.microphone.fallback,
                 detail: "Web capture: \(message)"
             )
         case .processTerminated:

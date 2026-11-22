@@ -44,12 +44,12 @@
         }
       }
     },
-    "Allow Speech Recognition for Hex in Settings. It runs on this iPhone." : {
+    "Allow Speech Recognition for WormaBoard in Settings. It runs on this iPhone." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请在“设置”中允许 Hex 使用语音识别。识别在这台 iPhone 上进行。"
+            "value" : "请在“设置”中允许 WormaBoard 使用语音识别。识别在这台 iPhone 上进行。"
           }
         }
       }
@@ -114,12 +114,12 @@
         }
       }
     },
-    "On iOS 18, dictations translate only with Hex open." : {
+    "On iOS 18, dictations translate only with WormaBoard open." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在 iOS 18 上，只有 Hex 打开时听写才会翻译。"
+            "value" : "在 iOS 18 上，只有 WormaBoard 打开时听写才会翻译。"
           }
         }
       }
@@ -164,12 +164,12 @@
         }
       }
     },
-    "iOS 18 translates only with Hex open" : {
+    "On iOS 18, open WormaBoard to translate" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iOS 18 仅在 Hex 打开时翻译"
+            "value" : "iOS 18 仅在 WormaBoard 打开时翻译"
           }
         }
       }
@@ -254,12 +254,12 @@
         }
       }
     },
-    "Opens Hex's Settings" : {
+    "Opens WormaBoard's Settings" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开 Hex 的设置"
+            "value" : "打开 WormaBoard 的设置"
           }
         }
       }
@@ -607,12 +607,12 @@
         }
       }
     },
-    "Add Hex and Allow Full Access" : {
+    "Add WormaBoard and Allow Full Access" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加 Hex 并允许完全访问"
+            "value" : "添加 WormaBoard 并允许完全访问"
           }
         }
       }
@@ -1068,22 +1068,22 @@
         }
       }
     },
-    "Delete what Hex learned" : {
+    "Delete what WormaBoard learned" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "删除 Hex 学到的内容"
+            "value" : "删除 WormaBoard 学到的内容"
           }
         }
       }
     },
-    "Delete what Hex learned?" : {
+    "Delete what WormaBoard learned?" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "删除 Hex 学到的内容？"
+            "value" : "删除 WormaBoard 学到的内容？"
           }
         }
       }
@@ -1118,12 +1118,12 @@
         }
       }
     },
-    "Dictate with Hex" : {
+    "Dictate with WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用 Hex 听写"
+            "value" : "用 WormaBoard 听写"
           }
         }
       }
@@ -1148,12 +1148,12 @@
         }
       }
     },
-    "Dictation fixes Hex learned" : {
+    "Dictation fixes WormaBoard learned" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 学到的听写修正"
+            "value" : "WormaBoard 学到的听写修正"
           }
         }
       }
@@ -1378,12 +1378,12 @@
         }
       }
     },
-    "Fixes spelling, not words Hex mishears" : {
+    "Fixes spelling, not words WormaBoard mishears" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "修正拼写，而不是 Hex 听错的词"
+            "value" : "修正拼写，而不是 WormaBoard 听错的词"
           }
         }
       }
@@ -1478,12 +1478,12 @@
         }
       }
     },
-    "General  ›  Keyboard  ›  Keyboards  ›  Add New Keyboard  ›  Hex" : {
+    "General  ›  Keyboard  ›  Keyboards  ›  Add New Keyboard  ›  WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "通用  ›  键盘  ›  键盘  ›  添加新键盘  ›  Hex"
+            "value" : "通用  ›  键盘  ›  键盘  ›  添加新键盘  ›  WormaBoard"
           }
         }
       }
@@ -1508,95 +1508,95 @@
         }
       }
     },
-    "Hex" : {
+    "WormaBoard" : {
       "shouldTranslate" : false
     },
-    "Hex closed while loading the speech model. Close other apps, then tap Set up." : {
+    "WormaBoard closed while loading the speech model. Close other apps, then tap Set up." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 在加载语音模型时关闭了。请关闭其他 App，然后轻点“开始设置”。"
+            "value" : "WormaBoard 在加载语音模型时关闭了。请关闭其他 App，然后轻点“开始设置”。"
           }
         }
       }
     },
-    "Hex couldn't download the speech model. Check your connection and try again." : {
+    "WormaBoard couldn't download the speech model. Check your connection and try again." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法下载语音模型。请检查网络连接后重试。"
+            "value" : "WormaBoard 无法下载语音模型。请检查网络连接后重试。"
           }
         }
       }
     },
-    "Hex couldn't get speech recognition ready. Try again." : {
+    "WormaBoard couldn't get speech recognition ready. Try again." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法准备好语音识别。请重试。"
+            "value" : "WormaBoard 无法准备好语音识别。请重试。"
           }
         }
       }
     },
-    "Hex couldn't start the microphone. Try again." : {
+    "WormaBoard couldn't start the microphone. Try again." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法启动麦克风。请重试。"
+            "value" : "WormaBoard 无法启动麦克风。请重试。"
           }
         }
       }
     },
-    "Hex couldn't transcribe that. Try again." : {
+    "WormaBoard couldn't transcribe that. Try again." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法转录这段内容。请重试。"
+            "value" : "WormaBoard 无法转录这段内容。请重试。"
           }
         }
       }
     },
-    "Hex is ready" : {
+    "WormaBoard is ready" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 已就绪"
+            "value" : "WormaBoard 已就绪"
           }
         }
       }
     },
-    "Hex key" : {
+    "WormaBoard key" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 键"
+            "value" : "WormaBoard 键"
           }
         }
       }
     },
-    "Hex Keyboard" : {
+    "WormaBoard Keyboard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex Keyboard"
+            "value" : "WormaBoard Keyboard"
           }
         }
       }
     },
-    "The Hex keyboard will record each tap and the text you type or dictate, including text around the cursor, for 14 days. Logs stay on this iPhone. Password, code and card fields are never recorded." : {
+    "The WormaBoard keyboard will record each tap and the text you type or dictate, including text around the cursor, for 14 days. Logs stay on this iPhone. Password, code and card fields are never recorded." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 键盘会记录每一次轻点，以及你输入或听写的文字（包括光标周围的文字），保留 14 天。日志保存在这台 iPhone 上。密码、验证码和银行卡字段永远不会被记录。"
+            "value" : "WormaBoard 键盘会记录每一次轻点，以及你输入或听写的文字（包括光标周围的文字），保留 14 天。日志保存在这台 iPhone 上。密码、验证码和银行卡字段永远不会被记录。"
           }
         }
       }
@@ -1731,12 +1731,12 @@
         }
       }
     },
-    "Keyboards  ›  Hex Keyboard  ›  Allow Full Access" : {
+    "Keyboards  ›  WormaBoard Keyboard  ›  Allow Full Access" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "键盘  ›  Hex Keyboard  ›  允许完全访问"
+            "value" : "键盘  ›  WormaBoard Keyboard  ›  允许完全访问"
           }
         }
       }
@@ -1751,12 +1751,12 @@
         }
       }
     },
-    "Learns on this iPhone from your taps and the words you fix in Hex" : {
+    "Learns on this iPhone from your taps and the words you fix in WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在这台 iPhone 上从你的轻点和你在 Hex 中修正的词中学习"
+            "value" : "在这台 iPhone 上从你的轻点和你在 WormaBoard 中修正的词中学习"
           }
         }
       }
@@ -2117,32 +2117,32 @@
         }
       }
     },
-    "Open Hex" : {
+    "Open WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开 Hex"
+            "value" : "打开 WormaBoard"
           }
         }
       }
     },
-    "Open Hex to download %@." : {
+    "Open WormaBoard to download %@." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开 Hex 下载%@语音。"
+            "value" : "打开 WormaBoard 下载%@语音。"
           }
         }
       }
     },
-    "Open Hex, then try again." : {
+    "Open WormaBoard, then try again." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请打开 Hex，然后重试。"
+            "value" : "请打开 WormaBoard，然后重试。"
           }
         }
       }
@@ -2177,12 +2177,12 @@
         }
       }
     },
-    "Not enough memory for the speech model. Hex is using Apple's on-device speech recognition." : {
+    "Not enough memory for the speech model. WormaBoard is using Apple's on-device speech recognition." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "内存不足，无法使用语音模型。Hex 正在使用 Apple 的设备端语音识别。"
+            "value" : "内存不足，无法使用语音模型。WormaBoard 正在使用 Apple 的设备端语音识别。"
           }
         }
       }
@@ -2207,22 +2207,22 @@
         }
       }
     },
-    "Settings › Apps › Hex › Paste from Other Apps › Allow" : {
+    "Settings › Apps › WormaBoard › Paste from Other Apps › Allow" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置 › App › Hex › 从其他App粘贴 › 允许"
+            "value" : "设置 › App › WormaBoard › 从其他App粘贴 › 允许"
           }
         }
       }
     },
-    "To paste without being asked, go to Settings, Apps, Hex, Paste from Other Apps, and choose Allow." : {
+    "To paste without being asked, go to Settings, Apps, WormaBoard, Paste from Other Apps, and choose Allow." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "若要粘贴时不再询问，请前往“设置”>“App”>“Hex”>“从其他App粘贴”，然后选择“允许”。"
+            "value" : "若要粘贴时不再询问，请前往“设置”>“App”>“WormaBoard”>“从其他App粘贴”，然后选择“允许”。"
           }
         }
       }
@@ -2457,12 +2457,12 @@
         }
       }
     },
-    "Set up Hex" : {
+    "Set up WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置 Hex"
+            "value" : "设置 WormaBoard"
           }
         }
       }
@@ -2567,12 +2567,12 @@
         }
       }
     },
-    "So Hex can hear you dictate" : {
+    "So WormaBoard can hear you dictate" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "让 Hex 能听到你的听写"
+            "value" : "让 WormaBoard 能听到你的听写"
           }
         }
       }
@@ -2627,12 +2627,12 @@
         }
       }
     },
-    "Lets the keyboard dictate without opening Hex." : {
+    "Lets the keyboard dictate without opening WormaBoard." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "让键盘无需打开 Hex 即可听写。"
+            "value" : "让键盘无需打开 WormaBoard 即可听写。"
           }
         }
       }
@@ -2737,22 +2737,22 @@
         }
       }
     },
-    "Change the spoken language from the Hex key." : {
+    "Change the spoken language from the WormaBoard key." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可通过 Hex 键更改说话的语言。"
+            "value" : "可通过 WormaBoard 键更改说话的语言。"
           }
         }
       }
     },
-    "Switch to Hex with %@, then tap the Hex key." : {
+    "Switch to WormaBoard with %@, then tap the WormaBoard key." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用 %@ 切换到 Hex，然后轻点 Hex 键。"
+            "value" : "用 %@ 切换到 WormaBoard，然后轻点 WormaBoard 键。"
           }
         }
       }
@@ -2767,22 +2767,22 @@
         }
       }
     },
-    "Tap here, then switch to Hex with %@" : {
+    "Tap here, then switch to WormaBoard with %@" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "轻点这里，然后用 %@ 切换到 Hex"
+            "value" : "轻点这里，然后用 %@ 切换到 WormaBoard"
           }
         }
       }
     },
-    "Tap the Hex key in any app to talk." : {
+    "Tap the WormaBoard key in any app to talk." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在任何 App 中轻点 Hex 键即可说话。"
+            "value" : "在任何 App 中轻点 WormaBoard 键即可说话。"
           }
         }
       }
@@ -2990,12 +2990,12 @@
         }
       }
     },
-    "Warm Hex Keyboard" : {
+    "Warm WormaBoard Keyboard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "让 Hex 键盘待命"
+            "value" : "让 WormaBoard 键盘待命"
           }
         }
       }
@@ -3123,12 +3123,12 @@
         }
       }
     },
-    "Setting up Hex" : {
+    "Setting up WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在设置 Hex"
+            "value" : "正在设置 WormaBoard"
           }
         }
       }
@@ -3173,22 +3173,22 @@
         }
       }
     },
-    "With Hex" : {
+    "With WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "有了 Hex"
+            "value" : "有了 WormaBoard"
           }
         }
       }
     },
-    "Tap the Hex key and say it." : {
+    "Tap the WormaBoard key and say it." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "轻点 Hex 键，说出来。"
+            "value" : "轻点 WormaBoard 键，说出来。"
           }
         }
       }
@@ -3223,22 +3223,22 @@
         }
       }
     },
-    "Let Hex hear you" : {
+    "Let WormaBoard hear you" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "让 Hex 听见你"
+            "value" : "让 WormaBoard 听见你"
           }
         }
       }
     },
-    "Hex listens only after you tap the Hex key." : {
+    "WormaBoard listens only after you tap the WormaBoard key." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "只有在你轻点 Hex 键后，Hex 才会聆听。"
+            "value" : "只有在你轻点 WormaBoard 键后，WormaBoard 才会聆听。"
           }
         }
       }
@@ -3313,12 +3313,12 @@
         }
       }
     },
-    "That's Hex" : {
+    "That's WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这就是 Hex"
+            "value" : "这就是 WormaBoard"
           }
         }
       }
@@ -3343,22 +3343,22 @@
         }
       }
     },
-    "Hex didn't hear any words. Try speaking louder." : {
+    "WormaBoard didn't hear any words. Try speaking louder." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 没有听到任何字词。请大声一点说。"
+            "value" : "WormaBoard 没有听到任何字词。请大声一点说。"
           }
         }
       }
     },
-    "Start using Hex" : {
+    "Start using WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "开始使用 Hex"
+            "value" : "开始使用 WormaBoard"
           }
         }
       }
@@ -3373,22 +3373,22 @@
         }
       }
     },
-    "Add the Hex keyboard in Settings." : {
+    "Add the WormaBoard keyboard in Settings." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请在“设置”中添加 Hex 键盘。"
+            "value" : "请在“设置”中添加 WormaBoard 键盘。"
           }
         }
       }
     },
-    "Use the Hex keyboard once to finish." : {
+    "Use the WormaBoard keyboard once to finish." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用一次 Hex 键盘即可完成。"
+            "value" : "使用一次 WormaBoard 键盘即可完成。"
           }
         }
       }
@@ -3463,12 +3463,12 @@
         }
       }
     },
-    "Switch to Hex below to confirm." : {
+    "Switch to WormaBoard below to confirm." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在下方切换到 Hex 即可确认。"
+            "value" : "在下方切换到 WormaBoard 即可确认。"
           }
         }
       }
@@ -3483,12 +3483,12 @@
         }
       }
     },
-    "Switch to Hex with %@" : {
+    "Switch to WormaBoard with %@" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用 %@ 切换到 Hex"
+            "value" : "用 %@ 切换到 WormaBoard"
           }
         }
       }
@@ -3613,12 +3613,12 @@
         }
       }
     },
-    "Not enough memory for the multilingual model. Hex is using its usual model." : {
+    "Not enough memory for the multilingual model. WormaBoard is using its usual model." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "内存不足，无法使用多语言模型。Hex 正在使用平时的模型。"
+            "value" : "内存不足，无法使用多语言模型。WormaBoard 正在使用平时的模型。"
           }
         }
       }
@@ -3703,22 +3703,22 @@
         }
       }
     },
-    "Don't see the Hex key? Tap %@ until the Hex keyboard appears." : {
+    "Don't see the WormaBoard key? Tap %@ until the WormaBoard keyboard appears." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "看不到 Hex 键？轻点 %@，直到出现 Hex 键盘。"
+            "value" : "看不到 WormaBoard 键？轻点 %@，直到出现 WormaBoard 键盘。"
           }
         }
       }
     },
-    "That wasn't Hex. Tap the Hex key on the Hex keyboard." : {
+    "That wasn't WormaBoard. Tap the WormaBoard key on the WormaBoard keyboard." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这不是 Hex 输入的。请轻点 Hex 键盘上的 Hex 键。"
+            "value" : "这不是 WormaBoard 输入的。请轻点 WormaBoard 键盘上的 WormaBoard 键。"
           }
         }
       }
@@ -3773,12 +3773,12 @@
         }
       }
     },
-    "When you switch to Hex" : {
+    "When you switch to WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "切换到 Hex 时"
+            "value" : "切换到 WormaBoard 时"
           }
         }
       }
@@ -3893,12 +3893,12 @@
         }
       }
     },
-    "Hex closed while getting the multilingual model ready, likely short of memory." : {
+    "WormaBoard closed while getting the multilingual model ready, likely short of memory." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 在准备多语言模型时关闭了，可能是内存不足。"
+            "value" : "WormaBoard 在准备多语言模型时关闭了，可能是内存不足。"
           }
         }
       }
@@ -3983,12 +3983,12 @@
         }
       }
     },
-    "The multilingual model's download resumes when you open Hex." : {
+    "The multilingual model's download resumes when you open WormaBoard." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开 Hex 后，多语言模型会继续下载。"
+            "value" : "打开 WormaBoard 后，多语言模型会继续下载。"
           }
         }
       }
@@ -4013,22 +4013,22 @@
         }
       }
     },
-    "25 languages, even mixed in one sentence. %@ download. Once ready, keyboard dictation opens Hex." : {
+    "25 languages, even mixed in one sentence. %@ download. Once ready, keyboard dictation opens WormaBoard." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "支持 25 种语言，一句话里混着说也行。需下载 %@。就绪后，键盘听写会打开 Hex。"
+            "value" : "支持 25 种语言，一句话里混着说也行。需下载 %@。就绪后，键盘听写会打开 WormaBoard。"
           }
         }
       }
     },
-    "Until then, Hex uses its usual model." : {
+    "Until then, WormaBoard uses its usual model." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在此之前，Hex 使用平时的模型。"
+            "value" : "在此之前，WormaBoard 使用平时的模型。"
           }
         }
       }
@@ -4093,42 +4093,42 @@
         }
       }
     },
-    "Settings › Apps › Hex › Keyboards" : {
+    "Settings › Apps › WormaBoard › Keyboards" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置 › App › Hex › 键盘"
+            "value" : "设置 › App › WormaBoard › 键盘"
           }
         }
       }
     },
-    "Settings, Apps, Hex, Keyboards" : {
+    "Settings, Apps, WormaBoard, Keyboards" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置，App，Hex，键盘"
+            "value" : "设置，App，WormaBoard，键盘"
           }
         }
       }
     },
-    "Opens Hex's setup" : {
+    "Opens WormaBoard's setup" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开 Hex 的设置步骤"
+            "value" : "打开 WormaBoard 的设置步骤"
           }
         }
       }
     },
-    "Allow Full Access: Settings › Apps › Hex › Keyboards" : {
+    "Allow Full Access: Settings › Apps › WormaBoard › Keyboards" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "允许完全访问：设置 › App › Hex › 键盘"
+            "value" : "允许完全访问：设置 › App › WormaBoard › 键盘"
           }
         }
       }

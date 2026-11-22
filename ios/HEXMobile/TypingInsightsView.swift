@@ -13,7 +13,7 @@ struct TypingInsightsView: View {
                 .foregroundStyle(HexTheme.textMuted)
 
             if !dictationFixes.isEmpty {
-                section("Dictation fixes Hex learned") {
+                section("Dictation fixes WormaBoard learned") {
                     ForEach(dictationFixes) { fix in
                         Toggle(isOn: isApplied(fix)) {
                             HStack {
@@ -57,11 +57,11 @@ struct TypingInsightsView: View {
             Button(role: .destructive) {
                 confirmingDelete = true
             } label: {
-                Text("Delete what Hex learned")
+                Text("Delete what WormaBoard learned")
                     .font(.system(size: 13, weight: .medium))
             }
             .disabled(snapshot.isEmpty && disabledFixes.isEmpty)
-            .confirmationDialog("Delete what Hex learned?", isPresented: $confirmingDelete) {
+            .confirmationDialog("Delete what WormaBoard learned?", isPresented: $confirmingDelete) {
                 Button("Delete", role: .destructive) {
                     TypingJournal.delete()
                     AdaptiveTouchSettings().requestReset()

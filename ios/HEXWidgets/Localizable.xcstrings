@@ -41,12 +41,12 @@
         }
       }
     },
-    "Dictate with Hex" : {
+    "Dictate with WormaBoard" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用 Hex 听写"
+            "value" : "用 WormaBoard 听写"
           }
         }
       }
@@ -81,7 +81,7 @@
         }
       }
     },
-    "Hex" : {
+    "WormaBoard" : {
       "shouldTranslate" : false
     },
     "Starts or finishes on-device dictation and copies the text." : {

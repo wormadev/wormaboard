@@ -47,8 +47,8 @@ targets:
             CFBundleURLName: anomaly.hex.mobile.keyboard-session
             CFBundleURLSchemes:
               - hex-dictation
-        NSMicrophoneUsageDescription: Hex turns what you say into text on this iPhone. Audio never leaves it and is deleted once it's transcribed.
-        NSSpeechRecognitionUsageDescription: Hex uses Apple's on-device speech recognition to turn what you say into text. Nothing you say is sent to a server.
+        NSMicrophoneUsageDescription: WormaBoard turns what you say into text on this iPhone. Audio never leaves it and is deleted once it's transcribed.
+        NSSpeechRecognitionUsageDescription: WormaBoard uses Apple's on-device speech recognition to turn what you say into text. Nothing you say is sent to a server.
         NSSupportsLiveActivities: true
         KlipyAPIKey: $(KLIPY_API_KEY)
         ITSAppUsesNonExemptEncryption: false
@@ -99,8 +99,8 @@ targets:
       path: HEXKeyboard/Info.plist
       properties:
         CFBundleDisplayName: WormaBoard
-        NSMicrophoneUsageDescription: Hex turns what you say into text on this iPhone. Audio never leaves it and is deleted once it's transcribed.
-        NSSpeechRecognitionUsageDescription: Hex uses Apple's on-device speech recognition to turn what you say into text. Nothing you say is sent to a server.
+        NSMicrophoneUsageDescription: WormaBoard turns what you say into text on this iPhone. Audio never leaves it and is deleted once it's transcribed.
+        NSSpeechRecognitionUsageDescription: WormaBoard uses Apple's on-device speech recognition to turn what you say into text. Nothing you say is sent to a server.
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         KlipyAPIKey: $(KLIPY_API_KEY)

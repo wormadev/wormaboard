@@ -411,7 +411,7 @@ private struct TranslationBadge: View {
 }
 
 enum KeyboardSetupCopy {
-    static let fullAccessPath = String(localized: "Allow Full Access: Settings › Apps › Hex › Keyboards")
+    static let fullAccessPath = String(localized: "Allow Full Access: Settings › Apps › WormaBoard › Keyboards")
 }
 
 /// Metal-free stand-in for the resting Dot Scope bar. Mounting it instead of
@@ -598,7 +598,7 @@ struct KeyboardSurfaceView: View {
                 .topBarHitTarget(alignment: .leading)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open Hex")
+            .accessibilityLabel("Open WormaBoard")
 
             // The mark's tap area reaches past its pill into this group's slot: the
             // outdent keeps the badge and the status where they were.
@@ -763,7 +763,7 @@ struct KeyboardSurfaceView: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens Hex's Settings")
+        .accessibilityHint("Opens WormaBoard's Settings")
     }
 
     private func styleTrigger(palette p: KeyboardChromePalette) -> some View {
@@ -1050,7 +1050,7 @@ struct KeyboardSurfaceView: View {
 
     private var idleTriggerSpec: (icon: String, title: String, width: CGFloat) {
         if !model.hasFullAccess {
-            return ("arrow.up.forward.app.fill", "Set up Hex", 112)
+            return ("arrow.up.forward.app.fill", "Set up WormaBoard", 112)
         }
         if !model.isModelInstalled {
             return ("mic.fill", "Set up", 88)

@@ -31,7 +31,7 @@ actor ParakeetUltraTranscriber: LocalTranscribing {
     static let name = "Parakeet Ultra"
     /// After a load that ended Hex (`ParakeetLoadGuard`), beside Try again.
     nonisolated static var setAsideMessage: String {
-        String(localized: "Hex closed while getting the multilingual model ready, likely short of memory.")
+        String(localized: "WormaBoard closed while getting the multilingual model ready, likely short of memory.")
     }
     /// `ParakeetLoadGuard`'s and `ParakeetCompileRecord`'s keys, apart from V2's.
     static let loadGuardModel = "parakeetUltra"

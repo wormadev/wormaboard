@@ -216,7 +216,7 @@ private extension DictationBarAutoStart {
     var detail: String {
         switch self {
         case .never: String(localized: "Tap Dictate to start")
-        case .whenSwitching: String(localized: "When you switch to Hex")
+        case .whenSwitching: String(localized: "When you switch to WormaBoard")
         case .always: String(localized: "Each time the dictation bar opens")
         }
     }
@@ -326,7 +326,7 @@ struct KeyboardSettingsPage: View {
                     SettingsDivider()
 
                     HStack(spacing: 12) {
-                        SettingsRowLabel(title: String(localized: "Hex key"))
+                        SettingsRowLabel(title: String(localized: "WormaBoard key"))
                         Spacer(minLength: 8)
                         SettingsSegments(
                             items: HexKeySide.allCases,
@@ -537,7 +537,7 @@ struct PrivacySettingsPage: View {
                 // dictation bar inserts. On until turned off (`TypingJournalSettings`).
                 SettingsToggleRow(
                     title: String(localized: "Learn how I type"),
-                    detail: String(localized: "Learns on this iPhone from your taps and the words you fix in Hex"),
+                    detail: String(localized: "Learns on this iPhone from your taps and the words you fix in WormaBoard"),
                     isOn: $learnTyping
                 )
 
@@ -575,7 +575,7 @@ struct PrivacySettingsPage: View {
                         typingLogs = true
                     }
                 } message: {
-                    Text("The Hex keyboard will record each tap and the text you type or dictate, including text around the cursor, for 14 days. Logs stay on this iPhone. Password, code and card fields are never recorded.")
+                    Text("The WormaBoard keyboard will record each tap and the text you type or dictate, including text around the cursor, for 14 days. Logs stay on this iPhone. Password, code and card fields are never recorded.")
                 }
 
                 if typingLogs {
@@ -938,7 +938,7 @@ struct ExperimentsSettingsPage: View {
         SettingsToggleRow(
             title: String(localized: "Multilingual model (Parakeet)"),
             detail: multilingualParakeetFits
-                ? String(localized: "25 languages, even mixed in one sentence. \(Self.multilingualParakeetSize) download. Once ready, keyboard dictation opens Hex.")
+                ? String(localized: "25 languages, even mixed in one sentence. \(Self.multilingualParakeetSize) download. Once ready, keyboard dictation opens WormaBoard.")
                 : String(localized: "Needs an iPhone with 6 GB of memory or more"),
             isOn: $multilingualParakeet
         )

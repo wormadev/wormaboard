@@ -49,7 +49,7 @@ struct AcknowledgementsView: View {
             Spatial autocorrect's word and word-pair frequencies, and German's capitalisation \
             shares, come from the Google Books Ngram Viewer data, version 3 (2020), by Google, \
             licensed under Creative Commons Attribution 3.0 (creativecommons.org/licenses/by/3.0). \
-            Hex sums the counts from 1980 to 2019 and keeps only words in the lists below.
+            WormaBoard sums the counts from 1980 to 2019 and keeps only words in the lists below.
             """
         ),
         Entry(
@@ -90,7 +90,7 @@ struct AcknowledgementsView: View {
             its English, Spanish, German and Norwegian lists, revision 5faf2ba \
             (github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words), \
             licensed under Creative Commons Attribution 4.0 International \
-            (creativecommons.org/licenses/by/4.0). Hex lowercased and classified the entries, \
+            (creativecommons.org/licenses/by/4.0). WormaBoard lowercased and classified the entries, \
             omitted ordinary, medical and search-only terms, and added common slurs, \
             inflections and spelling variants.
             """
@@ -98,12 +98,12 @@ struct AcknowledgementsView: View {
         Entry(
             title: "Parakeet V2",
             body: """
-            Hex dictates English with NVIDIA's Parakeet TDT 0.6B v2 \
+            WormaBoard dictates English with NVIDIA's Parakeet TDT 0.6B v2 \
             (huggingface.co/nvidia/parakeet-tdt-0.6b-v2), licensed under Creative Commons \
             Attribution 4.0 International (creativecommons.org/licenses/by/4.0), downloaded as \
             FluidInference's Core ML conversion (huggingface.co/FluidInference/\
             parakeet-tdt-0.6b-v2-coreml, CC BY 4.0), which stores the encoder's weights at \
-            reduced precision; Hex uses its files unchanged.
+            reduced precision; WormaBoard uses its files unchanged.
             """
         ),
         Entry(
@@ -116,7 +116,7 @@ struct AcknowledgementsView: View {
             (creativecommons.org/licenses/by/4.0). Core ML conversion by FluidInference \
             (huggingface.co/FluidInference/parakeet-ultra-coreml, revision 95eaa59), which \
             stores the encoder's weights as 8-bit integers and re-exports the decoder and \
-            joint; Hex uses its files unchanged.
+            joint; WormaBoard uses its files unchanged.
             """
         ),
         Entry(
@@ -134,7 +134,7 @@ struct AcknowledgementsView: View {
             Collection's Arabic news (2020, 2022) and Wikipedia (2021) corpora of a million \
             sentences each, by the Natural Language Processing Group, Leipzig University, \
             licensed under Creative Commons Attribution 4.0 (creativecommons.org/licenses/by/4.0). \
-            Hex counts their words without tashkeel and keeps the 150,000 commonest. \
+            WormaBoard counts their words without tashkeel and keeps the 150,000 commonest. \
             D. Goldhahn, T. Eckart and U. Quasthoff: Building Large Monolingual Dictionaries at \
             the Leipzig Corpora Collection: From 100 to 200 Languages. LREC 2012.
             """

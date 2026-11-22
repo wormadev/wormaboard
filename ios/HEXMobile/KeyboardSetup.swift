@@ -165,7 +165,7 @@ struct SetupStatusRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(stepsLeft == 0 ? Text("Hex is ready") : Text("Finish setup, \(stepsLeft) left"))
+        .accessibilityLabel(stepsLeft == 0 ? Text("WormaBoard is ready") : Text("Finish setup, \(stepsLeft) left"))
     }
 }
 
@@ -232,13 +232,13 @@ struct SetupSheet: View {
         guard needsKeyboardCheck else { return nil }
         return monitor.fullAccess == .off
             ? String(localized: "Turn on Allow Full Access in Settings for dictation, haptics and copy and paste in the keyboard.")
-            : String(localized: "Switch to Hex below to confirm.")
+            : String(localized: "Switch to WormaBoard below to confirm.")
     }
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
-                (monitor.stepsLeft(modelReady: modelReady) == 0 ? Text("Hex is ready") : Text("Finish setup"))
+                (monitor.stepsLeft(modelReady: modelReady) == 0 ? Text("WormaBoard is ready") : Text("Finish setup"))
                     .font(.system(size: 17, weight: .semibold))
                     .tracking(-0.2)
                     .foregroundStyle(HexTheme.textBase)
@@ -261,7 +261,7 @@ struct SetupSheet: View {
 
             VStack(spacing: 0) {
                 row(
-                    title: "Hex Keyboard",
+                    title: "WormaBoard Keyboard",
                     status: keyboardStatus,
                     icon: monitor.keyboardAdded == true ? .done : .todo
                 )
@@ -309,8 +309,8 @@ struct SetupSheet: View {
                     "",
                     text: $checkText,
                     prompt: (checkFocused
-                        ? Text("Switch to Hex with \(Image(systemName: "globe"))")
-                        : Text("Tap here, then switch to Hex with \(Image(systemName: "globe"))"))
+                        ? Text("Switch to WormaBoard with \(Image(systemName: "globe"))")
+                        : Text("Tap here, then switch to WormaBoard with \(Image(systemName: "globe"))"))
                         .foregroundStyle(HexTheme.textMuted)
                 )
                 .font(.system(size: 15))

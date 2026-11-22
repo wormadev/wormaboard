@@ -2083,7 +2083,7 @@ final class DictationControllerTests: XCTestCase {
         )
         try await settle()
 
-        let message = "Hex couldn't start the microphone. Try again."
+        let message = "WormaBoard couldn't start the microphone. Try again."
         XCTAssertEqual(controller.phase, .failed(message))
         let failed = bridge.snapshot()
         XCTAssertEqual(failed.state, .failed)
@@ -2134,7 +2134,7 @@ final class DictationControllerTests: XCTestCase {
         audio.captureShouldThrow = true
         bridge.send(.start, jobID: "busy-mic", style: .polished, sentAt: now)
         try await settle()
-        let message = "Hex couldn't start the microphone. Try again."
+        let message = "WormaBoard couldn't start the microphone. Try again."
         XCTAssertEqual(controller.phase, .failed(message))
         let failed = bridge.snapshot()
         XCTAssertEqual(failed.state, .failed)
@@ -2359,7 +2359,7 @@ final class DictationControllerTests: XCTestCase {
         XCTAssertEqual(choice.engine(for: "en-US", appleSpeechPicks: false), .onDeviceRecognizer)
         XCTAssertEqual(
             choice.notice(for: "en-US"),
-            "Not enough memory for the speech model. Hex is using Apple's on-device speech recognition."
+            "Not enough memory for the speech model. WormaBoard is using Apple's on-device speech recognition."
         )
         let transcriber = DictationController.transcriberBeforeAppleSpeech(choice: choice, suite: suiteName, resolve: { _ in "en-US" })
         XCTAssertTrue(transcriber is OnDeviceSpeechTranscriber)
@@ -2394,7 +2394,7 @@ final class DictationControllerTests: XCTestCase {
         XCTAssertEqual(controller.phase, .ready)
         XCTAssertEqual(
             controller.languageNotice,
-            "Not enough memory for the speech model. Hex is using Apple's on-device speech recognition."
+            "Not enough memory for the speech model. WormaBoard is using Apple's on-device speech recognition."
         )
     }
 
@@ -2416,7 +2416,7 @@ final class DictationControllerTests: XCTestCase {
             XCTAssertEqual(error as? OnDeviceSpeechTranscriber.TranscriberError, .notAllowed)
             XCTAssertEqual(
                 UserFacingError.message(for: error, context: .model),
-                "Allow Speech Recognition for Hex in Settings. It runs on this iPhone."
+                "Allow Speech Recognition for WormaBoard in Settings. It runs on this iPhone."
             )
         }
         XCTAssertEqual(access.requests, 1)
@@ -2476,7 +2476,7 @@ final class DictationControllerTests: XCTestCase {
     func testBeforeIOS26ATranslationWithoutHexsWindowSaysSo() async {
         XCTAssertEqual(DictationTranslator.reason(for: TranslationEngine.NoSession()), .needsHexOpen)
         let failure = TranslationFailure(.needsHexOpen, source: Locale.Language(identifier: "zh"), target: Locale.Language(identifier: "en"))
-        XCTAssertEqual(failure.fix, "iOS 18 translates only with Hex open")
+        XCTAssertEqual(failure.fix, "On iOS 18, open WormaBoard to translate")
         XCTAssertLessThanOrEqual(failure.fix.count, 40, "fits the keyboard's second line")
 
         let settings = DictationTranslationSettings(defaults: defaults)
@@ -3140,12 +3140,12 @@ final class SpeechModelInstallTests: XCTestCase {
             settings.clearKeyboardNeedsHex()
             // One failure is no evidence: the keyboard keeps dictating itself.
             let first = SpeechModelNeedsHex.keyboardError(for: error, language: "en-US", settings: settings)
-            XCTAssertEqual(UserFacingError.message(for: first, context: .transcription), "Hex couldn't transcribe that. Try again.")
+            XCTAssertEqual(UserFacingError.message(for: first, context: .transcription), "WormaBoard couldn't transcribe that. Try again.")
             XCTAssertFalse(settings.keyboardNeedsHex(), "\(error)")
             // The second in a row hands its dictations to Hex.
             let shown = SpeechModelNeedsHex.keyboardError(for: error, language: "en-US", settings: settings)
             XCTAssertEqual(shown as? SpeechModelNeedsHex, SpeechModelNeedsHex(language: "en-US"), "\(error)")
-            XCTAssertEqual(UserFacingError.message(for: shown, context: .transcription), "Open Hex to download English.")
+            XCTAssertEqual(UserFacingError.message(for: shown, context: .transcription), "Open WormaBoard to download English.")
             XCTAssertTrue(settings.keyboardNeedsHex(), "the Hex key opens Hex, which downloads it")
         }
     }

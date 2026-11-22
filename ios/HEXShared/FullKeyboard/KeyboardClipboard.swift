@@ -61,11 +61,11 @@ struct KeyboardClipboardTracker {
 
     /// The strip's pointer to the setting that stops Allow Paste.
     static var allowPasteHint: String {
-        String(localized: "Settings › Apps › Hex › Paste from Other Apps › Allow")
+        String(localized: "Settings › Apps › WormaBoard › Paste from Other Apps › Allow")
     }
 
     static var allowPasteHintAnnouncement: String {
-        String(localized: "To paste without being asked, go to Settings, Apps, Hex, Paste from Other Apps, and choose Allow.")
+        String(localized: "To paste without being asked, go to Settings, Apps, WormaBoard, Paste from Other Apps, and choose Allow.")
     }
 
     private enum Key {

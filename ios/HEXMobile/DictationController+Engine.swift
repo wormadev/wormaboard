@@ -127,7 +127,7 @@ extension DictationController {
             } else {
                 // Too little memory left to load it now: said, with Try again.
                 multilingualDownload.fail(
-                    String(localized: "Not enough memory for the multilingual model. Hex is using its usual model.")
+                    String(localized: "Not enough memory for the multilingual model. WormaBoard is using its usual model.")
                 )
             }
         }
@@ -295,10 +295,10 @@ extension DictationController {
             return UserFacingError.message(for: unavailable, context: .model)
         }
         if (error as? ParakeetTranscriber.TranscriberError) == .notEnoughMemory {
-            return String(localized: "Not enough memory for the speech model. Hex is using Apple's on-device speech recognition.")
+            return String(localized: "Not enough memory for the speech model. WormaBoard is using Apple's on-device speech recognition.")
         }
         if (error as? ParakeetUltraTranscriber.TranscriberError) == .notEnoughMemory {
-            return String(localized: "Not enough memory for the multilingual model. Hex is using its usual model.")
+            return String(localized: "Not enough memory for the multilingual model. WormaBoard is using its usual model.")
         }
         return nil
     }

@@ -25,15 +25,15 @@ nonisolated enum UserFacingError {
 
         var fallback: String {
             switch self {
-            case .microphone: String(localized: "Hex couldn't start the microphone. Try again.")
-            case .transcription: String(localized: "Hex couldn't transcribe that. Try again.")
-            case .model: String(localized: "Hex couldn't get speech recognition ready. Try again.")
+            case .microphone: String(localized: "WormaBoard couldn't start the microphone. Try again.")
+            case .transcription: String(localized: "WormaBoard couldn't transcribe that. Try again.")
+            case .model: String(localized: "WormaBoard couldn't get speech recognition ready. Try again.")
             }
         }
     }
 
     static var offline: String {
-        String(localized: "Hex couldn't download the speech model. Check your connection and try again.")
+        String(localized: "WormaBoard couldn't download the speech model. Check your connection and try again.")
     }
 
     /// Audio session errors get their own message, Hex's own errors (`HexDescribedError`)
@@ -86,7 +86,7 @@ nonisolated enum UserFacingError {
         case .isBusy:
             String(localized: "The microphone is busy. Try again.")
         case .cannotStartRecording, .cannotStartPlaying:
-            String(localized: "Open Hex, then try again.")
+            String(localized: "Open WormaBoard, then try again.")
         case .mediaServicesFailed:
             String(localized: "Audio restarted on this iPhone. Try again.")
         case .resourceNotAvailable:

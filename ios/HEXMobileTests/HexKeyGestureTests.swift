@@ -235,7 +235,7 @@ final class TranslationPasteSwitchTests: XCTestCase {
         let key = HexKeyControl()
         key.isWarm = true
         key.translatingTo = "en"
-        XCTAssertEqual(key.accessibilityLabel, "Dictate with Hex, Translating to English")
+        XCTAssertEqual(key.accessibilityLabel, "Dictate with WormaBoard, Translating to English")
     }
 
     /// No language pack, or a pair Apple can't translate: the transcript goes in as spoken, and
@@ -371,14 +371,14 @@ final class TranslationPasteSwitchTests: XCTestCase {
             suggestions: [],
             showsUndo: true,
             statusText: nil,
-            notice: KeyboardStripNotice(title: TranslationFailure.note, detail: note.fix, button: "Open Hex")
+            notice: KeyboardStripNotice(title: TranslationFailure.note, detail: note.fix, button: "Open WormaBoard")
         )
         strip.layoutIfNeeded()
         let shown = visibleLabels(in: strip)
         XCTAssertTrue(shown.contains("Couldn't translate, pasted as spoken"))
         XCTAssertTrue(shown.contains("Download Chinese in Settings"))
         XCTAssertFalse(visibleControls(in: strip).contains { $0.configuration?.title == "Undo dictation" }, "the note takes Undo's place")
-        visibleControls(in: strip).first { $0.configuration?.title == "Open Hex" }?.sendActions(for: .touchUpInside)
+        visibleControls(in: strip).first { $0.configuration?.title == "Open WormaBoard" }?.sendActions(for: .touchUpInside)
         XCTAssertTrue(opened)
 
         strip.update(suggestions: [], showsUndo: true, statusText: nil, notice: nil)

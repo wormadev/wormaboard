@@ -128,7 +128,7 @@ actor OnDeviceSpeechTranscriber: LocalTranscribing {
         var errorDescription: String? {
             switch self {
             case .notAllowed:
-                String(localized: "Allow Speech Recognition for Hex in Settings. It runs on this iPhone.")
+                String(localized: "Allow Speech Recognition for WormaBoard in Settings. It runs on this iPhone.")
             case .emptyTranscript:
                 String(localized: "No speech heard.")
             case .unavailable:

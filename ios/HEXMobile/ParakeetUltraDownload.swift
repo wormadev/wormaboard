@@ -314,7 +314,7 @@ final class ParakeetUltraDownload {
         case .waiting(_, let seconds?):
             String(localized: "The multilingual model's download stopped. Trying again in \(seconds) s.")
         case .waiting(_, nil):
-            String(localized: "The multilingual model's download resumes when you open Hex.")
+            String(localized: "The multilingual model's download resumes when you open WormaBoard.")
         case .loading:
             String(localized: "Getting the multilingual model ready")
         case .failed(let message):
@@ -380,7 +380,7 @@ struct MultilingualModelStatus: View {
                             .monospacedDigit()
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("multilingual-model-status")
-                        Text("Until then, Hex uses its usual model.")
+                        Text("Until then, WormaBoard uses its usual model.")
                             .font(.system(size: 12))
                             .foregroundStyle(HexTheme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)

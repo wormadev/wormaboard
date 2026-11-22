@@ -5,7 +5,7 @@ import SwiftUI
 /// the full keyboard never autocorrects away, completes and swipes.
 struct CustomVocabularyEditor: View {
     private let settings = CustomVocabularySettings()
-    var footer = String(localized: "Fixes spelling, not words Hex mishears")
+    var footer = String(localized: "Fixes spelling, not words WormaBoard mishears")
 
     @State private var terms: [String] = []
     @State private var draft = ""

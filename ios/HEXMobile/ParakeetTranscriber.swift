@@ -381,7 +381,7 @@ nonisolated struct ParakeetCompileRecord {
 /// load found too little memory), and the decision lasts a day and only for this build of
 /// Hex: then it tries again by itself.
 nonisolated struct ParakeetLoadGuard {
-    static let message = String(localized: "Hex closed while loading the speech model. Close other apps, then tap Set up.")
+    static let message = String(localized: "WormaBoard closed while loading the speech model. Close other apps, then tap Set up.")
     /// How long a set-aside load stays set aside.
     static let setAsideDuration: TimeInterval = 24 * 60 * 60
 

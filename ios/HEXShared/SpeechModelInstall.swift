@@ -71,7 +71,7 @@ nonisolated struct SpeechModelNeedsHex: HexDescribedError, Equatable {
     /// Short enough for the full keyboard's strip (about 60 characters).
     var errorDescription: String? {
         guard handedOff else { return UserFacingError.Context.transcription.fallback }
-        return String(localized: "Open Hex to download \(SpeechModelUnavailable.interfaceName(language)).")
+        return String(localized: "Open WormaBoard to download \(SpeechModelUnavailable.interfaceName(language)).")
     }
 
     /// Hands the keyboard's dictation to Hex for `language` and says so, the second time in a

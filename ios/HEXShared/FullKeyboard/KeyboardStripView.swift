@@ -774,8 +774,8 @@ struct KeyboardStripNotice: Equatable {
 @MainActor
 final class FullAccessHintView: UIView {
     static let title = String(localized: "Allow Full Access to dictate")
-    static let path = String(localized: "Settings › Apps › Hex › Keyboards")
-    static let spokenPath = String(localized: "Settings, Apps, Hex, Keyboards")
+    static let path = String(localized: "Settings › Apps › WormaBoard › Keyboards")
+    static let spokenPath = String(localized: "Settings, Apps, WormaBoard, Keyboards")
 
     var palette = FullKeyboardPalette(isDark: false) { didSet { applyPalette() } }
     var chipHeight: CGFloat = 30 { didSet { setNeedsLayout() } }
@@ -802,11 +802,11 @@ final class FullAccessHintView: UIView {
             addSubview(label)
         }
         var open = UIButton.Configuration.plain()
-        open.title = String(localized: "Open Hex")
+        open.title = String(localized: "Open WormaBoard")
         open.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 13, bottom: 0, trailing: 13)
         open.background.cornerRadius = 15
         openButton.configuration = open
-        openButton.accessibilityHint = String(localized: "Opens Hex's setup")
+        openButton.accessibilityHint = String(localized: "Opens WormaBoard's setup")
         openButton.addTarget(self, action: #selector(handleOpen), for: .touchUpInside)
         addSubview(openButton)
         applyPalette()

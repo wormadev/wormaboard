@@ -193,7 +193,7 @@ nonisolated struct TranslationFailure: Codable, Equatable, Sendable {
         case .notDownloaded: String(localized: "Download \(name) in Settings")
         case .unsupported: String(localized: "Pick another language in Settings")
         case .failed: String(localized: "Download \(name) again in Settings")
-        case .needsHexOpen: String(localized: "iOS 18 translates only with Hex open")
+        case .needsHexOpen: String(localized: "On iOS 18, open WormaBoard to translate")
         }
     }
 }

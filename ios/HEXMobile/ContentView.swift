@@ -150,7 +150,7 @@ struct ContentView: View {
     private var standaloneView: some View {
         NavigationStack(path: $settingsPath) {
             homeView
-                .navigationTitle("Hex")
+                .navigationTitle("WormaBoard")
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: SettingsPage.self) { page in
                     settingsPage(page)
@@ -318,7 +318,7 @@ struct ContentView: View {
                 color: showRecordingPill ? HexTheme.warmPearl : HexTheme.textBase
             )
 
-            Text("Hex")
+            Text("WormaBoard")
                 .font(.system(size: 17, weight: .semibold))
                 .tracking(-0.2)
                 .foregroundStyle(HexTheme.textBase)
@@ -569,7 +569,7 @@ struct ContentView: View {
                             color: showRecordingControls ? HexTheme.warmPearl : HexTheme.textBase
                         )
 
-                        Text("Hex")
+                        Text("WormaBoard")
                             .font(.system(size: 17, weight: .semibold))
                             .tracking(-0.2)
                             .foregroundStyle(HexTheme.textBase)
