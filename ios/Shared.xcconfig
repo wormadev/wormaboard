@@ -1,5 +1,5 @@
 // Settings for every target. Secrets.xcconfig is optional and gitignored; copy
-// Secrets.xcconfig.example to make one. Without it GIPHY_API_KEY is empty and the GIFs
+// Secrets.xcconfig.example to make one. Without it KLIPY_API_KEY is empty and the GIFs
 // experiment says this build has no key.
-GIPHY_API_KEY =
+KLIPY_API_KEY =
 #include? "Secrets.xcconfig"

@@ -11,7 +11,7 @@ import UIKit
 /// Emoji states (`emoji`, `emoji-search`, `emoji-tones`, `emoji-food`, `emoji-strip`) turn
 /// Settings › Keyboard › Emoji on with a seeded history; `emoji-probe` prints the panel's
 /// footprint and latency (`EMOJI_PROBE` lines) for `simctl launch --console`. `emoji-gifs`
-/// turns Settings › Experiments › GIFs on and opens its search (a build with a GIPHY key).
+/// turns Settings › Experiments › GIFs on and opens its search (a build with a KLIPY key).
 struct FullKeyboardSnapshotStage: View {
     let scene: String
 

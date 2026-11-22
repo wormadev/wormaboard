@@ -519,7 +519,7 @@ struct PrivacySettingsPage: View {
 
             // The one exception, and only while its experiment is on.
             if GifSearchSettings().isEnabled {
-                Text("Except GIF searches: Experiments › GIFs sends what you search to GIPHY.")
+                Text("Except GIF searches: Experiments › GIFs sends what you search to KLIPY.")
                     .font(.system(size: 13))
                     .foregroundStyle(HexTheme.textMuted)
                     .padding(.horizontal, 16)
@@ -618,7 +618,7 @@ struct ExperimentsSettingsPage: View {
     @State private var dvorakPunctuation = FullKeyboardSettings().dvorakPunctuation
     @State private var emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
     @State private var gifSearch = GifSearchSettings().isEnabled
-    private let hasGiphyKey = GifSearchSettings.apiKey() != nil
+    private let hasKlipyKey = GifSearchSettings.apiKey() != nil
     @State private var keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
     @State private var keyboardTheme = FullKeyboardSettings().keyboardTheme
     @State private var twoThumbSelection = FullKeyboardSettings().twoThumbSelection
@@ -823,15 +823,15 @@ struct ExperimentsSettingsPage: View {
         SettingsDivider()
 
         // Off by default, and the only part of Hex that goes online for typing: what you
-        // search is sent to GIPHY, and only with Full Access.
+        // search is sent to KLIPY, and only with Full Access.
         SettingsToggleRow(
             title: String(localized: "GIFs"),
-            detail: hasGiphyKey
-                ? String(localized: "Search GIPHY from the emoji panel. Needs Full Access; what you search is sent to GIPHY.")
+            detail: hasKlipyKey
+                ? String(localized: "Search KLIPY from the emoji panel. Needs Full Access; what you search is sent to KLIPY.")
                 : String(localized: "GIFs aren't set up in this build"),
-            isOn: hasGiphyKey ? $gifSearch : .constant(false)
+            isOn: hasKlipyKey ? $gifSearch : .constant(false)
         )
-        .disabled(!hasGiphyKey)
+        .disabled(!hasKlipyKey)
 
         SettingsDivider()
 
