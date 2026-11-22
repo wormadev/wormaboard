@@ -621,6 +621,7 @@ struct ExperimentsSettingsPage: View {
     @State private var confirmingTouchReset = false
     @State private var germanSpatialAutocorrect = FullKeyboardSettings().germanSpatialAutocorrect
     @State private var koreanKeyboard = FullKeyboardSettings().koreanKeyboard
+    @State private var arabicKeyboard = FullKeyboardSettings().arabicKeyboard
     @State private var dvorakPunctuation = FullKeyboardSettings().dvorakPunctuation
     @State private var clipboardHistory = FullKeyboardSettings().clipboardHistory
     @State private var emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
@@ -698,6 +699,9 @@ struct ExperimentsSettingsPage: View {
             }
             .onChange(of: koreanKeyboard) { _, enabled in
                 FullKeyboardSettings().koreanKeyboard = enabled
+            }
+            .onChange(of: arabicKeyboard) { _, enabled in
+                FullKeyboardSettings().arabicKeyboard = enabled
             }
             .onChange(of: dvorakPunctuation) { _, enabled in
                 FullKeyboardSettings().dvorakPunctuation = enabled
@@ -817,6 +821,15 @@ struct ExperimentsSettingsPage: View {
             title: String(localized: "Korean keyboard (두벌식)"),
             detail: String(localized: "Adds 한국어, composing syllables as you type"),
             isOn: $koreanKeyboard
+        )
+
+        SettingsDivider()
+
+        // Off by default: العربية isn't offered in Languages and a stored "ar" is ignored.
+        SettingsToggleRow(
+            title: String(localized: "Arabic keyboard"),
+            detail: String(localized: "Adds العربية, with suggestions, autocorrect and swipe typing"),
+            isOn: $arabicKeyboard
         )
 
         SettingsDivider()
@@ -972,6 +985,7 @@ struct ExperimentsSettingsPage: View {
         refreshAdaptiveTouchStatus()
         germanSpatialAutocorrect = FullKeyboardSettings().germanSpatialAutocorrect
         koreanKeyboard = FullKeyboardSettings().koreanKeyboard
+        arabicKeyboard = FullKeyboardSettings().arabicKeyboard
         dvorakPunctuation = FullKeyboardSettings().dvorakPunctuation
         clipboardHistory = FullKeyboardSettings().clipboardHistory
         emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey

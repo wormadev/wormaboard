@@ -152,7 +152,7 @@ extension FullKeyboardEngine {
     /// Marks that go against a suggestion's word, taking the space it typed, as on Apple's
     /// keyboard (black box, iOS 27.2: "Hello" picked, then "," types "Hello,"; a quote, a bracket
     /// or @ keeps the space), whatever the field's `smartInsertDeleteType`.
-    static let suggestionJoiners: Set<Character> = [",", ".", "!", "?", ";", ":", ")"]
+    static let suggestionJoiners: Set<Character> = [",", "،", ".", "!", "?", "؟", ";", "؛", ":", ")"]
 
     /// Deletes a suggestion's space before `text`, one of `suggestionJoiners`, typed right
     /// after it. True when it did: the mark then goes in as typed.

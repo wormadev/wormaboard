@@ -121,11 +121,11 @@ nonisolated struct LanguageSettings {
                 ?? defaults?.string(forKey: Key.keyboardLayout).map { [$0] }
                 ?? []
             var seen = Set<KeyboardLanguage>()
-            let koreanEnabled = KoreanKeyboardExperiment.isEnabled(in: defaults)
+            let offered = selectableKeyboardLanguages
             return stored.compactMap(KeyboardLanguage.init(rawValue:))
                 .filter { seen.insert($0).inserted }
-                // 한국어 is ignored while its experiment is off, even if it was stored before.
-                .filter { $0 != .korean || koreanEnabled }
+                // 한국어 and العربية are ignored while their experiments are off, even if stored before.
+                .filter(offered.contains)
         }
         nonmutating set {
             var seen = Set<KeyboardLanguage>()
@@ -154,13 +154,28 @@ nonisolated struct LanguageSettings {
         defaults?.dictionary(forKey: Key.letterLayouts) as? [String: String] ?? [:]
     }
 
+    /// The layouts this store's experiments allow (`KeyboardLanguage.selectable`).
+    private var selectableKeyboardLanguages: [KeyboardLanguage] {
+        KeyboardLanguage.selectable(
+            koreanEnabled: KoreanKeyboardExperiment.isEnabled(in: defaults),
+            arabicEnabled: ArabicKeyboardExperiment.isEnabled(in: defaults)
+        )
+    }
+
+    private func keyboardLanguage(matching identifier: String) -> KeyboardLanguage? {
+        KeyboardLanguage.matching(
+            identifier,
+            koreanEnabled: KoreanKeyboardExperiment.isEnabled(in: defaults),
+            arabicEnabled: ArabicKeyboardExperiment.isEnabled(in: defaults)
+        )
+    }
+
     /// The language the space bar last switched to, so the keyboard comes back in it.
     var currentKeyboardLanguage: KeyboardLanguage? {
         get {
             guard let language = defaults?.string(forKey: Key.currentKeyboardLanguage)
                 .flatMap(KeyboardLanguage.init(rawValue:)) else { return nil }
-            let koreanEnabled = KoreanKeyboardExperiment.isEnabled(in: defaults)
-            return language == .korean && !koreanEnabled ? nil : language
+            return selectableKeyboardLanguages.contains(language) ? language : nil
         }
         nonmutating set { defaults?.set(newValue?.rawValue, forKey: Key.currentKeyboardLanguage) }
     }
@@ -188,10 +203,9 @@ nonisolated struct LanguageSettings {
         guard dictationLanguage == nil else { return nil }
         let chosen = keyboardLanguages
         guard chosen.count > 1 else { return nil }
-        let koreanEnabled = KoreanKeyboardExperiment.isEnabled(in: defaults)
         if !dictationFollowsKeyboard,
            let own = automaticDictationLanguage ?? preferred.first,
-           KeyboardLanguage.matching(own, koreanEnabled: koreanEnabled) == nil {
+           keyboardLanguage(matching: own) == nil {
             return nil
         }
         let list = KeyboardLanguageList.resolve(chosen: chosen, stored: currentKeyboardLanguage, automatic: .english)
@@ -207,9 +221,8 @@ nonisolated struct LanguageSettings {
         region: String? = Locale.current.region?.identifier
     ) -> String? {
         var preferred = preferred
-        let koreanEnabled = KoreanKeyboardExperiment.isEnabled(in: defaults)
         if let picked = recentDictationLanguages.first(where: {
-            KeyboardLanguage.matching($0, koreanEnabled: koreanEnabled)?.baseLanguage == language.baseLanguage
+            keyboardLanguage(matching: $0)?.baseLanguage == language.baseLanguage
         }) {
             preferred.insert(picked, at: 0)
         }

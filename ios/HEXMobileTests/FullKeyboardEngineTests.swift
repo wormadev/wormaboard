@@ -2028,8 +2028,8 @@ final class FullKeyboardEngineTests: XCTestCase {
             }
             // Russian and Ukrainian have no Latin letters: press their own а and hold their own
             // е (Ukrainian's ʼ, its only key with long-press options); Greek its α and ε; Korean
-            // its ㅂ (Hangul holds nothing).
-            let first = language == .korean ? "ㅂ" : language == .greek ? "α" : language.isLatin ? "a" : "а"
+            // its ㅂ (Hangul holds nothing); Arabic its ب and ا.
+            let first = language == .korean ? "ㅂ" : language == .greek ? "α" : language == .arabic ? "ب" : language.isLatin ? "a" : "а"
             for (id, kind) in [KeyKind.character(first), .space, .delete].enumerated() {
                 let key = view.engine.layout.key(kind)!
                 let sample = TypingLogTouchSample(point: CGPoint(x: key.frame.midX, y: key.frame.midY), timestamp: 0)
@@ -2046,6 +2046,7 @@ final class FullKeyboardEngineTests: XCTestCase {
             case .czech: "r"
             case .greek: "ε"
             case .korean: "ㅂ"
+            case .arabic: "ا"
             default: "e"
             }
             view.debugHoldAccent(held, selectIndex: 1)
@@ -3225,12 +3226,12 @@ final class FullKeyboardEngineTests: XCTestCase {
         XCTAssertTrue(FullKeyboardView.passesGlobeTouch(phase: .cancelled, onKey: true, leftKey: false, appleKeyboardSplits: true))
     }
 
-    func testOnlyTheEnglishAndSpanishLayoutsSwipe() {
+    func testOnlyTheEnglishSpanishAndArabicLayoutsSwipe() {
         let view = FullKeyboardView(model: KeyboardViewModel(), target: FixtureTextTarget())
         view.swipeOverride = true
         for language in KeyboardLanguage.allCases {
             view.languageOverride = language
-            XCTAssertEqual(view.plane.swipe != nil, language == .english || language == .spanish, language.rawValue)
+            XCTAssertEqual(view.plane.swipe != nil, [.english, .spanish, .arabic].contains(language), language.rawValue)
             if let swipe = view.plane.swipe {
                 XCTAssertEqual(swipe.model.language, language.rawValue)
             }

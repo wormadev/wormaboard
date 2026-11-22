@@ -285,7 +285,7 @@ final class SwipeTyping {
 extension KeyboardLanguage {
     /// Swipe typing reads only the layouts with a typing model; elsewhere a drag stays a
     /// slide to another key.
-    var supportsSwipeTyping: Bool { self == .english || self == .spanish }
+    var supportsSwipeTyping: Bool { self == .english || self == .spanish || self == .arabic }
 }
 
 /// The light trail behind a swiping finger: the last `tail` seconds of its path, which

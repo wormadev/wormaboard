@@ -163,14 +163,14 @@ nonisolated enum TranscriptFormatter {
     }
 
     /// Whether text typed before the cursor leaves the next words at a sentence start: none
-    /// (or only spaces), a line break, or `.` `!` `?` `…` (closing quotes or brackets
-    /// after them count too).
+    /// (or only spaces), a line break, or `.` `!` `?` `…` or Arabic `؟` (closing quotes or
+    /// brackets after them count too).
     static func startsSentence(after before: String?) -> Bool {
         guard let before else { return true }
         for character in before.reversed() {
             if character.isNewline { return true }
             if character.isWhitespace || "\"”’')]»".contains(character) { continue }
-            return ".!?…。！？".contains(character)
+            return ".!?…。！？؟".contains(character)
         }
         return true
     }
@@ -263,7 +263,7 @@ nonisolated enum TranscriptFormatter {
 
     private static func isClosingPunctuation(_ character: Character?) -> Bool {
         guard let character else { return false }
-        return ".,!?;:)]}”".contains(character)
+        return ".,!?;:)]}”،؛؟".contains(character)
     }
 
     /// The hesitation sounds a style trims, per language. English "er" is a word in
@@ -348,8 +348,10 @@ nonisolated enum TranscriptFormatter {
 
     /// What may end a sentence already: its mark, or a closing quote or bracket after one. A
     /// line ending in a comma or semicolon ("Hi Sarah," before a line break) is no sentence.
+    /// Arabic's question mark, comma and semicolon (؟ ، ؛) count as their Latin twins.
     private static let sentenceClosers: Set<Character> = [
         ".", "!", "?", "…", "\"", "”", ")", "]", ":", ",", ";", "。", "！", "？", "」", "』", "）",
+        "؟", "،", "؛",
     ]
 
     /// Marks that end a sentence. A full stop counts only before a space, a line break, or the
@@ -357,7 +359,7 @@ nonisolated enum TranscriptFormatter {
     private static func endsSentence(_ chars: [Character], at index: Int) -> Bool {
         let ch = chars[index]
         if "。！？".contains(ch) { return true }
-        guard ".!?…".contains(ch) else { return false }
+        guard ".!?…؟".contains(ch) else { return false }
         return index + 1 == chars.count || chars[index + 1].isWhitespace
     }
 
@@ -706,7 +708,7 @@ nonisolated enum TranscriptFormatter {
     private static func fixSpacingBeforePunctuation(in text: String) -> String {
         // Never before an emoticon (":-)", ";)"), which follows a space.
         var result = text.replacingOccurrences(
-            of: #"\s+([,.;:!?])(?!-?[()])"#,
+            of: #"\s+([,.;:!?،؛؟])(?!-?[()])"#,
             with: "$1",
             options: .regularExpression
         )

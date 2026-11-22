@@ -913,6 +913,7 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
         // Greek's pages, as the system Greek keyboard shows them: ; is its question mark, so it
         // takes ?'s key on both, the ano teleia · takes ;'s key on 123, and ? takes |'s on #+=.
         let greek = language == .greek
+        if language == .arabic { return ArabicTyping.characterRows(layer) }
         // Ukrainian's apostrophe key on both pages is ʼ (U+02BC), as on the system Ukrainian
         // keyboard (iOS 26.2 to 27.2 simulators), holding ʼ's options (`letterHolds`).
         let punctuation = [".", ",", greek ? ";" : "?", "!", language == .ukrainian ? "\u{02BC}" : "'"]
@@ -1038,14 +1039,15 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
         if !dvorak {
             switch layer {
             case .letters:
-                add(.shift, row: 2, x: left, w: row3ModW, label: "shift")
+                // Arabic has no case, so Apple's Arabic row 3 has no shift: its letters start at the edge.
+                if language != .arabic { add(.shift, row: 2, x: left, w: row3ModW, label: "shift") }
             case .numbers:
                 add(.layerSwitch(.symbols), row: 2, x: left, w: modW, label: "#+=")
             case .symbols:
                 add(.layerSwitch(.numbers), row: 2, x: left, w: modW, label: "123")
             }
             if layer == .letters {
-                addCharacters(middle, row: 2, startX: centredStart(count: middle.count, keyWidth: lw), keyWidth: lw)
+                addCharacters(middle, row: 2, startX: language == .arabic ? left : centredStart(count: middle.count, keyWidth: lw), keyWidth: lw)
             } else {
                 // Apple's punctuation row: five wide keys aligned to the s..k columns between modifiers.
                 let edgeGap = 1.5 * (lw + m.gap) - modW

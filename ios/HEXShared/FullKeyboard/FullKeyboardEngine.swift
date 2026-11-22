@@ -238,7 +238,7 @@ final class FullKeyboardEngine {
 
     /// What the field asks for, or no automatic capitals with Auto-capitalization off.
     var autoCapitalizationMode: AutoCapitalization.Mode {
-        guard language != .korean, autoCapitalizes else { return .none }
+        guard language != .korean, language != .arabic, autoCapitalizes else { return .none }
         return AutoCapitalization.Mode(target.autocapitalizationType)
     }
 
@@ -928,7 +928,7 @@ final class FullKeyboardEngine {
     }
 
     /// Punctuation that closes a word, as Apple's keyboard treats it: , . ! ? ; : ) and ".
-    static let wordEnders: Set<Character> = [",", ".", "!", "?", ";", ":", ")", "\""]
+    static let wordEnders: Set<Character> = [",", "،", ".", "!", "?", "؟", ";", "؛", ":", ")", "\""]
 
     /// Punctuation right after a word corrects it as space does ("teh," becomes "the,"), and
     /// goes in after the fix. Delete right after takes only the mark, as after a space.

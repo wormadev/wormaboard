@@ -544,7 +544,7 @@ final class AutocorrectEngine {
         var trimmed = Substring(beforeInput)
         while trimmed.last == " " { trimmed = trimmed.dropLast() }
         guard let written = trimmed.last else { return true }
-        return written.isNewline || written == "." || written == "!" || written == "?"
+        return written.isNewline || written == "." || written == "!" || written == "?" || written == "؟"
             || (language == .greek && (written == ";" || written == "\u{037E}"))
     }
 
@@ -568,11 +568,12 @@ final class AutocorrectEngine {
         case .greek: ["θα", "δεν", "το"]
         case .serbianLatin: ["ja", "to", "da"]
         case .korean: []
+        case .arabic: ["أنا", "في", "هل"]
         }
     }
 
     /// Marks after which a sentence goes on.
-    static let midSentenceMarks: Set<Character> = [",", ";", ":", ")", "\"", "'", "\u{201D}", "\u{2019}", "\u{2014}"]
+    static let midSentenceMarks: Set<Character> = [",", "،", ";", "؛", ":", ")", "\"", "'", "\u{201D}", "\u{2019}", "\u{2014}"]
 
     /// Common first words of a clause, after a comma (Hex's own short lists).
     static func clauseStarters(_ language: KeyboardLanguage) -> [String] {
@@ -592,7 +593,7 @@ final class AutocorrectEngine {
         case .ukrainian: ["і", "але", "що"]
         case .greek: ["και", "αλλά", "που"]
         case .serbianLatin: ["i", "ali", "da"]
-        case .korean: []
+        case .korean, .arabic: []
         }
     }
 
@@ -615,6 +616,7 @@ final class AutocorrectEngine {
         case .greek: ["και", "να", "το", "θα", "δεν", "η"]
         case .serbianLatin: ["i", "je", "da", "u", "se", "na"]
         case .korean: []
+        case .arabic: ["في", "من", "على", "أن", "إلى", "لا"]
         }
     }
 

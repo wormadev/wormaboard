@@ -122,5 +122,5 @@ extension FullKeyboardEngine {
     /// What goes against a swiped word, as on Apple's keyboard: closing punctuation and
     /// brackets, an apostrophe, a hyphen and a slash. Anything else tapped right after a swipe
     /// (a straight quote and opening brackets included) starts the next word.
-    static let swipeJoiners: Set<Character> = [",", ".", "!", "?", ";", ":", ")", "]", "}", "'", "’", "-", "/"]
+    static let swipeJoiners: Set<Character> = [",", "،", ".", "!", "?", "؟", ";", "؛", ":", ")", "]", "}", "'", "’", "-", "/"]
 }
