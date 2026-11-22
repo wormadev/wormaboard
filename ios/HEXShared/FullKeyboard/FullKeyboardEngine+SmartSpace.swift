@@ -18,7 +18,7 @@ import Foundation
 @MainActor
 extension FullKeyboardEngine {
     /// Marks a space never goes before: closing punctuation, quotes and apostrophes.
-    static let closingMarks: Set<Character> = [".", ",", "!", "?", ";", ":", ")", "]", "}", "\"", "'", "»", "…"]
+    static let closingMarks: Set<Character> = [".", ",", "،", "!", "?", "؟", ";", "؛", ":", ")", "]", "}", "\"", "'", "»", "…"]
     /// French puts a space before these (`FrenchSpacing`), so there they take it as usual.
     static let frenchSpacedMarks: Set<Character> = ["?", "!", ";", ":", "»"]
 

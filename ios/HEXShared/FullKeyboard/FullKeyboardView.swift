@@ -595,10 +595,10 @@ final class FullKeyboardView: UIView {
     /// Fixtures and tests turn Swipe typing on or off; otherwise its switch in Settings › Keyboard.
     var swipeOverride: Bool? { didSet { syncSwipeTyping() } }
 
-    /// Settings › Keyboard › Swipe typing (on by default): on the English and Spanish layouts, a
-    /// drag across the letters types a word, read with the layout language's bundled model.
-    /// Off under VoiceOver, which has its own way to type. German stays out of it:
-    /// `supportsSwipeTyping` lists English and Spanish only, and the experiment does not add it.
+    /// Settings › Keyboard › Swipe typing (on by default): on the English, Spanish and Arabic
+    /// layouts, a drag across the letters types a word, read with the layout language's bundled
+    /// model. Off under VoiceOver, which has its own way to type. German stays out of it:
+    /// `supportsSwipeTyping` doesn't list it, and the experiment does not add it.
     private func syncSwipeTyping() {
         let settings = FullKeyboardSettings()
         let on = (swipeOverride ?? settings.swipeTyping) && engine.language.supportsSwipeTyping

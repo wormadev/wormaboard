@@ -474,7 +474,7 @@ never at a launch by itself.
     experiment off by default: unset or true is on, false off, so testers who turned it
     off keep it off. A noisy-channel decoder
     (`TypingDecoder`) replaces `UITextChecker`'s one-edit guesses on space and in the
-    strip for English and Spanish: each tap is scored against every letter with a 2D
+    strip for English, Spanish and Arabic (العربية, below): each tap is scored against every letter with a 2D
     Gaussian around the key (shifted by Learn how I type's tap offsets when it has 20
     or more taps on a letter), words are found with a beam search over a memory-mapped
     word list and over your own words (Contacts names and other `UILexicon` terms,
@@ -496,7 +496,8 @@ never at a launch by itself.
     model, except as bilingual autocorrect's second language (below). The
     models (`HEXKeyboard/TypingModel/en.hextm` and `es.hextm`, about 3.6 MB each) are
     built from Google Books Ngram v3 by `scripts/build-typing-model.py` (see
-    Acknowledgements below); `de.hextm` is the German model Android builds and ships
+    Acknowledgements below); `ar.hextm` (3.6 MB) from the Leipzig Corpora Collection by
+    `scripts/build-arabic-typing-model.py`, as Google Books has no Arabic; `de.hextm` is the German model Android builds and ships
     (`android/benchmark/typing/build-layout-model.py`), the same v3 format and, on iOS,
     off until the experiment below is turned on.
   - **German spatial autocorrect (Settings › Experiments › German spatial autocorrect):**
@@ -589,7 +590,7 @@ never at a launch by itself.
   - **Swipe typing (Settings › Keyboard › Swipe typing):** On by default (stored as
     `experiments.swipeTyping` from when it was an experiment off by default: unset or true
     is on, false off, so testers who turned it off keep it off), for the
-    English and Spanish layouts only (every other layout keeps a drag as a slide to
+    English, Spanish and Arabic layouts only (every other layout keeps a drag as a slide to
     another key) and off under VoiceOver. A touch that goes down on a letter and travels
     more than a key's pitch (width plus gap) is a swipe (`SwipeTyping`): its key no longer
     types, a light trail (a shape layer, the last 0.45 s of the path) follows the finger,
@@ -703,7 +704,7 @@ never at a launch by itself.
   - **Experiments:** Hinglish (Hindi in Latin letters), Greeklish (Greek in Latin
     letters), Two-language dictation,
     Clean up with Apple Intelligence, Adaptive touch (its status and Reset touch learning
-    below the switch), German spatial autocorrect, Korean keyboard (두벌식), Dvorak punctuation
+    below the switch), German spatial autocorrect, Korean keyboard (두벌식), Arabic keyboard, Dvorak punctuation
     keys, ABC under the emoji key, Keyboard themes (its Theme menu below the switch while
     it's on), Two-thumb selection, Delete swiped words letter by letter, Hide word
     suggestions, Join the keyboard when unfolded, and Multilingual model (Parakeet).
@@ -1025,6 +1026,46 @@ never at a launch by itself.
   the experiment off the language isn't listed, Automatic never picks it, and a stored "ko" is
   ignored. Unit tests only (`HangulComposerTests`, `HangulKeyboardTests`,
   `KoreanKeyboardGatingTests`): no CI compiles the iOS targets and no device run checks it.
+  **العربية:** Settings › Experiments › Arabic keyboard (off by default,
+  `experiments.arabicKeyboard`) adds العربية to the list, gated where the language list is read
+  (`KeyboardLanguage.selectable`, `matching`, `LanguageSettings.keyboardLanguages`), so off it
+  isn't listed, Automatic never picks it, and a stored "ar" is ignored. The keys are Apple's
+  iPhone Arabic keyboard as the iOS 26.4 simulator shows it (Settings › Keyboards › Arabic, its
+  keys' labels and frames read from the accessibility tree; `ArabicTyping`): ض ص ث ق ف غ ع ه خ
+  ح ج, ش س ي ب ل ا ت ن م ك ة, and ء ظ ط ذ د ز ر و ى from the left edge then delete, with no shift
+  (Arabic has no case, so there are no automatic capitals either). The keycaps run left to
+  right as Apple's do; text goes right to left because the host lays out Arabic so, and the keys
+  insert in typing order. Long presses are Apple's own list (`TextInput_ar.bundle/
+  Keyboard-ar.plist` in the same runtime), base first: ا holds ء آ إ أ, ء holds ؤ ئ إ أ, ي holds
+  ئ ى, ى holds ئ, و ؤ, ه هـ, ل لا, and ب ج ز ف ك their Persian letters پ چ ژ ڤ گ. The 123 page is
+  Apple's: Arabic-Indic digits ١ to ٠ (each holds its Western digit), ؛ for ;, and . ، ؟ ! ' on
+  its punctuation row (، holds ٫ and ,, ؟ holds ? and ¿); #+= has ٪ and Western , and ?.
+  Apple's tashkeel key (the harakat on a held key by the space bar) has no place on Hex's
+  bottom row and isn't offered; the Duo's split keyboard keeps its shift key. Suggestions,
+  autocorrect and Swipe typing read `HEXKeyboard/TypingModel/ar.hextm`, 150,000 words and
+  265,145 word pairs from three Leipzig Corpora Collection corpora (Arabic news 2020 and 2022,
+  Wikipedia 2021, a million sentences each; CC BY 4.0, see Acknowledgements), built by
+  `scripts/build-arabic-typing-model.py`: tashkeel, the superscript alef and tatweel are
+  dropped in the counts and in every lookup (`ArabicTyping.lookupForm`), while hamza forms, ة
+  and ه, and ى and ي stay distinct letters, since they make other words (على and علي). The
+  decoder reads أ إ آ from ا, ؤ from و and ئ from ي as accented letters (their base by NFD),
+  so a bare alef can become أ where the bare spelling isn't common itself ("انا" stays). The
+  corpora are news and encyclopaedia text: everyday words are in (أنا, شكرا, كيف, حبيبي,
+  بكرة), dialect spellings thinly. Clean swipes through the model's 300 commonest words of two
+  or more letters read as the word first 290 times and among the three readings all 300
+  (`testCommonArabicWordsDecodeFromCleanSwipes`, iPhone 17 Pro simulator, iOS 26.4). The
+  iPhone's own Arabic dictionary backs autocorrect's "is it a word" (`UITextChecker` lists
+  `ar`), though the simulator's fails to load ("Lexicon creation for ar failed"), so the tap
+  tests use a stub. ، ؛ ؟ end a word for autocorrect, swiped words and suggestions as , ; ?
+  do, and ؟ starts a sentence. Dictation: Apple Speech's Arabic is ar-SA, through
+  `DictationTranscriber` on iOS 26 (the iOS 26.4 simulator and macOS 27 list it;
+  `SpeechTranscriber` lists no Arabic), so Settings › Dictation language already offers it
+  wherever iOS lists it; before iOS 26, `SFSpeechRecognizer` lists ar-SA but only on-device
+  languages are offered, and the simulator has no on-device Arabic. With العربية among the
+  keyboard languages, Automatic dictates ar-SA while it types (`inputModeLanguage`). The
+  formatter keeps Arabic punctuation: no "." after ؟, no space before ، ؛ ؟, and nothing to
+  capitalise. Unit tests only (`ArabicKeyboardTests`); nobody typed, swiped or dictated in
+  Arabic on a device for this change.
 - **Layout per language (Settings › Keyboard › Languages › Layout):** each language the keys
   show (every chosen one, Automatic's while none is, and only the first of English and
   Español together) gets a menu of the layouts Apple's Keyboard Layout list offers for it
@@ -1622,6 +1663,15 @@ The app shows these under Settings › Acknowledgements (`HEXMobile/Acknowledgem
   as FluidInference's [Core ML conversion](https://huggingface.co/FluidInference/parakeet-ultra-coreml)
   (revision `95eaa59`: 8-bit integer encoder weights, decoder and joint re-exported), used
   unchanged.
+- **Leipzig Corpora Collection:** the Arabic keyboard's word and word-pair frequencies come
+  from the Leipzig Corpora Collection's Arabic corpora `ara_news_2020_1M`, `ara_news_2022_1M`
+  and `ara_wikipedia_2021_1M`, by the Natural Language Processing Group, Leipzig University,
+  whose downloadable corpora are licensed under
+  [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/)
+  (<https://wortschatz.uni-leipzig.de/en/usage>). Hex counts their words without tashkeel and
+  keeps the 150,000 commonest. D. Goldhahn, T. Eckart and U. Quasthoff: Building Large
+  Monolingual Dictionaries at the Leipzig Corpora Collection: From 100 to 200 Languages
+  (LREC 2012).
 - **RLA-ES:** Spanish words are checked against RLA-ES, the Spanish spelling dictionaries
   for LibreOffice by Santiago Bosio and contributors (Spain and Mexico), used under the
   [Mozilla Public License 1.1](https://www.mozilla.org/en-US/MPL/1.1/)

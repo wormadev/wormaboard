@@ -127,5 +127,17 @@ struct AcknowledgementsView: View {
             Mozilla Public License 1.1 (github.com/sbosio/rla-es).
             """
         ),
+        Entry(
+            title: "Leipzig Corpora Collection",
+            body: """
+            The Arabic keyboard's word and word-pair frequencies come from the Leipzig Corpora \
+            Collection's Arabic news (2020, 2022) and Wikipedia (2021) corpora of a million \
+            sentences each, by the Natural Language Processing Group, Leipzig University, \
+            licensed under Creative Commons Attribution 4.0 (creativecommons.org/licenses/by/4.0). \
+            Hex counts their words without tashkeel and keeps the 150,000 commonest. \
+            D. Goldhahn, T. Eckart and U. Quasthoff: Building Large Monolingual Dictionaries at \
+            the Leipzig Corpora Collection: From 100 to 200 Languages. LREC 2012.
+            """
+        ),
     ]
 }

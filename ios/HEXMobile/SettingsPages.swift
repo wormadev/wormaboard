@@ -606,6 +606,7 @@ struct ExperimentsSettingsPage: View {
     @State private var confirmingTouchReset = false
     @State private var germanSpatialAutocorrect = FullKeyboardSettings().germanSpatialAutocorrect
     @State private var koreanKeyboard = FullKeyboardSettings().koreanKeyboard
+    @State private var arabicKeyboard = FullKeyboardSettings().arabicKeyboard
     @State private var dvorakPunctuation = FullKeyboardSettings().dvorakPunctuation
     @State private var emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
     @State private var keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
@@ -673,6 +674,9 @@ struct ExperimentsSettingsPage: View {
             }
             .onChange(of: koreanKeyboard) { _, enabled in
                 FullKeyboardSettings().koreanKeyboard = enabled
+            }
+            .onChange(of: arabicKeyboard) { _, enabled in
+                FullKeyboardSettings().arabicKeyboard = enabled
             }
             .onChange(of: dvorakPunctuation) { _, enabled in
                 FullKeyboardSettings().dvorakPunctuation = enabled
@@ -790,6 +794,15 @@ struct ExperimentsSettingsPage: View {
 
         SettingsDivider()
 
+        // Off by default: العربية isn't offered in Languages and a stored "ar" is ignored.
+        SettingsToggleRow(
+            title: String(localized: "Arabic keyboard"),
+            detail: String(localized: "Adds العربية, with suggestions, autocorrect and swipe typing"),
+            isOn: $arabicKeyboard
+        )
+
+        SettingsDivider()
+
         // Off by default: English's Dvorak keeps Apple's keys until this is on.
         SettingsToggleRow(
             title: String(localized: "Dvorak punctuation keys"),
@@ -900,6 +913,7 @@ struct ExperimentsSettingsPage: View {
         refreshAdaptiveTouchStatus()
         germanSpatialAutocorrect = FullKeyboardSettings().germanSpatialAutocorrect
         koreanKeyboard = FullKeyboardSettings().koreanKeyboard
+        arabicKeyboard = FullKeyboardSettings().arabicKeyboard
         dvorakPunctuation = FullKeyboardSettings().dvorakPunctuation
         emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
         keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled

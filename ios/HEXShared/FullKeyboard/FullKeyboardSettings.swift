@@ -74,6 +74,7 @@ struct FullKeyboardSettings {
         static let spatialAutocorrect = "experiments.spatialAutocorrect"
         static let germanSpatialAutocorrect = "experiments.germanSpatialAutocorrect"
         static let koreanKeyboard = KoreanKeyboardExperiment.key
+        static let arabicKeyboard = ArabicKeyboardExperiment.key
         static let keyPopups = "settings.keyboardKeyPopups"
         static let haptics = "settings.keyboardHaptics"
         static let hapticStrength = "settings.keyboardHapticStrength"
@@ -154,6 +155,15 @@ struct FullKeyboardSettings {
     var koreanKeyboard: Bool {
         get { defaults?.object(forKey: Key.koreanKeyboard) as? Bool ?? false }
         nonmutating set { defaults?.set(newValue, forKey: Key.koreanKeyboard) }
+    }
+
+    /// Settings › Experiments › Arabic keyboard: adds العربية to Settings › Keyboard ›
+    /// Languages, on Apple's Arabic letters (`ArabicTyping`) with its bundled typing model for
+    /// suggestions, autocorrect and Swipe typing. Off by default: العربية isn't offered,
+    /// Automatic never picks it, and a stored "ar" is ignored.
+    var arabicKeyboard: Bool {
+        get { defaults?.object(forKey: Key.arabicKeyboard) as? Bool ?? false }
+        nonmutating set { defaults?.set(newValue, forKey: Key.arabicKeyboard) }
     }
 
     /// The typing model the keyboard may read `language`'s taps with: its bundled model, with

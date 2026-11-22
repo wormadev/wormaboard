@@ -106,10 +106,11 @@ nonisolated final class TypingDecoderModel: @unchecked Sendable {
         return body(UnsafeRawBufferPointer(start: base.advanced(by: blobAt + s), count: start(i + 1) - s))
     }
 
-    /// The word's letter codes, or nil when it has a letter the model doesn't.
+    /// The word's letter codes, or nil when it has a letter the model doesn't. Arabic is
+    /// looked up without its tashkeel and tatweel, as its model was built.
     func encode(_ word: String) -> [UInt8]? {
         var out: [UInt8] = []
-        for c in word {
+        for c in language == "ar" ? ArabicTyping.lookupForm(word) : word {
             guard let code = codes[c] else { return nil }
             out.append(code)
         }
