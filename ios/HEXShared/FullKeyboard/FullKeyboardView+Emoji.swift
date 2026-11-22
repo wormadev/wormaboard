@@ -70,7 +70,7 @@ extension FullKeyboardView {
             self?.closeEmojiPanel()
         }
         panel.onSearch = { [weak self] in self?.beginEmojiSearch() }
-        panel.showsGifs = makeGiphyClient() != nil
+        panel.showsGifs = makeKlipyClient() != nil
         panel.onGifs = { [weak self] in self?.beginGifSearch() }
         insertSubview(panel, belowSubview: callout)
         emojiPanel = panel

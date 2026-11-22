@@ -5,13 +5,13 @@ import UniformTypeIdentifiers
 /// the results row, and the requests in flight. Everything here goes when it ends.
 @MainActor
 final class GifSearchSession {
-    let client: GiphyClient
+    let client: KlipyClient
     let results = GifResultsView()
     var query: String?
     var searchTask: Task<Void, Never>?
     var copyTask: Task<Void, Never>?
 
-    init(client: GiphyClient) {
+    init(client: KlipyClient) {
         self.client = client
     }
 
@@ -23,19 +23,19 @@ final class GifSearchSession {
     }
 }
 
-/// Settings › Experiments › GIFs: a GIF button beside the emoji panel's search opens a GIPHY
+/// Settings › Experiments › GIFs: a GIF button beside the emoji panel's search opens a KLIPY
 /// search the letter keys type into, as the emoji search does, with trending GIFs while the
 /// query is empty. A tapped GIF goes on the clipboard (a keyboard can't insert images) and
 /// the strip says to paste it. Without the switch, Full Access or a key in this build there
-/// is no button and no request (`GiphyClient.make`).
+/// is no button and no request (`KlipyClient.make`).
 extension FullKeyboardView {
     static let gifSearchLift: CGFloat = 116
     static let gifStillLimit = 300_000
     static let gifCopiedNoteDuration: TimeInterval = 4
     static var gifCopiedNote: String { String(localized: "Copied, paste it") }
 
-    func makeGiphyClient() -> GiphyClient? {
-        GiphyClient.make(
+    func makeKlipyClient() -> KlipyClient? {
+        KlipyClient.make(
             enabled: GifSearchSettings().isEnabled,
             hasFullAccess: model.hasFullAccess,
             apiKey: GifSearchSettings.apiKey()
@@ -43,16 +43,16 @@ extension FullKeyboardView {
     }
 
     func beginGifSearch() {
-        guard let panel = emojiPanel, !routedTarget.isSearching, let client = makeGiphyClient() else { return }
+        guard let panel = emojiPanel, !routedTarget.isSearching, let client = makeKlipyClient() else { return }
         typingLog?.ui("gif_search")
-        // What you type is a search for GIPHY, never a typing log's.
+        // What you type is a search for KLIPY, never a typing log's.
         suspendedTypingLog = engine.typingLog
         engine.typingLog = nil
         routedTarget.query = ""
         panel.isHidden = true
 
         let field = EmojiSearchField()
-        field.placeholder = String(localized: "Search GIPHY")
+        field.placeholder = String(localized: "Search KLIPY")
         field.palette = palette
         field.onClose = { [weak self] in self?.endEmojiSearch() }
         addSubview(field)
@@ -96,7 +96,7 @@ extension FullKeyboardView {
                 return
             } catch {
                 guard !Task.isCancelled, let session else { return }
-                session.results.message = GiphyError(error).message
+                session.results.message = KlipyError(error).message
             }
         }
     }
@@ -104,8 +104,8 @@ extension FullKeyboardView {
     func copyGif(at index: Int) {
         guard let session = gifSearch, index < session.results.items.count else { return }
         keyFeedback()
-        guard let rendition = session.results.items[index].copyRendition(limit: GiphyClient.copyLimit) else {
-            session.results.message = GiphyError.tooLarge.message
+        guard let rendition = session.results.items[index].copyRendition(limit: KlipyClient.copyLimit) else {
+            session.results.message = KlipyError.tooLarge.message
             return
         }
         session.copyTask?.cancel()
@@ -113,7 +113,7 @@ extension FullKeyboardView {
         let client = session.client
         session.copyTask = Task { [weak self, weak session] in
             do {
-                let data = try await client.load(rendition.url, limit: GiphyClient.copyLimit)
+                let data = try await client.load(rendition.url, limit: KlipyClient.copyLimit)
                 guard !Task.isCancelled, let self else { return }
                 UIPasteboard.general.setData(data, forPasteboardType: UTType.gif.identifier)
                 self.typingLog?.ui("gif_copied")
@@ -121,7 +121,7 @@ extension FullKeyboardView {
                 self.showGifCopiedNote()
             } catch {
                 guard !Task.isCancelled, let session else { return }
-                session.results.message = GiphyError(error).message
+                session.results.message = KlipyError(error).message
             }
         }
     }

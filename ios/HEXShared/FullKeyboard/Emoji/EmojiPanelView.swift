@@ -58,7 +58,7 @@ final class EmojiPanelView: UIView, UICollectionViewDataSource, UICollectionView
             setNeedsLayout()
         }
     }
-    /// Settings › Experiments › GIFs: a GIF button after the search button opens a GIPHY search.
+    /// Settings › Experiments › GIFs: a GIF button after the search button opens a KLIPY search.
     var showsGifs = false {
         didSet {
             guard showsGifs != oldValue else { return }

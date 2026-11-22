@@ -1,7 +1,7 @@
 import UIKit
 
-/// The GIF search's results above the strip: one sideways row of GIPHY stills, a quiet line
-/// when there's nothing to show, and GIPHY's attribution. Stills (about 100 px wide) rather
+/// The GIF search's results above the strip: one sideways row of KLIPY stills, a quiet line
+/// when there's nothing to show, and KLIPY's attribution. Small JPG stills rather
 /// than animations keep the keyboard far under its memory ceiling; at most four load at once,
 /// their cache is capped, and all of it goes with the view.
 @MainActor
@@ -13,10 +13,10 @@ final class GifResultsView: UIView, UICollectionViewDataSource, UICollectionView
     /// What the row says instead of GIFs: loading, nothing found, or why it failed.
     var message: String? { didSet { refreshMessage() } }
     var onPick: ((Int) -> Void)?
-    /// Fetches a still's bytes (the gated GIPHY client).
+    /// Fetches a still's bytes (the gated KLIPY client).
     var loadStill: ((URL) async throws -> Data)?
 
-    private(set) var items: [GiphyGif] = []
+    private(set) var items: [KlipyGif] = []
     private let layout = UICollectionViewFlowLayout()
     private let collection: UICollectionView
     private let messageLabel = UILabel()
@@ -45,7 +45,7 @@ final class GifResultsView: UIView, UICollectionViewDataSource, UICollectionView
         messageLabel.textAlignment = .center
         messageLabel.numberOfLines = 2
         addSubview(messageLabel)
-        attribution.text = String(localized: "Powered by GIPHY")
+        attribution.text = String(localized: "Powered by KLIPY")
         attribution.font = .systemFont(ofSize: 10, weight: .semibold)
         attribution.textAlignment = .right
         addSubview(attribution)
@@ -55,7 +55,7 @@ final class GifResultsView: UIView, UICollectionViewDataSource, UICollectionView
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
-    func setItems(_ items: [GiphyGif]) {
+    func setItems(_ items: [KlipyGif]) {
         cancelLoads()
         self.items = items
         collection.reloadData()

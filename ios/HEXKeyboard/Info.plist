@@ -20,8 +20,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>GiphyAPIKey</key>
-	<string>$(GIPHY_API_KEY)</string>
+	<key>KlipyAPIKey</key>
+	<string>$(KLIPY_API_KEY)</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
