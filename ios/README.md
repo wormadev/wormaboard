@@ -744,15 +744,17 @@ never at a launch by itself.
     holds) and Key pop-ups only while Full is chosen, Haptics (the dictation bar uses it too),
     then Swipe typing and Emoji (Clear emoji history while it's on), which say they need the
     full keyboard while the dictation bar is chosen, and a field to try the keyboard in.
-  - **Privacy:** "Everything stays on this iPhone", Learn how I type (what it
+  - **Privacy:** "Everything stays on this iPhone" (and, while Experiments › GIFs is on,
+    that GIF searches go to GIPHY), Learn how I type (what it
     learned below the switch), and under **Advanced**, Record typing logs (off
     by default) with its Typing logs viewer while it's on.
   - **Experiments:** Hinglish (Hindi in Latin letters), Greeklish (Greek in Latin
     letters), Two-language dictation,
     Clean up with Apple Intelligence, Adaptive touch (its status and Reset touch learning
     below the switch), German spatial autocorrect, Korean keyboard (두벌식), Dvorak punctuation
-    keys, Clipboard history, ABC under the emoji key, Keyboard themes (its Theme menu below the
-    switch while it's on), Two-thumb selection, Delete swiped words letter by letter, Hide word
+    keys, Clipboard history, ABC under the emoji key, GIFs (GIPHY search; disabled in a build
+    without a key), Keyboard themes (its Theme menu below the switch while it's on), Two-thumb
+    selection, Delete swiped words letter by letter, Hide word
     suggestions, Join the keyboard when unfolded, and Multilingual model (Parakeet).
 
   Simulator scenes: `--snap-state settings-home` (ready), `setup` (keyboard
@@ -1576,6 +1578,25 @@ never at a launch by itself.
   binary-searches it in place (about 0.7 MB on the heap), loading it on the first
   emoji key press or finished word. Emoji newer than 15.1 are listed only where the
   emoji font draws them. Nothing leaves the iPhone.
+- **GIFs (Settings › Experiments › GIFs):** Off by default (`experiments.gifSearch`, App
+  Group), and the one exception to "Everything stays on this iPhone": while it's on, with
+  Full Access and a GIPHY key in the build, the emoji panel shows a GIF button after its
+  search button. It opens a GIPHY search the letter keys type into, as the emoji search
+  does (the typing log is held back, so the query is never logged), with trending GIFs
+  while the query is empty and a search 350 ms after typing pauses. Requests go only to
+  `api.giphy.com` (search text, the keyboard language's code as `lang`, `rating=pg-13`,
+  24 results) and GIPHY's media hosts; without the switch, Full Access or a key
+  `GiphyClient.make` returns nothing and no request is made. The row above the strip shows
+  `fixed_width_small_still` stills (about 100 px wide, at most four loading, a 4 MB cache)
+  and "Powered by GIPHY"; all of it goes when the search ends, and on a memory warning. A
+  tapped GIF downloads `fixed_height` (or `fixed_height_small`, refused past 3 MB) onto
+  the clipboard as `com.compuserve.gif`, since a keyboard can't insert images, the panel
+  closes, and the strip says "Copied, paste it" for 4 s. Failures show a quiet line in the
+  row; errors keep only a code, never the URL with the key and the search. The key comes
+  from `GIPHY_API_KEY` in the gitignored `ios/Secrets.xcconfig` (copy
+  `Secrets.xcconfig.example`), which `Shared.xcconfig` includes if present, into each
+  Info.plist's `GiphyAPIKey`; without it Settings says GIFs aren't set up in this build
+  and the switch stays off. Fixture: `--snap-state full-keyboard-emoji-gifs`.
 - **Screen stays on while dictating in Hex:** recording and transcribing set
   `isIdleTimerDisabled`, and every way out (done, cancel, failure) hands the
   screen back to Auto-Lock. iOS honors it only while Hex is in front: the

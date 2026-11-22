@@ -144,6 +144,10 @@ final class FullKeyboardView: UIView {
     var emojiResults: EmojiRowView?
     var emojiResultEntries: [Int] = []
     var emojiSearchLift: CGFloat = 0
+    /// Settings › Experiments › GIFs (FullKeyboardView+Gif.swift): the search while it runs,
+    /// and the strip's "Copied, paste it" while it shows.
+    var gifSearch: GifSearchSession?
+    var gifCopiedHideWork: DispatchWorkItem?
     /// Record typing logs, held back while you type a search.
     var suspendedTypingLog: TypingLogger?
     /// From the emoji key to the panel's suggestions laid out, for probes.
@@ -701,6 +705,7 @@ final class FullKeyboardView: UIView {
             EmojiLibrary.evictCached()
         }
         emojiPanel?.glyphs.purge()
+        gifSearch?.results.purge()
         if !showsRecording, let panel = recordingPanel {
             panel.tearDown()
             panel.removeFromSuperview()
@@ -824,6 +829,7 @@ final class FullKeyboardView: UIView {
         emojiSearchField?.palette = next
         emojiResults?.palette = next
         clipboardHistoryPanel?.palette = next
+        gifSearch?.results.palette = next
     }
 
     func refreshReturnKey() {
@@ -885,6 +891,8 @@ final class FullKeyboardView: UIView {
             model.statusMessage
         } else if showsAllowPasteHint {
             KeyboardClipboardTracker.allowPasteHint
+        } else if gifCopiedHideWork != nil {
+            Self.gifCopiedNote
         } else {
             nil
         }

@@ -10,7 +10,8 @@ import UIKit
 /// `--accent-key ø` (or Cyrillic `е`, `ь`, `ʼ`, Greek `α`, `σ`, `t` on Romanian, or `o` on Hungarian) picks the key the `accents` state holds; `--emoji-query kiss` what `emoji-search` types.
 /// Emoji states (`emoji`, `emoji-search`, `emoji-tones`, `emoji-food`, `emoji-strip`) turn
 /// Settings › Keyboard › Emoji on with a seeded history; `emoji-probe` prints the panel's
-/// footprint and latency (`EMOJI_PROBE` lines) for `simctl launch --console`.
+/// footprint and latency (`EMOJI_PROBE` lines) for `simctl launch --console`. `emoji-gifs`
+/// turns Settings › Experiments › GIFs on and opens its search (a build with a GIPHY key).
 struct FullKeyboardSnapshotStage: View {
     let scene: String
 
@@ -241,6 +242,7 @@ struct FullKeyboardSnapshotStage: View {
             FullKeyboardFixture(state: state, draft: draft, darkKeyboard: darkApp || darkField)
                 .frame(height: KeyboardLayout.height(for: .portrait, numberRow: FullKeyboardSettings().numberRow)
                     + (state == "emoji-search" ? KeyboardMetrics.for(.portrait).stripHeight : 0)
+                    + (state == "emoji-gifs" ? FullKeyboardView.gifSearchLift : 0)
                     // `--short-by 20`: a view shorter than the keyboard asks for, as iOS gives in Spotlight.
                     - (Self.argument(after: "--short-by").flatMap(Double.init).map { CGFloat($0) } ?? 0))
                 .background(Color(uiColor: backdrop).ignoresSafeArea(edges: .bottom))
@@ -403,6 +405,10 @@ private struct FullKeyboardFixture: UIViewRepresentable {
             case "emoji-tones":
                 view.debugOpenEmoji()
                 view.emojiPanel?.debugShowTones(for: "👍", selecting: 3)
+            case "emoji-gifs":
+                GifSearchSettings().isEnabled = true
+                view.debugOpenEmoji()
+                view.beginGifSearch()
             case "emoji-food":
                 view.debugOpenEmoji()
                 view.emojiPanel?.debugJump(toSection: 3)

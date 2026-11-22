@@ -286,6 +286,7 @@ enum SettingsSnapshotFixture {
         keyboard.dvorakPunctuation = on
         keyboard.clipboardHistory = on
         keyboard.emojiLettersUnderEmojiKey = on
+        GifSearchSettings().isEnabled = on
         keyboard.keyboardThemesEnabled = false
         keyboard.keyboardTheme = .automatic
         keyboard.suggestSwearWords = on

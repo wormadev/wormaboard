@@ -58,6 +58,15 @@ final class EmojiPanelView: UIView, UICollectionViewDataSource, UICollectionView
             setNeedsLayout()
         }
     }
+    /// Settings › Experiments › GIFs: a GIF button after the search button opens a GIPHY search.
+    var showsGifs = false {
+        didSet {
+            guard showsGifs != oldValue else { return }
+            gifButton.isHidden = !showsGifs
+            setNeedsLayout()
+        }
+    }
+    var onGifs: (() -> Void)?
     /// A key went down (click and haptic), or a tone was stepped over.
     var onKeyDown: (() -> Void)?
     var onSelectionStep: (() -> Void)?
@@ -72,6 +81,7 @@ final class EmojiPanelView: UIView, UICollectionViewDataSource, UICollectionView
 
     let suggestionRow = EmojiRowView()
     private let searchButton = UIButton(type: .custom)
+    private let gifButton = UIButton(type: .custom)
     private let grid: UICollectionView
     private let categoryBar: EmojiCategoryBar
     private let lettersKey = PanelKeyButton()
@@ -114,6 +124,14 @@ final class EmojiPanelView: UIView, UICollectionViewDataSource, UICollectionView
         searchButton.layer.cornerCurve = .continuous
         searchButton.addTarget(self, action: #selector(searchTapped), for: .touchUpInside)
         addSubview(searchButton)
+
+        gifButton.setTitle("GIF", for: .normal)
+        gifButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .bold)
+        gifButton.accessibilityLabel = "Search GIFs"
+        gifButton.layer.cornerCurve = .continuous
+        gifButton.isHidden = true
+        gifButton.addTarget(self, action: #selector(gifsTapped), for: .touchUpInside)
+        addSubview(gifButton)
 
         suggestionRow.renderer = glyphs
         suggestionRow.onPick = { [weak self] index in self?.pickSuggestion(index) }
@@ -268,7 +286,10 @@ final class EmojiPanelView: UIView, UICollectionViewDataSource, UICollectionView
         let buttonSide = min(36, line.height - 8)
         searchButton.frame = CGRect(x: row.minX + side, y: line.midY - buttonSide / 2, width: buttonSide + 4, height: buttonSide)
         searchButton.layer.cornerRadius = 10
-        let rowStart = showsSearch ? searchButton.frame.maxX + 4 : row.minX + side
+        gifButton.frame = searchButton.frame.offsetBy(dx: searchButton.frame.width + 4, dy: 0)
+        gifButton.layer.cornerRadius = 10
+        let searchEnd = showsGifs ? gifButton.frame.maxX : searchButton.frame.maxX
+        let rowStart = showsSearch ? searchEnd + 4 : row.minX + side
         suggestionRow.frame = CGRect(x: rowStart, y: line.minY, width: row.maxX - side - rowStart, height: line.height)
         let hairline = 1 / max(1, traitCollection.displayScale)
         rowSeparator.frame = CGRect(x: row.minX + side, y: row.maxY - hairline, width: row.width - 2 * side, height: hairline)
@@ -376,6 +397,8 @@ final class EmojiPanelView: UIView, UICollectionViewDataSource, UICollectionView
     private func applyPalette() {
         searchButton.backgroundColor = palette.chipFill
         searchButton.tintColor = palette.textMuted
+        gifButton.backgroundColor = palette.chipFill
+        gifButton.setTitleColor(palette.textMuted, for: .normal)
         rowSeparator.backgroundColor = palette.separator
         suggestionRow.palette = palette
         categoryBar.palette = palette
@@ -658,6 +681,11 @@ final class EmojiPanelView: UIView, UICollectionViewDataSource, UICollectionView
     @objc private func searchTapped() {
         onKeyDown?()
         onSearch?()
+    }
+
+    @objc private func gifsTapped() {
+        onKeyDown?()
+        onGifs?()
     }
 
     @objc private func lettersTapped() {
