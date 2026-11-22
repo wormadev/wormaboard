@@ -726,9 +726,44 @@ struct ExperimentsSettingsPage: View {
     private var page: some View {
         SettingsPageScaffold(title: "Experiments") {
             SettingsCard { rows }
+            SettingsSectionHeader(title: "WormaDev Experiments")
+            SettingsCard { wormaDevRows }
         }
         .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: adaptiveTouch)
         .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: keyboardThemes)
+    }
+
+    /// WormaBoard's own experiments, kept apart from upstream's.
+    @ViewBuilder
+    private var wormaDevRows: some View {
+        // Off by default: العربية isn't offered in Languages and a stored "ar" is ignored.
+        SettingsToggleRow(
+            title: String(localized: "Arabic keyboard"),
+            detail: String(localized: "Adds العربية, with suggestions, autocorrect and swipe typing"),
+            isOn: $arabicKeyboard
+        )
+
+        SettingsDivider()
+
+        // Off by default: nothing reads the clipboard; turning it off deletes what was kept.
+        SettingsToggleRow(
+            title: String(localized: "Clipboard history"),
+            detail: String(localized: "Keeps your last 20 copied texts on this iPhone. Each new copy can ask Allow Paste unless Paste from Other Apps is Allow."),
+            isOn: $clipboardHistory
+        )
+
+        SettingsDivider()
+
+        // Off by default, and the only part of Hex that goes online for typing: what you
+        // search is sent to KLIPY, and only with Full Access.
+        SettingsToggleRow(
+            title: String(localized: "GIFs"),
+            detail: hasKlipyKey
+                ? String(localized: "Search KLIPY from the emoji panel. Needs Full Access; what you search is sent to KLIPY.")
+                : String(localized: "GIFs aren't set up in this build"),
+            isOn: hasKlipyKey ? $gifSearch : .constant(false)
+        )
+        .disabled(!hasKlipyKey)
     }
 
     /// The experiment switches, in the card's order.
@@ -825,29 +860,11 @@ struct ExperimentsSettingsPage: View {
 
         SettingsDivider()
 
-        // Off by default: العربية isn't offered in Languages and a stored "ar" is ignored.
-        SettingsToggleRow(
-            title: String(localized: "Arabic keyboard"),
-            detail: String(localized: "Adds العربية, with suggestions, autocorrect and swipe typing"),
-            isOn: $arabicKeyboard
-        )
-
-        SettingsDivider()
-
         // Off by default: English's Dvorak keeps Apple's keys until this is on.
         SettingsToggleRow(
             title: String(localized: "Dvorak punctuation keys"),
             detail: String(localized: "Adds comma, period and semicolon keys to the English Dvorak keyboard."),
             isOn: $dvorakPunctuation
-        )
-
-        SettingsDivider()
-
-        // Off by default: nothing reads the clipboard; turning it off deletes what was kept.
-        SettingsToggleRow(
-            title: String(localized: "Clipboard history"),
-            detail: String(localized: "Keeps your last 20 copied texts on this iPhone. Each new copy can ask Allow Paste unless Paste from Other Apps is Allow."),
-            isOn: $clipboardHistory
         )
 
         SettingsDivider()
@@ -858,19 +875,6 @@ struct ExperimentsSettingsPage: View {
             detail: String(localized: "In the emoji panel, ABC takes the emoji key's place"),
             isOn: $emojiLettersUnderEmojiKey
         )
-
-        SettingsDivider()
-
-        // Off by default, and the only part of Hex that goes online for typing: what you
-        // search is sent to KLIPY, and only with Full Access.
-        SettingsToggleRow(
-            title: String(localized: "GIFs"),
-            detail: hasKlipyKey
-                ? String(localized: "Search KLIPY from the emoji panel. Needs Full Access; what you search is sent to KLIPY.")
-                : String(localized: "GIFs aren't set up in this build"),
-            isOn: hasKlipyKey ? $gifSearch : .constant(false)
-        )
-        .disabled(!hasKlipyKey)
 
         SettingsDivider()
 
