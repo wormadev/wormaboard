@@ -3,7 +3,7 @@ import Foundation
 import Speech
 
 @available(iOS 26.0, *)
-private actor AppleSpeechAssetReservations {
+actor AppleSpeechAssetReservations {
     static let shared = AppleSpeechAssetReservations()
 
     private enum State {
@@ -12,10 +12,24 @@ private actor AppleSpeechAssetReservations {
         case releasing(Int, Task<Void, Never>)
     }
 
+    private let reserver: @Sendable (Locale) async -> Void
+    private let releaser: @Sendable (Locale) async -> Void
     private var generation = 0
     private var states: [String: State] = [:]
 
-    func acquire(_ locale: Locale) async throws {
+    /// `reserver` and `releaser` are Apple's calls, swapped out in tests.
+    init(
+        reserver: @escaping @Sendable (Locale) async -> Void = { await AppleSpeechAssets.reserve($0) },
+        releaser: @escaping @Sendable (Locale) async -> Void = { _ = await AssetInventory.release(reservedLocale: $0) }
+    ) {
+        self.reserver = reserver
+        self.releaser = releaser
+    }
+
+    /// Reserves `locale`'s assets, joining a call already running for it. A call that never
+    /// answers is forgotten after `limit`, so the next preparation asks Apple again instead of
+    /// joining it forever; reservations are best effort, so the caller may simply skip it.
+    func acquire(_ locale: Locale, limit: Duration) async throws {
         let key = locale.identifier(.bcp47)
         while true {
             switch states[key] {
@@ -23,43 +37,79 @@ private actor AppleSpeechAssetReservations {
                 generation += 1
                 let currentGeneration = generation
                 let acquisition = Task<Void, Error> {
-                    await AppleSpeechAssets.reserve(locale)
+                    await reserver(locale)
                 }
                 states[key] = .acquiring(currentGeneration, acquisition, 1)
-                try await finishAcquisition(acquisition, generation: currentGeneration, key: key)
-                return
+                if try await finishAcquisition(
+                    acquisition,
+                    generation: currentGeneration,
+                    key: key,
+                    limit: limit
+                ) {
+                    return
+                }
             case .reserved(let references):
                 states[key] = .reserved(references + 1)
                 return
             case .acquiring(let currentGeneration, let acquisition, let references):
                 states[key] = .acquiring(currentGeneration, acquisition, references + 1)
-                try await finishAcquisition(acquisition, generation: currentGeneration, key: key)
-                return
+                if try await finishAcquisition(
+                    acquisition,
+                    generation: currentGeneration,
+                    key: key,
+                    limit: limit
+                ) {
+                    return
+                }
             case .releasing(let currentGeneration, let release):
-                await release.value
+                // A release that never answers must not hold the next reservation: clear it
+                // however the wait ends, and only then let a cancellation through.
+                let cancelled: Bool
+                do {
+                    try await SpeechModelDeadline.run(limit) { await release.value }
+                    cancelled = false
+                } catch is CancellationError {
+                    cancelled = true
+                } catch {
+                    cancelled = false
+                }
                 if case .releasing(let generation, _) = states[key],
                    generation == currentGeneration {
                     states[key] = nil
                 }
+                if cancelled { throw CancellationError() }
             }
         }
     }
 
+    /// True when this call's success was counted. False when another caller cleared the call
+    /// first (a timeout), or a newer one replaced it: the caller asks again rather than
+    /// believing in a reservation the actor does not count.
     private func finishAcquisition(
         _ acquisition: Task<Void, Error>,
         generation currentGeneration: Int,
-        key: String
-    ) async throws {
+        key: String,
+        limit: Duration
+    ) async throws -> Bool {
         do {
-            try await acquisition.value
-            if case .acquiring(let generation, _, let references) = states[key],
-               generation == currentGeneration {
-                states[key] = .reserved(references)
+            // The call must answer: one that never does would otherwise be joined by every
+            // later preparation.
+            try await SpeechModelDeadline.run(limit) {
+                try await acquisition.value
             }
+            guard case .acquiring(let generation, _, let references) = states[key],
+                  generation == currentGeneration else {
+                return false
+            }
+            states[key] = .reserved(references)
+            return true
         } catch {
+            // Forget the call that timed out while it is still this one, so the next attempt
+            // starts a fresh call rather than joining a hung one.
             if case .acquiring(let generation, _, _) = states[key],
                generation == currentGeneration {
                 states[key] = nil
+                acquisition.cancel()
             }
             throw error
         }
@@ -74,7 +124,7 @@ private actor AppleSpeechAssetReservations {
             generation += 1
             let currentGeneration = generation
             let release = Task {
-                _ = await AssetInventory.release(reservedLocale: locale)
+                await releaser(locale)
             }
             states[key] = .releasing(currentGeneration, release)
             await release.value
@@ -158,6 +208,10 @@ actor AppleSpeechTranscriber: LocalTranscribing {
         return hasSpeechTranscriber && !setAside
     }
 
+    /// How long one Apple Speech step may wait before Hex gives up on it: the speech daemon can
+    /// stop answering, and no step may hold the screen on "Checking the speech model".
+    static let stepStallLimit: Duration = .seconds(60)
+
     func prepare(
         progressHandler: @escaping @Sendable (ModelPreparationProgress) -> Void
     ) async throws {
@@ -165,8 +219,15 @@ actor AppleSpeechTranscriber: LocalTranscribing {
         let locale = language.locale
 
         // Best effort: a reservation Hex can't get (over Apple's limit) doesn't stop the download.
-        if (try? await AppleSpeechAssetReservations.shared.acquire(locale)) != nil {
+        // One that never answers is forgotten by `acquire` and skipped, so the next preparation
+        // asks again instead of joining it.
+        do {
+            try await AppleSpeechAssetReservations.shared.acquire(locale, limit: Self.stepStallLimit)
             reservedLocale = locale
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            // Without a reservation the install still runs, or fails with its own reason.
         }
         do {
             let detail = "Downloading Apple \(Self.displayName(for: locale)) speech"
@@ -279,7 +340,11 @@ actor AppleSpeechTranscriber: LocalTranscribing {
     private func releaseAssets() async {
         guard let reservedLocale else { return }
         self.reservedLocale = nil
-        await AppleSpeechAssetReservations.shared.release(reservedLocale)
+        // Best effort, and watched: a release that never answers must not keep the failure
+        // from reaching the screen.
+        try? await SpeechModelDeadline.run(Self.stepStallLimit) {
+            await AppleSpeechAssetReservations.shared.release(reservedLocale)
+        }
     }
 
     nonisolated private static func displayName(for locale: Locale) -> String {
