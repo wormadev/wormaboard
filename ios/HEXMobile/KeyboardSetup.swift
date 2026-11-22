@@ -7,7 +7,7 @@ import UIKit
 @MainActor
 @Observable
 final class KeyboardSetupMonitor {
-    static let keyboardBundleID = "anomaly.hex.mobile.keyboard"
+    static let keyboardBundleID = "com.wormadev.wormaboard.keyboard"
 
     private let bridge: KeyboardBridge
     private let observers = NotificationObservers()
