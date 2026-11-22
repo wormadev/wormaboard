@@ -1,0 +1,51 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      # SYNC_TOKEN: fine-grained PAT (contents, workflows, issues: write) because
+      # GITHUB_TOKEN can't push commits that touch .github/workflows.
+      GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Clone
+        run: |
+          git clone --no-tags "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" repo
+          cd repo
+          git config user.name "wormaboard-sync"
+          git config user.email "wormaboard-sync@users.noreply.github.com"
+          git remote add upstream https://github.com/anomalyco/hex.git
+          git fetch --no-tags upstream dev
+          git fetch --no-tags origin wormaboard
+
+      - name: Mirror dev
+        working-directory: repo
+        run: git push --force origin refs/remotes/upstream/dev:refs/heads/dev
+
+      - name: Merge into wormaboard
+        working-directory: repo
+        run: |
+          git switch wormaboard
+          if git merge --no-edit refs/remotes/upstream/dev; then
+            git push origin wormaboard
+            exit 0
+          fi
+          files=$(git diff --name-only --diff-filter=U)
+          git merge --abort
+          title="Upstream merge conflict"
+          if [ -z "$(gh issue list --repo "$REPO" --state open --search "in:title \"$title\"" --json number --jq '.[].number')" ]; then
+            gh issue create --repo "$REPO" --title "$title" --body "$(printf 'Merging anomalyco/hex dev into wormaboard conflicts in:\n\n```\n%s\n```\n\nResolve locally: `git fetch upstream && git switch wormaboard && git merge upstream/dev`.' "$files")"
+          fi
+          exit 1
