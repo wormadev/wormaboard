@@ -265,6 +265,7 @@ final class FullKeyboardView: UIView {
         engine.autocorrect.setVocabulary(CustomVocabularySettings().terms)
         engine.autoCapitalizes = FullKeyboardSettings().autoCapitalization
         engine.showsKeyPopups = FullKeyboardSettings().keyPopups
+        engine.swipesSpaceToSwitchLanguage = FullKeyboardSettings().languageSwipe
         engine.trackpadSelectionState.enabled = FullKeyboardSettings().twoThumbSelection
         engine.deletesSwipedWordsLetterByLetter = FullKeyboardSettings().deletesSwipedWordsLetterByLetter
         hidesWordSuggestions = FullKeyboardSettings().hideWordSuggestions
@@ -546,6 +547,7 @@ final class FullKeyboardView: UIView {
         }
         engine.korean.isEnabled = FullKeyboardSettings().koreanKeyboard
         engine.showsKeyPopups = FullKeyboardSettings().keyPopups
+        engine.swipesSpaceToSwitchLanguage = FullKeyboardSettings().languageSwipe
         engine.autoCapitalizes = FullKeyboardSettings().autoCapitalization
         engine.deletesSwipedWordsLetterByLetter = FullKeyboardSettings().deletesSwipedWordsLetterByLetter
         let selectionEnabled = FullKeyboardSettings().twoThumbSelection

@@ -730,7 +730,7 @@ never at a launch by itself.
     from when the full keyboard was an experiment: unset or true is Full, false
     the dictation bar, so testers who turned that experiment off keep the bar;
     an iPad follows the same choice, where until build 117 it always showed the bar), Auto-start (Never, On
-    switch by default, or Always) while the dictation bar is chosen, then Languages, Number row (off by default), Auto-capitalization, Autocorrect (with Spatial autocorrect below it while it's
+    switch by default, or Always) while the dictation bar is chosen, then Languages (with Swipe space to switch language, on by default, under it while two or more are chosen), Number row (off by default), Auto-capitalization, Autocorrect (with Spatial autocorrect below it while it's
     on), Suggest swear words, Vocabulary (Hex's custom vocabulary list, how many words it
     holds) and Key pop-ups only while Full is chosen, Haptics (the dictation bar uses it too),
     then Swipe typing and Emoji (Clear emoji history while it's on), which say they need the
@@ -962,6 +962,10 @@ never at a launch by itself.
   space bar was held still for 0.35 s (the hold that starts Apple's trackpad, below), a slide
   before that is a swipe, and one shorter than 24 pt types a space
   (`FullKeyboardEngine.trackpadHoldDelay`, `languageSwipeDistance`).
+  Swipe space to switch language, a switch right under Languages while two or more are
+  chosen (on by default; App Group `settings.keyboardLanguageSwipe`,
+  `FullKeyboardEngine.swipesSpaceToSwitchLanguage`), turns the swipe off: a slide before the
+  hold then types a space, as with one language, and the hold still moves the cursor.
   The globe key is unchanged. The keyboard comes back in the language it was left in, in
   every app and field, as Apple's keyboards do (black box: a switch in Messages held in
   Safari and back; `settings.keyboardLanguages.current`; without Full Access an iPhone may

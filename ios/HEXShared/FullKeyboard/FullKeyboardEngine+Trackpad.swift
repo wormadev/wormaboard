@@ -24,7 +24,7 @@ extension FullKeyboardEngine {
     /// types one (iOS 27.2: taps of 60 to 150 ms sliding 8 to 24 pt, slides of 40 pt in 150 ms).
     func moveSpaceBar(_ touch: inout ActiveTouch, id: Int, to point: CGPoint, time: TimeInterval?) -> Bool {
         if touch.isLanguageSwipe { return true }
-        if !touch.isTrackpad, !touch.committed, switchesLanguage, abs(point.x - touch.startPoint.x) >= Self.trackpadActivationDistance {
+        if !touch.isTrackpad, !touch.committed, switchesLanguage, swipesSpaceToSwitchLanguage, abs(point.x - touch.startPoint.x) >= Self.trackpadActivationDistance {
             touch.isLanguageSwipe = true
             return true
         }

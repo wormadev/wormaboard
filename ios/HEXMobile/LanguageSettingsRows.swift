@@ -179,9 +179,11 @@ private func automaticKeyboardLanguage() -> KeyboardLanguage {
 }
 
 /// Settings › Keyboard › Languages (while the full keyboard is on): Automatic with the
-/// layout it picks, or the languages chosen, in order. Opens `KeyboardLanguagesPage`.
+/// layout it picks, or the languages chosen, in order. Opens `KeyboardLanguagesPage`. With two
+/// or more, Swipe space to switch language below it (`FullKeyboardSettings.languageSwipe`).
 struct KeyboardLanguagesRow: View {
     @State private var chosen = LanguageSettings().keyboardLanguages
+    @State private var languageSwipe = FullKeyboardSettings().languageSwipe
     @State private var showsPage = SettingsSnapshotFixture.opensKeyboardLanguages
 
     private var summary: String {
@@ -218,11 +220,25 @@ struct KeyboardLanguagesRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+
+            if chosen.count > 1 {
+                LanguageRowDivider()
+                SettingsToggleRow(
+                    title: String(localized: "Swipe space to switch language"),
+                    isOn: $languageSwipe
+                )
+            }
         }
         .navigationDestination(isPresented: $showsPage) {
             KeyboardLanguagesPage()
         }
-        .onAppear { chosen = LanguageSettings().keyboardLanguages }
+        .onAppear {
+            chosen = LanguageSettings().keyboardLanguages
+            languageSwipe = FullKeyboardSettings().languageSwipe
+        }
+        .onChange(of: languageSwipe) { _, enabled in
+            FullKeyboardSettings().languageSwipe = enabled
+        }
         .onChange(of: showsPage) { _, shown in
             if !shown { chosen = LanguageSettings().keyboardLanguages }
         }

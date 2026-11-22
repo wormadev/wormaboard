@@ -607,6 +607,34 @@ final class FullKeyboardEngineTests: XCTestCase {
         XCTAssertEqual(steps, [1, -1, 1])
     }
 
+    /// Settings › Keyboard › Swipe space to switch language: on (the default) a quick slide with
+    /// two languages switches; off it types a space, as with one language.
+    func testSwipeSpaceToSwitchLanguageOffTypesASpace() {
+        var steps: [Int] = []
+        engine.onLanguageSwipe = { steps.append($0) }
+        engine.switchesLanguage = true
+        XCTAssertTrue(engine.swipesSpaceToSwitchLanguage)
+        type("hi")
+        let start = point(.space)
+        func slide(_ id: Int) {
+            engine.touchBegan(id: id, at: start)
+            now += 0.05
+            engine.touchMoved(id: id, to: CGPoint(x: start.x - 40, y: start.y))
+            XCTAssertFalse(engine.isTrackpadActive)
+            engine.touchEnded(id: id, at: CGPoint(x: start.x - 40, y: start.y))
+            now += 1
+        }
+
+        slide(1)
+        XCTAssertEqual(steps, [1])
+        XCTAssertEqual(target.text, "hi")
+
+        engine.swipesSpaceToSwitchLanguage = false
+        slide(2)
+        XCTAssertEqual(steps, [1], "off: no switch")
+        XCTAssertEqual(target.text, "hi ", "off: a space")
+    }
+
     /// Settings › Keyboard › Languages with English and Polish: the space bar says "Polski",
     /// the keys are QWERTY, every Polish letter is on a held key (ą ć ę ł ń ó ś ź ż), and
     /// Switch dictation too dictates pl-PL.
