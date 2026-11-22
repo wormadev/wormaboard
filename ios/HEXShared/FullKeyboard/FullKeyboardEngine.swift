@@ -191,6 +191,9 @@ final class FullKeyboardEngine {
     /// switches language (`onLanguageSwipe`) and the cursor slides once the space bar is held
     /// (`trackpadHoldDelay`), as on SwiftKey. With one, a slide before the hold is still a tap.
     var switchesLanguage = false
+    /// Settings › Keyboard › Swipe space to switch language: off, a slide before the hold types
+    /// a space even with two or more languages.
+    var swipesSpaceToSwitchLanguage = true
     private(set) var layout = KeyboardLayout(width: 375)
 
     var clock: () -> TimeInterval = { CACurrentMediaTime() }

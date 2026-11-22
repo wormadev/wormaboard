@@ -88,6 +88,7 @@ struct FullKeyboardSettings {
         static let hideWordSuggestions = "experiments.hideWordSuggestions"
         static let hexKeyOnLeft = "settings.keyboardHexKeyLeft"
         static let numberRow = "settings.keyboardNumberRow"
+        static let languageSwipe = "settings.keyboardLanguageSwipe"
         static let dictationBarAutoStart = "settings.dictationBarAutoStart"
         static let joinKeyboardWhenUnfolded = "experiments.joinKeyboardWhenUnfolded"
         static let dvorakPunctuation = "experiments.dvorakPunctuation"
@@ -293,6 +294,14 @@ struct FullKeyboardSettings {
     var numberRow: Bool {
         get { defaults?.bool(forKey: Key.numberRow) ?? false }
         nonmutating set { defaults?.set(newValue, forKey: Key.numberRow) }
+    }
+
+    /// Settings › Keyboard › Swipe space to switch language, under Languages while two or more
+    /// are chosen. On by default; off, a quick slide along the space bar types a space, as with
+    /// one language, and only the hold moves the cursor (`FullKeyboardEngine.swipesSpaceToSwitchLanguage`).
+    var languageSwipe: Bool {
+        get { defaults?.object(forKey: Key.languageSwipe) as? Bool ?? true }
+        nonmutating set { defaults?.set(newValue, forKey: Key.languageSwipe) }
     }
 
     /// Settings › Experiments › Join the keyboard when unfolded: on the Duo unfolded and held
