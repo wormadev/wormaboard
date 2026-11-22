@@ -51,6 +51,8 @@ final class FullKeyboardView: UIView {
     private let morph = UIView()
     private var recordingPanel: HexKeyRecordingPanel?
     private var styleMenu: HexStyleMenuView?
+    /// Settings › Experiments › New dictation key (`FullKeyboardView+WormaDictation`).
+    var wormaTray: WormaDictationTrayView?
     private(set) var palette = FullKeyboardPalette(isDark: false)
     private var didApplyPalette = false
     private var subscriptions: Set<AnyCancellable> = []
@@ -218,7 +220,8 @@ final class FullKeyboardView: UIView {
         hexKey.onHold = { [weak self] in self?.hexKeyHeld() }
         hexKey.onHoldRelease = { [weak self] in self?.hexKeyReleased() }
         hexKey.onMenuOpen = { [weak self] point in
-            guard let self else { return }
+            // The New dictation key has no slide menu: a slide only drops the press.
+            guard let self, self.wormaTray == nil else { return }
             // Styles and languages are for dictation, which needs Full Access.
             guard self.model.hasFullAccess else {
                 self.showFullAccessHint()
@@ -281,6 +284,7 @@ final class FullKeyboardView: UIView {
         syncNumberRow()
         syncJoinsUnfoldedKeyboard()
         syncDvorakPunctuation()
+        syncWormaDictationKey()
         refreshEmojiKey()
         syncSpatialAutocorrect()
         refreshLanguageSignals()
@@ -579,6 +583,7 @@ final class FullKeyboardView: UIView {
         syncNumberRow()
         syncJoinsUnfoldedKeyboard()
         syncDvorakPunctuation()
+        syncWormaDictationKey()
         refreshEmojiKey()
         let wantsAutocorrect = FullKeyboardSettings().autocorrect
         if engine.autocorrect.isEnabled != wantsAutocorrect {
@@ -752,7 +757,10 @@ final class FullKeyboardView: UIView {
         accentCallout.frame = content
         stripView.frame = layout.stripFrame.offsetBy(dx: 0, dy: lift)
         selectionStrip.frame = stripView.frame
-        stripView.slotFrames = layout.stripSlotFrames.map { $0.offsetBy(dx: -layout.stripFrame.minX, dy: -layout.stripFrame.minY) }
+        stripView.slotFrames = wormaSlotFrames(
+            layout.stripSlotFrames.map { $0.offsetBy(dx: -layout.stripFrame.minX, dy: -layout.stripFrame.minY) },
+            hexOnLeading: layout.hexOnLeading
+        )
         stripView.pillInset = layout.metrics.stripInset
         stripView.textCenterY = layout.metrics.stripTextCenter
         stripView.chipHeight = layout.metrics.stripChipHeight
@@ -768,6 +776,7 @@ final class FullKeyboardView: UIView {
                 : CGRect(x: bar.minX, y: bar.minY, width: hex.hitFrame.minX - bar.minX, height: bar.height)
         }
         stripView.barTouchFrame = bar.offsetBy(dx: -layout.stripFrame.minX, dy: -layout.stripFrame.minY)
+        layoutWormaTray(layout)
 
         hexKey.cornerRadius = layout.metrics.cornerRadius
         if let hex = layout.key(.hex) {
@@ -825,6 +834,7 @@ final class FullKeyboardView: UIView {
         hexKey.palette = next
         recordingPanel?.palette = next
         styleMenu?.palette = next
+        wormaTray?.palette = next
         emojiPanel?.palette = next
         emojiSearchField?.palette = next
         emojiResults?.palette = next
@@ -935,6 +945,11 @@ final class FullKeyboardView: UIView {
         // `engine.suggestions`, never this.
         if hidesWordSuggestions {
             suggestions = suggestions.filter { $0.kind == .revert }
+        }
+        let hintShows = (showsFullAccessHint && !model.hasFullAccess) || (vocabularyNotice ?? translationNotice) != nil
+        if refreshWormaTray(hintShows: hintShows) {
+            stripView.update(suggestions: [], showsUndo: false, statusText: nil)
+            return
         }
         stripView.update(
             suggestions: suggestions,
@@ -1372,6 +1387,7 @@ final class FullKeyboardView: UIView {
     func dismissStyleMenu() {
         styleMenu?.removeFromSuperview()
         styleMenu = nil
+        closeWormaTray()
     }
 
     /// Fixtures: open the menu without a long press, optionally on another page.

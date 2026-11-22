@@ -626,6 +626,8 @@ struct ExperimentsSettingsPage: View {
     @State private var clipboardHistory = FullKeyboardSettings().clipboardHistory
     @State private var emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
     @State private var gifSearch = GifSearchSettings().isEnabled
+    @State private var wormaDictationKey = FullKeyboardSettings().wormaDictationKey
+    @State private var wormaDictationTray = FullKeyboardSettings().wormaDictationTray
     private let hasKlipyKey = GifSearchSettings.apiKey() != nil
     @State private var keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
     @State private var keyboardTheme = FullKeyboardSettings().keyboardTheme
@@ -720,6 +722,12 @@ struct ExperimentsSettingsPage: View {
             .onChange(of: gifSearch) { _, enabled in
                 GifSearchSettings().isEnabled = enabled
             }
+            .onChange(of: wormaDictationKey) { _, enabled in
+                FullKeyboardSettings().wormaDictationKey = enabled
+            }
+            .onChange(of: wormaDictationTray) { _, items in
+                FullKeyboardSettings().wormaDictationTray = items
+            }
             .onChange(of: keyboardThemes) { _, enabled in
                 FullKeyboardSettings().keyboardThemesEnabled = enabled
             }
@@ -769,6 +777,30 @@ struct ExperimentsSettingsPage: View {
             isOn: hasKlipyKey ? $gifSearch : .constant(false)
         )
         .disabled(!hasKlipyKey)
+
+        SettingsDivider()
+
+        // Off by default: the Hex key and its slide menu stay as they are.
+        SettingsToggleRow(
+            title: String(localized: "New dictation key"),
+            detail: String(localized: "A mic key, with a chevron beside it that opens shortcuts in place of the suggestions"),
+            isOn: $wormaDictationKey
+        )
+
+        if wormaDictationKey {
+            ForEach(WormaTrayItem.allCases, id: \.self) { item in
+                SettingsDivider()
+                SettingsToggleRow(
+                    title: item.title,
+                    isOn: Binding(
+                        get: { wormaDictationTray.contains(item) },
+                        set: { on in
+                            wormaDictationTray = on ? wormaDictationTray.union([item]) : wormaDictationTray.subtracting([item])
+                        }
+                    )
+                )
+            }
+        }
     }
 
     /// The experiment switches, in the card's order.
@@ -999,6 +1031,8 @@ struct ExperimentsSettingsPage: View {
         clipboardHistory = FullKeyboardSettings().clipboardHistory
         emojiLettersUnderEmojiKey = FullKeyboardSettings().emojiLettersUnderEmojiKey
         gifSearch = GifSearchSettings().isEnabled
+        wormaDictationKey = FullKeyboardSettings().wormaDictationKey
+        wormaDictationTray = FullKeyboardSettings().wormaDictationTray
         keyboardThemes = FullKeyboardSettings().keyboardThemesEnabled
         keyboardTheme = FullKeyboardSettings().keyboardTheme
         twoThumbSelection = FullKeyboardSettings().twoThumbSelection

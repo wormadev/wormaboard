@@ -94,6 +94,8 @@ struct FullKeyboardSettings {
         static let joinKeyboardWhenUnfolded = "experiments.joinKeyboardWhenUnfolded"
         static let dvorakPunctuation = "experiments.dvorakPunctuation"
         static let clipboardHistory = "experiments.clipboardHistory"
+        static let wormaDictationKey = "experiments.wormaDictationKey"
+        static let wormaDictationTray = "settings.wormaDictationTray"
     }
 
     private let defaults: UserDefaults?
@@ -341,6 +343,25 @@ struct FullKeyboardSettings {
         nonmutating set {
             defaults?.set(newValue, forKey: Key.clipboardHistory)
             if !newValue { ClipboardHistory(defaults: defaults).clear() }
+        }
+    }
+
+    /// Settings › Experiments › New dictation key (off by default): the strip's Hex key becomes
+    /// a mic on an orange keycap with no slide menu, and a chevron beside it opens a shortcut
+    /// tray (`WormaDictationTrayView`).
+    var wormaDictationKey: Bool {
+        get { defaults?.bool(forKey: Key.wormaDictationKey) ?? false }
+        nonmutating set { defaults?.set(newValue, forKey: Key.wormaDictationKey) }
+    }
+
+    /// The tray items the person shows, in `WormaTrayItem`'s fixed order; all of them by default.
+    var wormaDictationTray: Set<WormaTrayItem> {
+        get {
+            guard let raw = defaults?.stringArray(forKey: Key.wormaDictationTray) else { return Set(WormaTrayItem.allCases) }
+            return Set(raw.compactMap(WormaTrayItem.init(rawValue:)))
+        }
+        nonmutating set {
+            defaults?.set(WormaTrayItem.allCases.filter(newValue.contains).map(\.rawValue), forKey: Key.wormaDictationTray)
         }
     }
 

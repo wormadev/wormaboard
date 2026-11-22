@@ -19,6 +19,9 @@ final class HexKeyControl: UIControl {
     /// In the strip, the suggestions' line in this view's coordinates
     /// (`KeyboardMetrics.stripTextCenter`): the mark centres on it, beside the words.
     var markCenterY: CGFloat? { didSet { if markCenterY != oldValue { setNeedsDisplay() } } }
+    /// Settings › Experiments › New dictation key: a mic on an orange keycap, with no styles
+    /// action (it has no slide menu).
+    var drawsMic = false { didSet { if drawsMic != oldValue { setNeedsDisplay(); updateAccessibility() } } }
 
     /// The finger landed on the key, with when (wall clock, from the touch's own timestamp).
     var onPress: ((TimeInterval) -> Void)?
@@ -44,13 +47,6 @@ final class HexKeyControl: UIControl {
         isAccessibilityElement = true
         accessibilityTraits = .button
         updateAccessibility()
-        accessibilityCustomActions = [
-            UIAccessibilityCustomAction(name: "Dictation styles") { [weak self] _ in
-                guard let self else { return false }
-                self.onMenuOpen?(CGPoint(x: self.bounds.midX, y: self.bounds.midY))
-                return true
-            },
-        ]
     }
 
     @available(*, unavailable)
@@ -63,7 +59,14 @@ final class HexKeyControl: UIControl {
     private func updateAccessibility() {
         let label = isWarm ? "Dictate with WormaBoard" : "Open WormaBoard to dictate"
         accessibilityLabel = translatingTo.map { "\(label), \(TranslationPasteChoice.translatingLabel(target: $0))" } ?? label
-        accessibilityHint = "Tap to dictate, hold to talk, slide for styles"
+        accessibilityHint = drawsMic ? "Tap to dictate, hold to talk" : "Tap to dictate, hold to talk, slide for styles"
+        accessibilityCustomActions = drawsMic ? [] : [
+            UIAccessibilityCustomAction(name: "Dictation styles") { [weak self] _ in
+                guard let self else { return false }
+                self.onMenuOpen?(CGPoint(x: self.bounds.midX, y: self.bounds.midY))
+                return true
+            },
+        ]
     }
 
     override func accessibilityActivate() -> Bool {
@@ -140,6 +143,10 @@ final class HexKeyControl: UIControl {
         // there (19 pt, or less where the line leaves less room), and so does its pressed chip.
         let markMidY = inStrip ? (markCenterY ?? cap.midY) : cap.midY
         let room = inStrip ? 2 * min(markMidY - cap.minY, cap.maxY - markMidY) : cap.height
+        if drawsMic {
+            drawMic(cap: cap, midY: markMidY, room: room)
+            return
+        }
         if !inStrip {
             context.fillKeycap(
                 cap,
@@ -162,6 +169,19 @@ final class HexKeyControl: UIControl {
         }
         if let translatingTo {
             drawTranslationBadge(TranslationPasteChoice.badge(target: translatingTo), keycap: cap, mark: markRect)
+        }
+    }
+
+    private func drawMic(cap: CGRect, midY: CGFloat, room: CGFloat) {
+        let chip = inStrip ? CGRect(x: cap.minX, y: midY - room / 2, width: cap.width, height: room) : cap
+        palette.warmCore.withAlphaComponent(isHighlighted ? 0.7 : 1).setFill()
+        UIBezierPath(roundedRect: chip, cornerRadius: inStrip ? min(cornerRadius + 2, room / 2) : cornerRadius).fill()
+        let config = UIImage.SymbolConfiguration(pointSize: min(17, chip.height * 0.55), weight: .semibold)
+        guard let image = UIImage(systemName: "mic.fill", withConfiguration: config)?
+            .withTintColor(.white, renderingMode: .alwaysOriginal) else { return }
+        image.draw(at: CGPoint(x: chip.midX - image.size.width / 2, y: chip.midY - image.size.height / 2))
+        if let translatingTo {
+            drawTranslationBadge(TranslationPasteChoice.badge(target: translatingTo), keycap: chip, mark: CGRect(x: chip.midX - 9, y: chip.midY - 9, width: 18, height: 18))
         }
     }
 
