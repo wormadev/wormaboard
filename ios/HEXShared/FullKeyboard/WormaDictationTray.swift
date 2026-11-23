@@ -92,7 +92,7 @@ final class WormaDictationTrayView: UIView {
     private(set) var page: Page?
     var isOpen: Bool { page != nil }
     private let chevron = UIButton(type: .custom)
-    private let scroller = UIScrollView()
+    private let scroller = ChipScroller()
     private var chips: [UIButton] = []
     private var chipValues: [AnyHashable?] = []
     private var guardUntil: TimeInterval = 0
@@ -108,7 +108,8 @@ final class WormaDictationTrayView: UIView {
         chevron.addTarget(self, action: #selector(keyDown), for: .touchDown)
         addSubview(chevron)
         scroller.showsHorizontalScrollIndicator = false
-        scroller.alwaysBounceHorizontal = false
+        // Every page takes a swipe as a scroll (a bounce when its chips fit), never a tap.
+        scroller.alwaysBounceHorizontal = true
         scroller.delaysContentTouches = false
         scroller.isHidden = true
         // iOS 26 blurs a scroll view's edges as content slides under them; the strip has no bar
@@ -419,11 +420,16 @@ final class WormaDictationTrayView: UIView {
             chip.setNeedsUpdateConfiguration()
             x += width + gap
         }
+        // Evenly shared icons can sum a hair past the width: they fit, so the row only bounces.
         let contentWidth = x - gap
-        scroller.contentSize = CGSize(width: max(area.width, contentWidth), height: bounds.height)
-        // Evenly shared icons can sum a hair past the width; only real overflow scrolls.
-        scroller.isScrollEnabled = contentWidth > area.width + 0.5
+        scroller.contentSize = CGSize(width: contentWidth > area.width + 0.5 ? contentWidth : area.width, height: bounds.height)
     }
 
     @objc private func chevronTapped() { onChevron?() }
+
+    /// A drag that starts on a chip scrolls the row and cancels the chip, rather than UIKit's
+    /// default for controls, which keeps the press and picks the chip when the finger lifts.
+    private final class ChipScroller: UIScrollView {
+        override func touchesShouldCancel(in view: UIView) -> Bool { true }
+    }
 }

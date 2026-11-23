@@ -768,7 +768,8 @@ final class FullKeyboardView: UIView {
         stripView.textCenterY = layout.metrics.stripTextCenter
         stripView.chipHeight = layout.metrics.stripChipHeight
         stripView.appleBar = layout.metrics.appleBar
-        stripView.dividerBesideHex = layout.metrics.appleBar && layout.key(.hex).map { $0.row < 0 } == true
+        // The New dictation key's chevron sits beside the Hex key with no divider between them.
+        stripView.dividerBesideHex = layout.metrics.appleBar && layout.key(.hex).map { $0.row < 0 } == true && wormaTray == nil
         stripView.hexOnLeading = layout.hexOnLeading
         stripView.barMidX = layout.stripBarFrame.midX - layout.stripFrame.minX
         // The bar from the keyboard's top to the strip's bottom, up to the Hex key beside it.
