@@ -110,7 +110,9 @@ final class WormaDictationTrayView: UIView {
         scroller.showsHorizontalScrollIndicator = false
         // Every page takes a swipe as a scroll (a bounce when its chips fit), never a tap.
         scroller.alwaysBounceHorizontal = true
-        scroller.delaysContentTouches = false
+        // A touch waits a beat before it presses a chip: a swipe then scrolls without the chip
+        // under the finger lighting and shrinking first, which read as a flicker.
+        scroller.delaysContentTouches = true
         scroller.isHidden = true
         // iOS 26 blurs a scroll view's edges as content slides under them; the strip has no bar
         // to blur under.
