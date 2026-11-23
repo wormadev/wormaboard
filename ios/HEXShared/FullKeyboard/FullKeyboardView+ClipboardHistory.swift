@@ -9,9 +9,11 @@ extension FullKeyboardView {
         model.hasFullAccess && clipboardHistory.isEnabled && !clipboardHistory.items.isEmpty
     }
 
-    /// The keyboard is on screen: keep the clipboard's text if it changed since the last look.
+    /// The keyboard is on screen (and every second while it stays): keep what was copied if
+    /// the clipboard changed since the last look.
     func captureClipboardForHistory() {
-        clipboardHistory.capture(hasFullAccess: hostController?.hasFullAccess == true)
+        guard clipboardHistory.capture(hasFullAccess: hostController?.hasFullAccess == true) else { return }
+        clipboardHistoryPanel?.setItems(clipboardHistory.items)
         refreshStrip()
     }
 
@@ -23,11 +25,11 @@ extension FullKeyboardView {
         engine.commitHangulComposition()
         dismissStyleMenu()
         plane.cancelAllTouches()
-        let panel = ClipboardHistoryPanelView(items: items)
+        let panel = ClipboardHistoryPanelView(items: items, history: clipboardHistory)
         panel.palette = palette
         panel.onKeyDown = { [weak self] in self?.keyFeedback() }
-        panel.onInsert = { [weak self] text in self?.insertFromClipboardHistory(text) }
-        panel.onRemove = { [weak self] text in self?.removeFromClipboardHistory(text) }
+        panel.onInsert = { [weak self] item in self?.insertFromClipboardHistory(item) }
+        panel.onRemove = { [weak self] item in self?.removeFromClipboardHistory(item) }
         panel.onClear = { [weak self] in
             self?.clipboardHistory.clear()
             self?.closeClipboardHistory()
@@ -58,9 +60,14 @@ extension FullKeyboardView {
         panel.horizontalInset = engine.layout.horizontalInset
     }
 
-    /// Inserted as the Paste chip inserts, but the text never reaches the typing log.
-    private func insertFromClipboardHistory(_ text: String) {
+    /// Text is inserted as the Paste chip inserts, but never reaches the typing log. A keyboard
+    /// can't insert an image or file, so those go back on the clipboard to paste, as a GIF does.
+    private func insertFromClipboardHistory(_ item: ClipboardItem) {
         closeClipboardHistory()
+        guard let text = item.text else {
+            if clipboardHistory.copyToPasteboard(item) { showGifCopiedNote() }
+            return
+        }
         engine.forgetTextAroundKeys()
         engine.target.insertText(text)
         engine.textDidChange()
@@ -68,8 +75,8 @@ extension FullKeyboardView {
         onTextEdit?()
     }
 
-    private func removeFromClipboardHistory(_ text: String) {
-        clipboardHistory.remove(text)
+    private func removeFromClipboardHistory(_ item: ClipboardItem) {
+        clipboardHistory.remove(item)
         let items = clipboardHistory.items
         if items.isEmpty {
             closeClipboardHistory()

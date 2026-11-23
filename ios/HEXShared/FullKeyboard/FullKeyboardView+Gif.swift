@@ -127,7 +127,7 @@ extension FullKeyboardView {
     }
 
     /// The strip says "Copied, paste it" for a few seconds (`refreshStrip`).
-    private func showGifCopiedNote() {
+    func showGifCopiedNote() {
         gifCopiedHideWork?.cancel()
         let work = DispatchWorkItem { [weak self] in
             self?.gifCopiedHideWork = nil

@@ -1,27 +1,32 @@
 import UIKit
+import UniformTypeIdentifiers
 
 /// Settings › Experiments › Clipboard history's list: it covers the keys as the emoji panel
 /// does, with ABC (back to the keys) and Clear all on the strip's line and the copies below,
-/// newest first. Tapping a copy inserts it; its ✕ forgets it. Clear all asks once more first.
+/// newest first: texts, image thumbnails and named files. Tapping a text inserts it; an image or
+/// file goes back on the clipboard to paste. Its ✕ forgets it. Clear all asks once more first.
 @MainActor
 final class ClipboardHistoryPanelView: UIView, UITableViewDataSource, UITableViewDelegate {
     var palette = FullKeyboardPalette(isDark: false) { didSet { if palette != oldValue { applyPalette() } } }
     var metrics = KeyboardMetrics.portrait { didSet { if metrics != oldValue { setNeedsLayout() } } }
     var horizontalInset: CGFloat = 0 { didSet { if horizontalInset != oldValue { setNeedsLayout() } } }
-    var onInsert: ((String) -> Void)?
-    var onRemove: ((String) -> Void)?
+    var onInsert: ((ClipboardItem) -> Void)?
+    var onRemove: ((ClipboardItem) -> Void)?
     var onClear: (() -> Void)?
     var onLetters: (() -> Void)?
     var onKeyDown: (() -> Void)?
 
-    private(set) var items: [String]
+    private(set) var items: [ClipboardItem]
+    private let history: ClipboardHistory
+    private var thumbnails: [String: UIImage] = [:]
     private let lettersChip = UIButton(type: .custom)
     private let clearChip = UIButton(type: .custom)
     private let table = UITableView(frame: .zero, style: .plain)
     private var confirmingClear = false
 
-    init(items: [String]) {
+    init(items: [ClipboardItem], history: ClipboardHistory) {
         self.items = items
+        self.history = history
         super.init(frame: .zero)
         lettersChip.configuration = Self.chip(title: "ABC")
         lettersChip.accessibilityLabel = String(localized: "Back to the keys")
@@ -49,7 +54,7 @@ final class ClipboardHistoryPanelView: UIView, UITableViewDataSource, UITableVie
         return chip
     }
 
-    func setItems(_ items: [String]) {
+    func setItems(_ items: [ClipboardItem]) {
         self.items = items
         table.reloadData()
     }
@@ -123,11 +128,26 @@ final class ClipboardHistoryPanelView: UIView, UITableViewDataSource, UITableVie
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "copy", for: indexPath)
+        let item = items[indexPath.row]
         var content = cell.defaultContentConfiguration()
-        content.text = items[indexPath.row]
         content.textProperties.color = palette.textBase
         content.textProperties.font = .systemFont(ofSize: 16)
         content.textProperties.numberOfLines = 2
+        switch item.kind {
+        case .text:
+            content.text = item.text
+        case .image:
+            content.text = String(localized: "Image")
+            content.image = thumbnail(for: item)
+            content.imageProperties.maximumSize = CGSize(width: 56, height: 56)
+            content.imageProperties.cornerRadius = 6
+        case .file:
+            content.text = item.name ?? String(localized: "File")
+            content.secondaryText = item.type.flatMap { UTType($0)?.localizedDescription }
+            content.secondaryTextProperties.color = palette.textMuted
+            content.image = UIImage(systemName: "doc")
+            content.imageProperties.tintColor = palette.textMuted
+        }
         cell.contentConfiguration = content
         cell.backgroundColor = .clear
         cell.selectedBackgroundView = UIView()
@@ -148,5 +168,15 @@ final class ClipboardHistoryPanelView: UIView, UITableViewDataSource, UITableVie
         guard items.indices.contains(indexPath.row) else { return }
         onKeyDown?()
         onInsert?(items[indexPath.row])
+    }
+
+    /// Images are shown small; the thumbnail is made once per item.
+    private func thumbnail(for item: ClipboardItem) -> UIImage? {
+        guard let file = item.file else { return nil }
+        if let cached = thumbnails[file] { return cached }
+        let image = history.data(of: item).flatMap(UIImage.init(data:))?
+            .preparingThumbnail(of: CGSize(width: 112, height: 112))
+        thumbnails[file] = image
+        return image
     }
 }

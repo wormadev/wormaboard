@@ -8,6 +8,9 @@ final class KeyboardViewController: UIInputViewController {
     private let viewModel = KeyboardViewModel()
     private let localDictation = KeyboardLocalDictation()
     private var pollTimer: Timer?
+    /// Clipboard history: every copy made while the keyboard is up, not only the last one
+    /// before it appeared. The change count it checks asks nothing.
+    private var clipboardTimer: Timer?
     private var coldStartJobID = UUID().uuidString
     private var lastURLRefreshBucket: Int = 0
     private var lastFullAccessReport: KeyboardFullAccessReport?
@@ -176,6 +179,10 @@ final class KeyboardViewController: UIInputViewController {
         bridge.recordKeyboardShown(at: Date().timeIntervalSince1970)
         // After the keys are up: reading the clipboard can wait on iOS's Allow Paste.
         fullKeyboard?.captureClipboardForHistory()
+        clipboardTimer?.invalidate()
+        clipboardTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.fullKeyboard?.captureClipboardForHistory() }
+        }
         scheduleLaunchWork()
     }
 
@@ -252,6 +259,8 @@ final class KeyboardViewController: UIInputViewController {
         TypingJournal.sharedIfEnabled()?.save()
         AdaptiveTouch.current?.save()
         isShown = false
+        clipboardTimer?.invalidate()
+        clipboardTimer = nil
         Self.onScreen.disappeared(keyboardID)
         launchWork.forEach { $0.cancel() }
         launchWork = []
