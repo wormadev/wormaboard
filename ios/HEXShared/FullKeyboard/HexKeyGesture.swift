@@ -32,6 +32,8 @@ nonisolated struct HexKeyGesture: Equatable, Sendable {
     }
 
     private(set) var state: State = .idle
+    /// Moving past `slop` opens the slide menu; off for the New dictation key, which has none.
+    var slides = true
     private var origin: CGPoint = .zero
 
     mutating func touchDown(at point: CGPoint) {
@@ -42,6 +44,8 @@ nonisolated struct HexKeyGesture: Equatable, Sendable {
     mutating func touchMoved(to point: CGPoint) -> Output {
         switch state {
         case .pressing:
+            // Without the slide menu (New dictation key) a rolling thumb stays a tap or hold.
+            guard slides else { return .ignored }
             guard hypot(point.x - origin.x, point.y - origin.y) > Self.slop else { return .ignored }
             state = .menu
             return .openMenu

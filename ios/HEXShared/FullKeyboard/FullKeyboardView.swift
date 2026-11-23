@@ -248,6 +248,8 @@ final class FullKeyboardView: UIView {
             self.vocabularyOffer = nil
             self.hideFullAccessHint()
             self.hideAllowPasteHint()
+            // Typing brings the suggestions back, so a correction never happens out of sight.
+            self.closeWormaTray(animated: false)
             self.refreshReturnKey()
             self.refreshStrip()
             self.onTextEdit?()
@@ -671,6 +673,7 @@ final class FullKeyboardView: UIView {
         engine.selectionTextChanged()
         if routeField != field {
             plane.cancelAllTouches()
+            closeWormaTray(animated: false)
             engine.configureForField()
             refreshEmojiKey()
         } else {
@@ -947,7 +950,9 @@ final class FullKeyboardView: UIView {
             suggestions = suggestions.filter { $0.kind == .revert }
         }
         let hintShows = (showsFullAccessHint && !model.hasFullAccess) || (vocabularyNotice ?? translationNotice) != nil
-        if refreshWormaTray(hintShows: hintShows) {
+        // Undo, a failure or a status line keeps its place: the tray steps aside for it.
+        let stripBusy = hintShows || status != nil || lastDictation != nil
+        if refreshWormaTray(hintShows: stripBusy) {
             stripView.update(suggestions: [], showsUndo: false, statusText: nil)
             return
         }

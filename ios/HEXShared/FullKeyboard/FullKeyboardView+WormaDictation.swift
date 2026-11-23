@@ -14,6 +14,7 @@ extension FullKeyboardView {
             tray.palette = palette
             tray.onChevron = { [weak self] in self?.toggleWormaTray() }
             tray.onItem = { [weak self] item in self?.wormaTrayItem(item) }
+            tray.onKeyDown = { [weak self] in self?.keyFeedback() }
             tray.onStyle = { [weak self] style in
                 self?.typingLog?.ui("style", [
                     TypingLogField("style", .string(style.rawValue)),
@@ -62,8 +63,10 @@ extension FullKeyboardView {
     /// its own. A hint or notice takes the chevron's place and closes the tray.
     func refreshWormaTray(hintShows: Bool) -> Bool {
         guard let tray = wormaTray else { return false }
-        tray.hidesChevron = hintShows
-        if hintShows { tray.show(nil) }
+        // Nothing to offer: no chevron that opens an empty strip.
+        let hides = hintShows || wormaTrayItems.isEmpty
+        tray.hidesChevron = hides
+        if hides { tray.show(nil, animated: false) }
         tray.isTranslating = model.isTranslating
         tray.style = model.style
         tray.language = model.dictationLanguage
@@ -71,18 +74,23 @@ extension FullKeyboardView {
         return tray.isOpen
     }
 
-    func closeWormaTray() {
+    /// The chips leave first; the words come back once they're gone.
+    func closeWormaTray(animated: Bool = true) {
         guard let tray = wormaTray, tray.isOpen else { return }
-        tray.show(nil)
-        refreshStrip()
+        tray.show(nil, animated: animated) { [weak self] in self?.refreshStrip() }
     }
 
     private func toggleWormaTray() {
         guard let tray = wormaTray else { return }
-        keyFeedback()
-        if tray.isOpen {
+        switch tray.page {
+        case .styles, .languages:
+            tray.show(.items(wormaTrayItems))
+            return
+        case .items:
             closeWormaTray()
             return
+        case nil:
+            break
         }
         // As the old slide menu: its shortcuts are for dictation and the clipboard, which need Full Access.
         guard model.hasFullAccess else {
@@ -90,12 +98,13 @@ extension FullKeyboardView {
             return
         }
         typingLog?.ui("worma_tray")
+        // The words start leaving as the chips spring in just after.
         tray.show(.items(wormaTrayItems))
         refreshStrip()
     }
 
     /// The items shown in Settings whose feature this keyboard has now.
-    private var wormaTrayItems: [WormaTrayItem] {
+    var wormaTrayItems: [WormaTrayItem] {
         let shown = FullKeyboardSettings().wormaDictationTray
         return WormaTrayItem.allCases.filter { item in
             guard shown.contains(item) else { return false }
@@ -110,21 +119,20 @@ extension FullKeyboardView {
     }
 
     private func wormaTrayItem(_ item: WormaTrayItem) {
-        keyFeedback()
         guard let tray = wormaTray else { return }
         switch item {
         case .gif:
-            closeWormaTray()
+            closeWormaTray(animated: false)
             openEmojiPanel()
             beginGifSearch()
         case .clipboard:
-            closeWormaTray()
+            closeWormaTray(animated: false)
             openClipboardHistory()
         case .translate:
             let on = !model.isTranslating
             typingLog?.ui("translate", [TypingLogField("on", .bool(on))])
+            // A switch: the tray stays so its state shows.
             model.onTranslationToggled?(on)
-            closeWormaTray()
         case .style:
             tray.show(.styles)
         case .language:

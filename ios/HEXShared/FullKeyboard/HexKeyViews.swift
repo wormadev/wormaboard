@@ -20,7 +20,13 @@ final class HexKeyControl: UIControl {
     /// (`KeyboardMetrics.stripTextCenter`): the mark centres on it, beside the words.
     var markCenterY: CGFloat? { didSet { if markCenterY != oldValue { setNeedsDisplay() } } }
     /// Settings › Experiments › New dictation key: no styles action (it has no slide menu).
-    var hasTray = false { didSet { if hasTray != oldValue { updateAccessibility() } } }
+    var hasTray = false {
+        didSet {
+            guard hasTray != oldValue else { return }
+            gesture.slides = !hasTray
+            updateAccessibility()
+        }
+    }
 
     /// The finger landed on the key, with when (wall clock, from the touch's own timestamp).
     var onPress: ((TimeInterval) -> Void)?
