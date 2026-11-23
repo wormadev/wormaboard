@@ -1634,9 +1634,9 @@ never at a launch by itself.
   the key in its Partner Panel; any that came would be left out. The row above the strip
   shows the `xs` JPG stills (about 2 KB each, at most four loading, a 4 MB in-memory cache)
   and "Powered by KLIPY"; all of it goes when the search ends, and on a memory warning. A
-  tapped GIF downloads the `md` GIF (or `sm`, then `xs`, refused past 3 MB) onto the
-  clipboard as `com.compuserve.gif`, since a keyboard can't insert images, the panel
-  closes, and the strip says "Copied, paste it" for 4 s. Failures show a quiet line in the
+  tapped GIF types the link of its `md` GIF (or `sm`, then `xs`, refused past 3 MB) into
+  the field, since a keyboard can't insert images and messaging apps show the link as the
+  GIF, and the panel closes. Failures show a quiet line in the
   row; errors keep only a code, never the URL with the key and the search. The key comes
   from `KLIPY_API_KEY` in the gitignored `ios/Secrets.xcconfig` (copy
   `Secrets.xcconfig.example`), which `Shared.xcconfig` includes if present, into each

@@ -1,5 +1,4 @@
 import UIKit
-import UniformTypeIdentifiers
 
 /// One GIF search, from the emoji panel's GIF button until the search ends: the gated client,
 /// the results row, and the requests in flight. Everything here goes when it ends.
@@ -9,7 +8,6 @@ final class GifSearchSession {
     let results = GifResultsView()
     var query: String?
     var searchTask: Task<Void, Never>?
-    var copyTask: Task<Void, Never>?
 
     init(client: KlipyClient) {
         self.client = client
@@ -17,7 +15,6 @@ final class GifSearchSession {
 
     func tearDown() {
         searchTask?.cancel()
-        copyTask?.cancel()
         results.purge()
         results.removeFromSuperview()
     }
@@ -25,8 +22,8 @@ final class GifSearchSession {
 
 /// Settings › Experiments › GIFs: a GIF button beside the emoji panel's search opens a KLIPY
 /// search the letter keys type into, as the emoji search does, with trending GIFs while the
-/// query is empty. A tapped GIF goes on the clipboard (a keyboard can't insert images) and
-/// the strip says to paste it. Without the switch, Full Access or a key in this build there
+/// query is empty. A tapped GIF types its link into the field, which messaging apps show as
+/// the GIF (a keyboard can't insert images). Without the switch, Full Access or a key in this build there
 /// is no button and no request (`KlipyClient.make`).
 extension FullKeyboardView {
     static let gifSearchLift: CGFloat = 116
@@ -60,7 +57,7 @@ extension FullKeyboardView {
         let session = GifSearchSession(client: client)
         session.results.palette = palette
         session.results.loadStill = { url in try await client.load(url, limit: Self.gifStillLimit) }
-        session.results.onPick = { [weak self] index in self?.copyGif(at: index) }
+        session.results.onPick = { [weak self] index in self?.sendGif(at: index) }
         addSubview(session.results)
         gifSearch = session
 
@@ -101,29 +98,18 @@ extension FullKeyboardView {
         }
     }
 
-    func copyGif(at index: Int) {
+    /// Types the GIF's link where the cursor is, as one insertion, and closes the panel.
+    func sendGif(at index: Int) {
         guard let session = gifSearch, index < session.results.items.count else { return }
         keyFeedback()
         guard let rendition = session.results.items[index].copyRendition(limit: KlipyClient.copyLimit) else {
             session.results.message = KlipyError.tooLarge.message
             return
         }
-        session.copyTask?.cancel()
-        session.results.message = String(localized: "Copying GIF…")
-        let client = session.client
-        session.copyTask = Task { [weak self, weak session] in
-            do {
-                let data = try await client.load(rendition.url, limit: KlipyClient.copyLimit)
-                guard !Task.isCancelled, let self else { return }
-                UIPasteboard.general.setData(data, forPasteboardType: UTType.gif.identifier)
-                self.typingLog?.ui("gif_copied")
-                self.closeEmojiPanel()
-                self.showGifCopiedNote()
-            } catch {
-                guard !Task.isCancelled, let session else { return }
-                session.results.message = KlipyError(error).message
-            }
-        }
+        typingLog?.ui("gif_sent")
+        routedTarget.document.insertText(rendition.url.absoluteString)
+        onTextEdit?()
+        closeEmojiPanel()
     }
 
     /// The strip says "Copied, paste it" for a few seconds (`refreshStrip`).
