@@ -63,6 +63,7 @@ final class WormaDictationTrayView: UIView {
             guard hidesChevron != oldValue else { return }
             UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut, .beginFromCurrentState]) {
                 self.chevron.alpha = self.hidesChevron ? 0 : 1
+                self.divider.alpha = self.dividerAlpha
             }
         }
     }
@@ -83,6 +84,9 @@ final class WormaDictationTrayView: UIView {
     private(set) var page: Page?
     var isOpen: Bool { page != nil }
     private let chevron = UIButton(type: .custom)
+    /// The strip's divider on the chevron's other side, so it sits centred in a cell of its
+    /// own between the words and the Hex key. Closed only: open, the words' dividers are gone.
+    private let divider = UIView()
     private let scroller = UIScrollView()
     private var chips: [UIButton] = []
     private var chipValues: [AnyHashable?] = []
@@ -98,6 +102,8 @@ final class WormaDictationTrayView: UIView {
         chevron.addTarget(self, action: #selector(chevronTapped), for: .touchUpInside)
         chevron.addTarget(self, action: #selector(keyDown), for: .touchDown)
         addSubview(chevron)
+        divider.isUserInteractionEnabled = false
+        addSubview(divider)
         scroller.showsHorizontalScrollIndicator = false
         scroller.alwaysBounceHorizontal = false
         scroller.delaysContentTouches = false
@@ -120,6 +126,9 @@ final class WormaDictationTrayView: UIView {
         let wasOpen = isOpen
         self.page = page
         turnChevron(animated: animated)
+        UIView.animate(withDuration: animated ? 0.2 : 0, delay: 0, options: [.curveEaseOut, .beginFromCurrentState]) {
+            self.divider.alpha = self.dividerAlpha
+        }
         updateAccessibility()
         guard let page else {
             leave(chips, animated: animated) { [weak self] in
@@ -149,7 +158,10 @@ final class WormaDictationTrayView: UIView {
 
     // MARK: - Chips
 
+    private var dividerAlpha: CGFloat { isOpen || hidesChevron ? 0 : 1 }
+
     private func rebuild(animated: Bool) {
+        divider.backgroundColor = palette.stripDivider
         chips.forEach { $0.removeFromSuperview() }
         var made: [(UIButton, AnyHashable?)] = []
         switch page {
@@ -360,6 +372,8 @@ final class WormaDictationTrayView: UIView {
         // Centred on the words' line by its frame, not insets, which its turn would flip.
         chevron.frame = CGRect(x: hexOnLeading ? 0 : bounds.width - w, y: textCenterY - bounds.height / 2, width: w, height: bounds.height)
         chevron.transform = transform
+        let lineH = min(24, chipHeight, bounds.height - 2)
+        divider.frame = CGRect(x: hexOnLeading ? w : bounds.width - w - 1, y: textCenterY - lineH / 2, width: 1, height: lineH)
         let area = CGRect(x: hexOnLeading ? w : 0, y: 0, width: max(0, bounds.width - w), height: bounds.height)
         scroller.frame = area
         let h = pillHeight
