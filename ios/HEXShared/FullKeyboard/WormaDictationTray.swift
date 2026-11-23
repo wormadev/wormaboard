@@ -38,8 +38,9 @@ nonisolated enum WormaTrayItem: String, CaseIterable, Sendable {
 /// (or a style's or language's chips). Closed, only the chevron takes touches.
 ///
 /// Motion follows the strip's: chips spring in from the chevron (0.35 s, damping 0.85, a short
-/// stagger) and leave toward it (0.15 s) before the words come back; the chevron turns rather
-/// than swapping its image. Reduce Motion keeps only a 0.15 s crossfade.
+/// stagger) and leave toward it (0.15 s) before the words come back; the chevron sinks back in
+/// depth, flips to face the other way, and springs forward again. Reduce Motion keeps only a
+/// 0.15 s crossfade.
 @MainActor
 final class WormaDictationTrayView: UIView {
     enum Page: Equatable {
@@ -50,11 +51,19 @@ final class WormaDictationTrayView: UIView {
 
     /// The chevron's slot, a full touch target beside the Hex key.
     static let chevronWidth: CGFloat = 44
+    /// The chevron's glyph sits this far from the Hex key's side of its slot, near the key.
+    static let chevronInset: CGFloat = 8
     /// After a page change, chips ignore taps this long, so a quick second tap doesn't land
     /// on whatever chip took the first one's place.
     static let pageGuard: TimeInterval = 0.25
 
-    var palette = FullKeyboardPalette(isDark: false) { didSet { if palette != oldValue { rebuild(animated: false) } } }
+    var palette = FullKeyboardPalette(isDark: false) {
+        didSet {
+            guard palette != oldValue else { return }
+            chevron.setNeedsUpdateConfiguration()
+            rebuild(animated: false)
+        }
+    }
     var hexOnLeading = false { didSet { if hexOnLeading != oldValue { turnChevron(animated: false); setNeedsLayout() } } }
     var textCenterY: CGFloat = 19 { didSet { if textCenterY != oldValue { setNeedsLayout() } } }
     var chipHeight: CGFloat = 30 { didSet { if chipHeight != oldValue { setNeedsLayout() } } }
@@ -63,7 +72,6 @@ final class WormaDictationTrayView: UIView {
             guard hidesChevron != oldValue else { return }
             UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut, .beginFromCurrentState]) {
                 self.chevron.alpha = self.hidesChevron ? 0 : 1
-                self.divider.alpha = self.dividerAlpha
             }
         }
     }
@@ -84,9 +92,6 @@ final class WormaDictationTrayView: UIView {
     private(set) var page: Page?
     var isOpen: Bool { page != nil }
     private let chevron = UIButton(type: .custom)
-    /// The strip's divider on the chevron's other side, so it sits centred in a cell of its
-    /// own between the words and the Hex key. Closed only: open, the words' dividers are gone.
-    private let divider = UIView()
     private let scroller = UIScrollView()
     private var chips: [UIButton] = []
     private var chipValues: [AnyHashable?] = []
@@ -102,12 +107,16 @@ final class WormaDictationTrayView: UIView {
         chevron.addTarget(self, action: #selector(chevronTapped), for: .touchUpInside)
         chevron.addTarget(self, action: #selector(keyDown), for: .touchDown)
         addSubview(chevron)
-        divider.isUserInteractionEnabled = false
-        addSubview(divider)
         scroller.showsHorizontalScrollIndicator = false
         scroller.alwaysBounceHorizontal = false
         scroller.delaysContentTouches = false
         scroller.isHidden = true
+        // iOS 26 blurs a scroll view's edges as content slides under them; the strip has no bar
+        // to blur under.
+        if #available(iOS 26.0, *) {
+            scroller.leftEdgeEffect.isHidden = true
+            scroller.rightEdgeEffect.isHidden = true
+        }
         addSubview(scroller)
         turnChevron(animated: false)
         rebuild(animated: false)
@@ -126,9 +135,6 @@ final class WormaDictationTrayView: UIView {
         let wasOpen = isOpen
         self.page = page
         turnChevron(animated: animated)
-        UIView.animate(withDuration: animated ? 0.2 : 0, delay: 0, options: [.curveEaseOut, .beginFromCurrentState]) {
-            self.divider.alpha = self.dividerAlpha
-        }
         updateAccessibility()
         guard let page else {
             leave(chips, animated: animated) { [weak self] in
@@ -158,10 +164,7 @@ final class WormaDictationTrayView: UIView {
 
     // MARK: - Chips
 
-    private var dividerAlpha: CGFloat { isOpen || hidesChevron ? 0 : 1 }
-
     private func rebuild(animated: Bool) {
-        divider.backgroundColor = palette.stripDivider
         chips.forEach { $0.removeFromSuperview() }
         var made: [(UIButton, AnyHashable?)] = []
         switch page {
@@ -255,6 +258,10 @@ final class WormaDictationTrayView: UIView {
             config.contentInsets.top = max(0, 2 * offset)
             config.contentInsets.bottom = max(0, -2 * offset)
         }
+        if button === chevron {
+            config.contentInsets.leading = Self.chevronInset
+            config.contentInsets.trailing = Self.chevronInset
+        }
         button.configuration = config
     }
 
@@ -267,8 +274,13 @@ final class WormaDictationTrayView: UIView {
         let top = max(0, min(button.bounds.height - h, textCenterY - h / 2 - button.frame.minY))
         let bottom = max(0, button.bounds.height - top - h)
         let width = button.configuration?.image != nil ? h + 16 : button.bounds.width
-        let horizontal = max(0, (button.bounds.width - width) / 2)
-        return NSDirectionalEdgeInsets(top: top, leading: horizontal, bottom: bottom, trailing: horizontal)
+        // The chevron's glyph sits near the Hex key, so its capsule follows the glyph.
+        let center = (button === chevron ? button.imageView?.frame.midX : nil) ?? button.bounds.midX
+        let left = max(0, center - width / 2)
+        let right = max(0, button.bounds.width - center - width / 2)
+        let leading = effectiveUserInterfaceLayoutDirection == .rightToLeft ? right : left
+        let trailing = effectiveUserInterfaceLayoutDirection == .rightToLeft ? left : right
+        return NSDirectionalEdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing)
     }
 
     @objc private func keyDown() { onKeyDown?() }
@@ -336,21 +348,33 @@ final class WormaDictationTrayView: UIView {
         }
     }
 
-    /// One chevron that turns: closed it points into the strip, away from the key; open, back.
+    /// Closed the chevron points into the strip, away from the key; open, back toward it. A
+    /// change sinks it back (a z translation under perspective), swaps its direction, and
+    /// springs it forward.
     private func turnChevron(animated: Bool) {
-        if chevron.configuration?.image == nil {
+        let pointsLeft = isOpen == hexOnLeading
+        let symbol = pointsLeft ? "chevron.left" : "chevron.right"
+        let swap = { [chevron] in
             var config = chevron.configuration ?? .plain()
-            config.image = UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .medium))
+            config.image = UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .medium))
             chevron.configuration = config
         }
-        let mirror = CGAffineTransform(scaleX: hexOnLeading ? -1 : 1, y: 1)
-        let target = isOpen ? mirror.rotated(by: .pi) : mirror
-        guard animated, !reduceMotion else {
-            chevron.transform = target
+        guard animated, !reduceMotion, chevron.configuration?.image != nil else {
+            chevron.layer.removeAllAnimations()
+            chevron.transform3D = CATransform3DIdentity
+            swap()
             return
         }
-        UIView.animate(withDuration: 0.35, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
-            self.chevron.transform = target
+        var sunk = CATransform3DIdentity
+        sunk.m34 = -1 / 300
+        sunk = CATransform3DTranslate(sunk, 0, 0, -120)
+        UIView.animate(withDuration: 0.12, delay: 0, options: [.curveEaseIn, .beginFromCurrentState, .allowUserInteraction]) {
+            self.chevron.transform3D = sunk
+        } completion: { _ in
+            swap()
+            UIView.animate(withDuration: 0.35, delay: 0, usingSpringWithDamping: 0.7, initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+                self.chevron.transform3D = CATransform3DIdentity
+            }
         }
     }
 
@@ -367,13 +391,12 @@ final class WormaDictationTrayView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         let w = Self.chevronWidth
-        let transform = chevron.transform
-        chevron.transform = .identity
-        // Centred on the words' line by its frame, not insets, which its turn would flip.
+        let transform = chevron.transform3D
+        chevron.transform3D = CATransform3DIdentity
+        // Centred on the words' line by its frame; across, its glyph sits near the Hex key.
         chevron.frame = CGRect(x: hexOnLeading ? 0 : bounds.width - w, y: textCenterY - bounds.height / 2, width: w, height: bounds.height)
-        chevron.transform = transform
-        let lineH = min(24, chipHeight, bounds.height - 2)
-        divider.frame = CGRect(x: hexOnLeading ? w : bounds.width - w - 1, y: textCenterY - lineH / 2, width: 1, height: lineH)
+        chevron.contentHorizontalAlignment = hexOnLeading ? .left : .right
+        chevron.transform3D = transform
         let area = CGRect(x: hexOnLeading ? w : 0, y: 0, width: max(0, bounds.width - w), height: bounds.height)
         scroller.frame = area
         let h = pillHeight
@@ -396,7 +419,10 @@ final class WormaDictationTrayView: UIView {
             chip.setNeedsUpdateConfiguration()
             x += width + gap
         }
-        scroller.contentSize = CGSize(width: max(area.width, x - gap), height: bounds.height)
+        let contentWidth = x - gap
+        scroller.contentSize = CGSize(width: max(area.width, contentWidth), height: bounds.height)
+        // Evenly shared icons can sum a hair past the width; only real overflow scrolls.
+        scroller.isScrollEnabled = contentWidth > area.width + 0.5
     }
 
     @objc private func chevronTapped() { onChevron?() }
