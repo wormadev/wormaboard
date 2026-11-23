@@ -149,7 +149,9 @@ final class ClipboardHistoryPanelView: UIView, UITableViewDataSource, UITableVie
             content.imageProperties.tintColor = palette.textMuted
         }
         cell.contentConfiguration = content
-        cell.backgroundColor = .clear
+        // iOS doesn't deliver a keyboard's touches through fully transparent pixels, so a clear
+        // row only took taps on its text; a fill too faint to see makes the whole row a target.
+        cell.backgroundColor = UIColor(white: 0, alpha: 0.01)
         cell.selectedBackgroundView = UIView()
         cell.selectedBackgroundView?.backgroundColor = palette.selectFill
         let remove = UIButton(type: .system)
