@@ -451,6 +451,23 @@ final class FullKeyboardEngineTests: XCTestCase {
         XCTAssertEqual(target.text, "hello")
     }
 
+    /// In right-to-left text the cursor follows the finger on screen: right is back in the text.
+    func testSpacebarTrackpadFollowsTheFingerInArabic() {
+        target.insertText("مرحبا بك")
+        let count = target.cursorIndex
+        let spaceStart = point(.space)
+        engine.touchBegan(id: 1, at: spaceStart)
+        let enterPoint = CGPoint(x: spaceStart.x + 12, y: spaceStart.y)
+        engine.touchMoved(id: 1, to: enterPoint)
+        engine.holdSpace(forTouch: 1)
+        engine.touchMoved(id: 1, to: CGPoint(x: enterPoint.x + 24, y: spaceStart.y))
+        engine.touchEnded(id: 1, at: CGPoint(x: enterPoint.x + 24, y: spaceStart.y))
+        XCTAssertLessThan(target.cursorIndex, count)
+        XCTAssertEqual(FullKeyboardEngine.readsRightToLeft(before: "hello مرحبا", after: ""), true)
+        XCTAssertEqual(FullKeyboardEngine.readsRightToLeft(before: "مرحبا hello", after: ""), false)
+        XCTAssertNil(FullKeyboardEngine.readsRightToLeft(before: "12 ", after: "!"))
+    }
+
     /// X (Brandon): "holding down on the space bar only allows scrubbing horizontally, whereas
     /// Apple's keyboard treats it like a cursor on both x/y axes". Apple's (black box, iOS 27.2)
     /// drags a point through the text at the text's own scale: a line per line height (the

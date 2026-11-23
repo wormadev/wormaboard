@@ -39,9 +39,12 @@ extension FullKeyboardEngine {
         commitHangulComposition()
         touch.isTrackpad = true
         touch.trackpadPath = [TrackpadCursor.Sample(time: time ?? clock(), point: touch.point)]
+        let before = target.documentContextBeforeInput ?? ""
+        let after = target.documentContextAfterInput ?? ""
+        touch.trackpadRightToLeft = Self.readsRightToLeft(before: before, after: after) ?? (language == .arabic)
         touch.trackpad = TrackpadCursor.State(
-            before: target.documentContextBeforeInput ?? "",
-            after: target.documentContextAfterInput ?? "",
+            before: before,
+            after: after,
             wrapWidth: TrackpadCursor.wrapWidth(forWidth: width),
             lineHeight: Self.trackpadFont().lineHeight,
             width: Self.trackpadWidth
@@ -64,7 +67,8 @@ extension FullKeyboardEngine {
         let gain = TrackpadCursor.gain(speed: TrackpadCursor.speed(along: touch.trackpadPath))
         let dx = point.x - last.point.x, dy = point.y - last.point.y
         let vertical = touch.trackpadPath.count > 1 ? TrackpadCursor.isVertical(touch.trackpadPath) : abs(dy) > abs(dx)
-        var offset = state.move(by: CGVector(dx: dx * gain, dy: dy * gain), at: time, vertical: vertical)
+        let across = touch.trackpadRightToLeft ? -dx : dx
+        var offset = state.move(by: CGVector(dx: across * gain, dy: dy * gain), at: time, vertical: vertical)
         if state.nearsEdge, catchUp(&state) { offset += state.settle(at: time) }
         touch.trackpad = state
         return offset
@@ -128,5 +132,17 @@ extension FullKeyboardEngine {
         let width = character.isNewline ? 0 : (String(character) as NSString).size(withAttributes: [.font: trackpadWidths.font]).width
         trackpadWidths.widths[character] = width
         return width
+    }
+
+    /// The direction of the letter nearest the cursor, before it first: true for Arabic,
+    /// Hebrew and the other right-to-left scripts, nil with no letters to go by.
+    static func readsRightToLeft(before: String, after: String) -> Bool? {
+        let nearest = before.unicodeScalars.reversed().first(where: \.properties.isAlphabetic)
+            ?? after.unicodeScalars.first(where: \.properties.isAlphabetic)
+        guard let scalar = nearest else { return nil }
+        switch scalar.value {
+        case 0x0590...0x08FF, 0xFB1D...0xFDFF, 0xFE70...0xFEFF, 0x10800...0x10FFF, 0x1E800...0x1EFFF: return true
+        default: return false
+        }
     }
 }

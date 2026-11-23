@@ -30,6 +30,9 @@ extension FullKeyboardEngine {
         var trackpadPath: [TrackpadCursor.Sample] = []
         /// The text the trackpad moves the cursor through (`TrackpadCursor.State`).
         var trackpad: TrackpadCursor.State?
+        /// The text by the cursor reads right to left (Arabic): a finger moving right moves the
+        /// cursor right on screen, which is back in the text.
+        var trackpadRightToLeft = false
         /// UTF-16 units the trackpad has moved the cursor, for Record typing logs.
         var trackpadOffset = 0
         /// True when the likelier next letter claimed this touch from the key under it; a
