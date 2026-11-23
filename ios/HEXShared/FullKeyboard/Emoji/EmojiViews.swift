@@ -91,7 +91,7 @@ final class EmojiSectionHeader: UICollectionReusableView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        label.font = .systemFont(ofSize: 13, weight: .semibold)
+        label.font = .systemFont(ofSize: 12, weight: .semibold)
         label.isAccessibilityElement = false
         addSubview(label)
     }

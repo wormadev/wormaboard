@@ -336,14 +336,17 @@ final class EmojiPanelView: UIView, UICollectionViewDataSource, UICollectionView
 
     private func applyGridLayout(height: CGFloat) {
         let isRoomy = metrics.keyHeight >= 40
-        let headerHeight: CGFloat = isRoomy ? 20 : 16
         let rows = gridRows
-        let rowHeight = max(20, (height - headerHeight) / CGFloat(rows))
+        // The system emoji keyboard's row pitch (iOS 26.4, iPhone 17: 116 px at 3x); the
+        // section names take what is left above the rows.
+        let minHeader: CGFloat = isRoomy ? 14 : 12
+        let rowHeight = max(20, min(isRoomy ? 38.67 : 34, (height - minHeader) / CGFloat(rows)))
+        let headerHeight = max(minHeader, height - rowHeight * CGFloat(rows))
         let geometry = GridGeometry(
             rows: rows,
             rowHeight: rowHeight,
-            // The system emoji keyboard's pitch and emoji size, measured from screenshots.
-            columnWidth: isRoomy ? 46 : 42,
+            // The system emoji keyboard's column pitch (139 px at 3x) and emoji size.
+            columnWidth: isRoomy ? 46.33 : 42,
             headerHeight: headerHeight,
             fontSize: isRoomy ? 32 : 26,
             counts: sections.map(\.entries.count)
@@ -446,7 +449,8 @@ final class EmojiPanelView: UIView, UICollectionViewDataSource, UICollectionView
             for: indexPath
         )
         if let header = view as? EmojiSectionHeader {
-            header.label.text = sections[indexPath.section].title
+            // Upper case, as the system emoji keyboard names its sections.
+            header.label.text = sections[indexPath.section].title.localizedUppercase
             header.label.textColor = palette.textMuted
         }
         return view

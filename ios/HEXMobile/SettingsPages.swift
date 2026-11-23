@@ -761,7 +761,7 @@ struct ExperimentsSettingsPage: View {
         // Off by default: nothing reads the clipboard; turning it off deletes what was kept.
         SettingsToggleRow(
             title: String(localized: "Clipboard history"),
-            detail: String(localized: "Keeps your last 20 copied texts on this iPhone. Each new copy can ask Allow Paste unless Paste from Other Apps is Allow."),
+            detail: String(localized: "Keeps your last 20 copies (text, images and files) on this iPhone. Copies made while the keyboard is hidden: only the last one. Each can ask Allow Paste unless Paste from Other Apps is Allow."),
             isOn: $clipboardHistory
         )
 
@@ -1094,6 +1094,44 @@ private struct KeyboardThemeRow: View {
     }
 }
 
+/// Keyboard › Skin tone: the tone every emoji with tones shows in the emoji panel and
+/// suggestions. Holding an emoji in the panel still picks another tone for that one.
+private struct SkinToneRow: View {
+    @State private var tone = EmojiUsageStore().defaultTone
+    private static let hands = ["✋", "✋🏻", "✋🏼", "✋🏽", "✋🏾", "✋🏿"]
+    private static let names = ["Default", "Light", "Medium-light", "Medium", "Medium-dark", "Dark"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Skin tone")
+                .font(.system(size: 15, weight: .regular))
+                .foregroundStyle(HexTheme.textBase)
+            HStack(spacing: 0) {
+                ForEach(Self.hands.indices, id: \.self) { index in
+                    Button {
+                        tone = index
+                        EmojiUsageStore().defaultTone = index
+                    } label: {
+                        Text(Self.hands[index])
+                            .font(.system(size: 28))
+                            .frame(width: 44, height: 44)
+                            .background(
+                                Circle().fill(tone == index ? HexTheme.textBase.opacity(0.12) : .clear)
+                            )
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(Self.names[index]))
+                    .accessibilityAddTraits(tone == index ? .isSelected : [])
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+}
+
 /// Keyboard › Emoji: the full keyboard's emoji key, and while it's on, Clear emoji history.
 private struct EmojiRows: View {
     @Binding var emoji: Bool
@@ -1110,6 +1148,11 @@ private struct EmojiRows: View {
         )
         .onChange(of: emoji) { _, enabled in
             FullKeyboardSettings().emoji = enabled
+        }
+
+        if emoji, fullKeyboard {
+            SettingsDivider()
+            SkinToneRow()
         }
 
         if emoji {

@@ -13,6 +13,7 @@ final class EmojiUsageStore {
     private enum Key {
         static let usage = "emoji.usage"
         static let tones = "emoji.tones"
+        static let defaultTone = "emoji.defaultTone"
     }
 
     private let defaults: UserDefaults?
@@ -56,13 +57,25 @@ final class EmojiUsageStore {
         return scored.map { ($0.0, Float($0.1 / top)) }
     }
 
-    /// 0 for the default yellow, else 1 (light) to 5 (dark).
+    /// 0 for the default yellow, else 1 (light) to 5 (dark): the one picked for `base`, else
+    /// Settings › Keyboard › Skin tone.
     func tone(for base: String) -> Int {
-        tones[base] ?? 0
+        tones[base] ?? defaultTone
+    }
+
+    /// Settings › Keyboard › Skin tone, for every emoji that has tones. Choosing it drops the
+    /// tones picked one emoji at a time, so all of them change.
+    var defaultTone: Int {
+        get { defaults?.integer(forKey: Key.defaultTone) ?? 0 }
+        set {
+            defaults?.set(newValue, forKey: Key.defaultTone)
+            tones = [:]
+            defaults?.removeObject(forKey: Key.tones)
+        }
     }
 
     func setTone(_ tone: Int, for base: String) {
-        tones[base] = tone == 0 ? nil : tone
+        tones[base] = tone == defaultTone ? nil : tone
         defaults?.set(tones, forKey: Key.tones)
     }
 
