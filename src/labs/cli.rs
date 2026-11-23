@@ -14,7 +14,7 @@ impl Feature {
     /// reader has already enforced any managed lock, and it is checked here
     /// as `encode` does.
     pub fn saved_on(self, settings: &AppSettings) -> bool {
-        self.on(settings) && self.shipped() && self.managed().is_none()
+        self.on(settings) && self.shipped() && self.on_this_os() && self.managed().is_none()
     }
 }
 
@@ -184,7 +184,7 @@ const GRADUATED: [(&str, &str); 24] = [
     ),
     (
         "stop-when-call-ends",
-        "stop-when-call-ends moved: turn on Stop when the call ends in Meetings › Settings › Detected calls, or hex settings set meetings.stop_when_call_ends true",
+        "stop-when-call-ends moved: turn on Stop when the call ends in Meetings › Settings › Calls, or hex settings set meetings.stop_when_call_ends true",
     ),
     (
         "meeting-descriptive-filenames",

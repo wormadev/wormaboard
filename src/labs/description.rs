@@ -104,6 +104,9 @@ impl Feature {
             Self::HistoryStats => {
                 "Add a Stats button to History that summarizes the dictations you kept, with time saved against a typing speed, the local hour you dictate most, a year-long heatmap, and all-time totals from a daily rollup in usage.json (counts only, no text or app names) that outlives History's retention; off, the rollup is never written or read; the hex history stats command prints it too"
             }
+            Self::HistoryStatsStrip => {
+                "Show the six headline numbers the Dictation stats dialog summarizes as one compact strip above History's list; it needs Dictation stats and reads its numbers"
+            }
             Self::RecentDictations => {
                 "Copy one of your last five dictations from the menu bar, under Paste Last Dictation"
             }
@@ -222,6 +225,9 @@ impl Feature {
             Self::VocabularyFiles => {
                 "Import terms from a CSV file into the vocabulary sheet, merging them into the list, and export the list as a CSV file"
             }
+            Self::VocabularyMenu => {
+                "Add a Vocabulary submenu to the menu bar, right under Speech Model: add a term or open the Vocabulary sheet, with the last five saved terms listed (macOS)"
+            }
             Self::AnnotateAgentTools => {
                 "Adds hex annotate zoom, inspect, frames, and skill so coding agents can read a capture closely"
             }
@@ -233,6 +239,15 @@ impl Feature {
             }
             Self::DictationStyle => {
                 "Write each dictation as Polished, Casual, Notes, or Verbatim after the corrections and rewrite and before transformations; Dictate without processing, Voice Action, meetings, and the local API are left alone"
+            }
+            Self::HudHeight => {
+                "Choose how high the dictation HUD sits above the Dock or the screen's bottom edge when its position is Bottom (labs.hud_bottom_gap, macOS)"
+            }
+            Self::VoiceIsolation => {
+                "Open dictation's microphone through Apple's voice processing, so Control Center's Mic Mode can offer Voice Isolation and background noise is reduced (macOS; falls back to normal capture when voice processing won't start, and may lower other audio)"
+            }
+            Self::DictateWhileAnnotating => {
+                "While an Annotate capture records, the dictation shortcut dictates as usual: the text pastes into the app in front, History and Paste Last keep it, and the capture goes on recording, hearing the words too"
             }
         }
     }

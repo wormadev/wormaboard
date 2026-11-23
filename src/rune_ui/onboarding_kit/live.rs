@@ -84,8 +84,6 @@ pub(crate) struct Live {
     pub(crate) models: Vec<ChoiceRow>,
     /// Where the model step stands.
     pub(crate) model_step: ModelStep,
-    /// The pick is under way: ours downloading, or a found model ready.
-    pick_started: bool,
     /// The scan for models on this computer hasn't answered yet.
     scanning: bool,
     pub(crate) practice: Practice,
@@ -111,8 +109,59 @@ pub(crate) enum ModelStep {
     None,
     /// The list shows and holds the story until Continue.
     Choosing,
-    /// Continued from the list; Back returns to it.
-    Chosen,
+    /// Continued from the list, waiting for the pick to start (adopting a
+    /// found file or starting the download); still holds the story.
+    Starting,
+    /// The pick is under way (ours downloading, or a found model ready);
+    /// the story moves on and Back returns to the list.
+    Started,
+}
+
+impl ModelStep {
+    /// Advances the model step from the latest poll inputs.
+    pub(super) fn sync(
+        self,
+        offered: bool,
+        downloading_page: bool,
+        pick_started: bool,
+        failed: bool,
+    ) -> Self {
+        match self {
+            Self::None if offered && downloading_page => Self::Choosing,
+            Self::Choosing if !offered => Self::None,
+            // A pick that failed asks again.
+            Self::Starting | Self::Started if downloading_page && failed => Self::Choosing,
+            Self::Starting if pick_started => Self::Started,
+            Self::Started if downloading_page && !pick_started => Self::Starting,
+            other => other,
+        }
+    }
+
+    /// Continue on the model step: holds in `Starting` until the pick is under
+    /// way, or moves straight to `Started` if it already is.
+    pub(super) fn choose(pick_started: bool) -> Self {
+        if pick_started {
+            Self::Started
+        } else {
+            Self::Starting
+        }
+    }
+
+    /// Whether this step holds the story on the download page.
+    pub(crate) fn holds(self) -> bool {
+        matches!(self, Self::Choosing | Self::Starting)
+    }
+
+    /// Whether the model list replaces the download card on the first page.
+    pub(crate) fn shows_list(self) -> bool {
+        !matches!(self, Self::None)
+    }
+
+    /// Whether the person continued from the list (Back returns to it on later
+    /// pages, and a local model needs no download pill).
+    pub(crate) fn is_chosen(self) -> bool {
+        matches!(self, Self::Starting | Self::Started)
+    }
 }
 
 impl Live {
@@ -125,12 +174,7 @@ impl Live {
 
     /// The story waits on the download page for the model step.
     pub(crate) fn holds(&self) -> bool {
-        self.scanning
-            || match self.model_step {
-                ModelStep::None => false,
-                ModelStep::Choosing => true,
-                ModelStep::Chosen => !self.pick_started,
-            }
+        self.scanning || self.model_step.holds()
     }
 
     /// The language capsule switches languages only when the system
@@ -273,9 +317,17 @@ fn alternate_selection(
     }
 }
 
+/// Whether the file is on this computer: a found, unverified model has no
+/// download to show, even while Setup still waits for its check.
 fn installed(ui: &Ui, selection: &TranscriptionSelection) -> bool {
     transcription_models::validate(selection)
-        .is_ok_and(|model| ui.picker.installed(model, &selection.language))
+        .is_ok_and(|model| ui.picker.installed(&model, &selection.language))
+}
+
+/// Whether Setup can move on: the installed file has passed its check.
+fn ready(ui: &Ui, selection: &TranscriptionSelection) -> bool {
+    transcription_models::validate(selection)
+        .is_ok_and(|model| ui.picker.ready(&model, &selection.language))
 }
 
 /// Opens the first run over the tour, at the tour's step: at launch when
@@ -338,7 +390,6 @@ pub(in crate::rune_ui) fn open(ui: &mut Ui) {
         paste: ui.platform.paste,
         models: Vec::new(),
         model_step: ModelStep::None,
-        pick_started: false,
         scanning: false,
         practice: Practice::Waiting,
         choice,
@@ -386,7 +437,7 @@ pub(in crate::rune_ui) enum Page {
 /// The page the first run shows, for the window tests (Linux only).
 #[cfg(all(test, target_os = "linux"))]
 pub(in crate::rune_ui) fn page(ui: &Ui) -> Option<Page> {
-    Some(match ui.first_run.as_ref()?.step {
+    Some(match ui.first_run.as_ref()?.step() {
         Step::Pick | Step::Started => Page::Download,
         Step::Parked | Step::YourTurn | Step::Hearing | Step::Heard | Step::Done => Page::Demo,
         Step::Microphone | Step::Accessibility => Page::Permissions,
@@ -404,7 +455,7 @@ pub(in crate::rune_ui) fn fixture(ui: &mut Ui, page: Page) {
     if let Some(s) = ui.first_run.as_mut() {
         // From the start, as a new install plays it, whatever the tour's step.
         s.now = FIXTURE_START;
-        s.step = Step::Pick;
+        s.reset_to_pick();
         s.begin_live(FIXTURE_START);
     }
     fixture_resume(ui, page);
@@ -419,12 +470,12 @@ pub(in crate::rune_ui) fn fixture_resume(ui: &mut Ui, page: Page) {
         return;
     };
     let reached = |s: &Onboard| match page {
-        Page::Download => matches!(s.step, Step::Pick | Step::Started),
-        Page::Demo => s.step == Step::Heard,
-        Page::Permissions => matches!(s.step, Step::Microphone | Step::Accessibility),
-        Page::Waiting => s.step == Step::Waiting,
-        Page::Try => s.step == Step::Try,
-        Page::Ready => s.step == Step::Ready,
+        Page::Download => matches!(s.step(), Step::Pick | Step::Started),
+        Page::Demo => s.step() == Step::Heard,
+        Page::Permissions => matches!(s.step(), Step::Microphone | Step::Accessibility),
+        Page::Waiting => s.step() == Step::Waiting,
+        Page::Try => s.step() == Step::Try,
+        Page::Ready => s.step() == Step::Ready,
     };
     if page == Page::Ready {
         s.jump_to_ready();
@@ -503,7 +554,7 @@ pub(in crate::rune_ui) fn poll(ui: &mut Ui, tx: &mut Tx) -> bool {
         ui.view.as_ref().map_or((false, 0, false), |view| {
             let t = &view.transcription;
             (
-                model.is_some_and(|m| t.preparing == Some(m.id)),
+                model.as_ref().is_some_and(|m| t.preparing == Some(m.id)),
                 t.downloaded_bytes,
                 t.error.is_some(),
             )
@@ -522,10 +573,11 @@ pub(in crate::rune_ui) fn poll(ui: &mut Ui, tx: &mut Tx) -> bool {
         Some(checked) => checked,
         None => {
             let installed = installed(ui, &choice);
+            let ready = ready(ui, &choice);
             Checked {
                 at: now,
                 installed,
-                status: ui.platform.setup_status(installed),
+                status: ui.platform.setup_status(ready),
             }
         }
     };
@@ -596,23 +648,20 @@ pub(in crate::rune_ui) fn poll(ui: &mut Ui, tx: &mut Tx) -> bool {
     }
 
     // The model step: shown on the download page once the scan found
-    // something, and held there until Continue.
+    // something, and held there until Continue and the pick is under way.
     live.models = models;
-    live.pick_started = started;
     live.scanning = scanning;
-    let downloading_page = matches!(s.step, Step::Pick | Step::Started);
-    match live.model_step {
-        ModelStep::None if offered && downloading_page => live.model_step = ModelStep::Choosing,
-        ModelStep::Choosing if !offered => live.model_step = ModelStep::None,
-        // A pick that failed asks again.
-        ModelStep::Chosen if downloading_page && tour_model == ItemStatus::Failed => {
-            live.model_step = ModelStep::Choosing;
-        }
-        _ => {}
-    }
-    if live.model_step == ModelStep::Chosen && downloading_page {
-        // A model already on this computer needs no download pill.
-        s.had_model = tour_model == ItemStatus::Ready;
+    let downloading_page = matches!(s.beat.step(), Step::Pick | Step::Started);
+    live.model_step = live.model_step.sync(
+        offered,
+        downloading_page,
+        started,
+        tour_model == ItemStatus::Failed,
+    );
+    if live.model_step.is_chosen() && downloading_page {
+        // A model already on this computer needs no download pill, even
+        // while its check still runs.
+        s.had_model = choice_installed;
     }
     let granted = granted(status, paste);
     if granted {
@@ -639,7 +688,7 @@ pub(in crate::rune_ui) fn poll(ui: &mut Ui, tx: &mut Tx) -> bool {
     s.toggle = toggle;
     live.release_microphone = release_microphone;
     if let Some(download) = s.download.as_mut() {
-        if let Some(total) = model.and_then(|m| m.download_bytes()) {
+        if let Some(total) = model.as_ref().and_then(|model| model.download_bytes()) {
             download.total = total;
         }
         if choice_installed {
@@ -653,7 +702,7 @@ pub(in crate::rune_ui) fn poll(ui: &mut Ui, tx: &mut Tx) -> bool {
     // Hex's state arrives between frames, so the first run keeps polling;
     // a fixture shows one moment and stays still.
     advance_to(s, now, tx);
-    let ready = s.step == Step::Ready;
+    let ready = s.step() == Step::Ready;
     if live_window {
         tx.wake_after(FRAME);
     }
@@ -730,8 +779,10 @@ pub(in crate::rune_ui) fn continue_without_model(ui: &mut Ui) {
 /// "Start using Hex": closes the first run and the tour under it, and
 /// records the tour finished once setup is ready.
 pub(super) fn finish(ui: &mut Ui) {
-    let installed = ui.picker.selected_installed(&ui.settings);
-    let ready = ui.platform.setup_status(installed).ready();
+    let ready = ui
+        .platform
+        .setup_status(ui.picker.selected_ready(&ui.settings))
+        .ready();
     onboarding::close(ui, ready);
 }
 
@@ -779,8 +830,9 @@ pub(in crate::rune_ui) fn continue_model(ui: &mut Ui) {
     if found_choice::pending(ui, model) {
         found_choice::start_selected(ui);
     }
+    let started = found_choice::started(ui, model);
     if let Some(live) = ui.first_run.as_mut().and_then(|s| s.live.as_mut()) {
-        live.model_step = ModelStep::Chosen;
+        live.model_step = ModelStep::choose(started);
     }
     if let Some(s) = ui.first_run.as_mut() {
         s.move_on();
@@ -1016,5 +1068,45 @@ mod tests {
         clock.frame_drawn(slow);
         assert!((clock.story - (frame.as_secs_f64() + MAX_STEP)).abs() < 1e-9);
         assert!(between <= clock.story);
+    }
+
+    #[test]
+    fn model_step_transitions_and_holds_are_explicit() {
+        // None does not hold or show the list; only enters Choosing on the download page.
+        let step = ModelStep::None;
+        assert!(!step.holds() && !step.shows_list() && !step.is_chosen());
+        assert_eq!(step.sync(true, false, false, false), ModelStep::None);
+        let step = step.sync(true, true, false, false);
+        assert_eq!(step, ModelStep::Choosing);
+        assert!(step.holds() && step.shows_list() && !step.is_chosen());
+
+        // Choosing drops back to None when nothing is offered.
+        assert_eq!(step.sync(false, true, false, false), ModelStep::None);
+
+        // Continue before the pick is under way enters Starting, which still holds.
+        let step = ModelStep::choose(false);
+        assert_eq!(step, ModelStep::Starting);
+        assert!(step.holds() && step.shows_list() && step.is_chosen());
+        assert_eq!(step.sync(true, true, false, false), ModelStep::Starting);
+
+        // A failed pick on the download page returns to Choosing.
+        assert_eq!(step.sync(true, true, false, true), ModelStep::Choosing);
+
+        // Once the pick starts, Starting advances to Started and releases the hold.
+        let step = step.sync(true, true, true, false);
+        assert_eq!(step, ModelStep::Started);
+        assert!(!step.holds() && step.shows_list() && step.is_chosen());
+
+        // Continue when a pick is already under way enters Started directly.
+        assert_eq!(ModelStep::choose(true), ModelStep::Started);
+
+        // On later pages (past download), Started stays Started for Back even if
+        // pick_started or failed toggles.
+        assert_eq!(step.sync(true, false, false, true), ModelStep::Started);
+
+        // Still on the download page, a newly unstarted pick holds again in Starting,
+        // and a failure returns to Choosing.
+        assert_eq!(step.sync(true, true, false, false), ModelStep::Starting);
+        assert_eq!(step.sync(true, true, true, true), ModelStep::Choosing);
     }
 }

@@ -116,15 +116,28 @@ pub(super) fn basics(ui: &Ui, p: Paint, layer: &mut Vec<El>) -> Option<El> {
         p,
         "transcription-control",
         tr("Speech model"),
-        model.name,
+        model.name.as_ref(),
         &rune_theme_opencode::icons::CHEVRON_RIGHT,
         super::picker::open,
     );
-    let (description, control) = match missing_model(ui) {
+    // A model whose file is already here is checked, not downloaded: say
+    // that instead of showing a download bar at zero.
+    let checking = ui.view.as_ref().and_then(|view| {
+        (view.transcription.preparing == Some(ui.settings.transcription.model))
+            .then_some(view.transcription.preparation_stage)
+            .flatten()
+    });
+    let checking = match checking {
+        Some(transcription_models::ModelPreparationStage::Verifying) => Some(tr("Verifying model")),
+        Some(transcription_models::ModelPreparationStage::Loading) => Some(tr("Loading model")),
+        _ => None,
+    };
+    let (description, control) = match (missing_model(ui), checking) {
+        (Some(_), Some(label)) => (Some((label.to_string(), p.muted())), picker_button),
         // Hex can't listen without the selected model: say so, with the
         // download's progress, or Download and Add model file… when none
         // runs, as after Continue without a model (#894).
-        Some(progress) => {
+        (Some(progress), _) => {
             let description = match (
                 progress.downloading,
                 super::model_import::download_failure(ui),
@@ -168,7 +181,7 @@ pub(super) fn basics(ui: &Ui, p: Paint, layer: &mut Vec<El>) -> Option<El> {
             };
             (Some(description), controls.child(picker_button))
         }
-        None => (s::transcription_status(ui, p), picker_button),
+        (None, _) => (s::transcription_status(ui, p), picker_button),
     };
 
     rows.push(
@@ -225,7 +238,7 @@ pub(super) fn missing_model(ui: &Ui) -> Option<crate::desktop::onboarding::Model
     {
         let fallback = crate::transcription::custom_models::fallback();
         let model = transcription_models::definition(fallback.model);
-        if ui.picker.installed(model, &fallback.language) {
+        if ui.picker.installed(&model, &fallback.language) {
             return None;
         }
     }

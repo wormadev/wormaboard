@@ -9,6 +9,7 @@ pub(crate) mod benchmark;
 ))]
 pub(crate) mod cpu_floor;
 pub(crate) mod custom_models;
+pub(crate) mod definitions;
 pub(crate) mod engine;
 pub(crate) mod file_transcript;
 pub(crate) mod found_models;
@@ -28,6 +29,7 @@ pub(crate) mod pause_segmenter;
 pub(crate) mod pieces;
 #[cfg(any(target_os = "macos", target_os = "windows", test))]
 pub(crate) mod preparation;
+pub(crate) mod readiness;
 pub(crate) mod service;
 pub(crate) mod speech_detector;
 pub(crate) mod stream;

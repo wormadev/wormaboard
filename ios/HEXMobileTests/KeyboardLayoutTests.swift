@@ -5,7 +5,7 @@ import XCTest
 final class KeyboardLayoutTests: XCTestCase {
     private let portraitWidths: [CGFloat] = [320, 375, 393, 402, 430, 440]
     private let layers: [KeyboardLayer] = [.letters, .numbers, .symbols]
-    private let fields: [KeyboardFieldKind] = [.text, .url, .email]
+    private let fields: [KeyboardFieldKind] = [.text, .url, .email, .webSearch]
     /// Every layout here is Apple's iOS 27 keyboard, read on 27.0 and 27.2 simulators, while CI's
     /// newest simulator runtime is iOS 26.5. Pin the version the expectations describe
     /// (`KeyboardLanguage.systemMajorVersion` exists for this; the before-27 Ukrainian test sets
@@ -353,8 +353,9 @@ final class KeyboardLayoutTests: XCTestCase {
         XCTAssertEqual(pro.key(.space)!.frame.minY - proQ.frame.minY, 3 * 53, accuracy: 0.001)
         XCTAssertEqual(pro.key(.space)!.frame.height, 42)
         XCTAssertEqual(pro.key(.space)!.hitFrame.maxY, pro.totalHeight, accuracy: 0.001, "taps reach the view's bottom edge")
-        XCTAssertEqual(pro.key(.space)!.hitFrame.minY, pro.key(.character("v"))!.frame.maxY, accuracy: 0.001, "the gap above row 4 is row 4's")
-        XCTAssertEqual(pro.key(.character("v"))!.hitFrame.maxY, pro.key(.character("v"))!.frame.maxY, accuracy: 0.001)
+        let v = pro.key(.character("v"))!
+        XCTAssertEqual(pro.key(.space)!.gapHitFrame?.minY ?? 0, v.frame.maxY, accuracy: 0.001, "the gap over the space bar is the space bar's")
+        XCTAssertEqual(v.hitFrame.maxY, v.frame.maxY, accuracy: 0.001)
         XCTAssertEqual(pro.key(.space)!.frame.maxY, pro.totalHeight, accuracy: 0.001)
         XCTAssertEqual(pro.key(.shift)!.frame.maxX, 52, accuracy: 0.34)
         XCTAssertEqual(pro.key(.delete)!.frame.minX, 350, accuracy: 0.34)
@@ -467,7 +468,7 @@ final class KeyboardLayoutTests: XCTestCase {
                     x: CGFloat.random(in: 0..<layout.width, using: &generator),
                     y: CGFloat.random(in: area.minY..<area.maxY, using: &generator)
                 )
-                let hits = layout.keys.filter { $0.hitFrame.contains(point) }
+                let hits = layout.keys.filter { $0.takes(point) }
                 let inEmojiMargin = emojiSlot?.contains(point) == true && emoji?.hitFrame.contains(point) == false
                 XCTAssertEqual(hits.count, inEmojiMargin ? 0 : 1, "\(describe(layout)) at \(point): \(hits.map(\.label))")
             }
@@ -557,6 +558,54 @@ final class KeyboardLayoutTests: XCTestCase {
         XCTAssertEqual(
             bottomRow(KeyboardLayout(width: 393, field: .url)),
             [.layerSwitch(.numbers), .space, .character("."), .character("/"), .returnKey]
+        )
+        XCTAssertEqual(
+            bottomRow(KeyboardLayout(width: 393, field: .webSearch)),
+            [.layerSwitch(.numbers), .space, .character("."), .returnKey]
+        )
+        XCTAssertEqual(
+            bottomRow(KeyboardLayout(width: 393, field: .webSearch, showsEmoji: true)),
+            [.layerSwitch(.numbers), .emoji, .space, .character("."), .returnKey]
+        )
+    }
+
+    /// Apple's web search row (Safari's address bar, iPhone 17 Pro, iOS 26.5 and 27.2): its text
+    /// row's 123, a space bar from x a quarter pitch shorter, a letter-wide `.` and a return 1.75
+    /// pitches wide, measured at 6.7–99.3, 105.3–287, 293–326.7 and 332.3–395.7 pt on 402 pt.
+    /// Only that row changes; a docked iPad's web search row is its text row, as Apple's is.
+    func testWebSearchBottomRowHasApplesPeriodBeforeReturn() {
+        let apple: [(KeyKind, CGFloat, CGFloat)] = [
+            (.layerSwitch(.numbers), 6.7, 99.3), (.space, 105.3, 287), (.character("."), 293, 326.7), (.returnKey, 332.3, 395.7),
+        ]
+        let row = KeyboardLayout(width: 402, field: .webSearch).keys.filter { $0.row == 3 }.sorted { $0.frame.minX < $1.frame.minX }
+        XCTAssertEqual(row.map(\.kind), apple.map(\.0))
+        for (key, (kind, minX, maxX)) in zip(row, apple) {
+            XCTAssertEqual(key.frame.minX, minX, accuracy: 0.5, "\(kind)")
+            XCTAssertEqual(key.frame.maxX, maxX, accuracy: 0.5, "\(kind)")
+        }
+        for width in portraitWidths {
+            for emoji in [false, true] {
+                let text = KeyboardLayout(width: width, showsEmoji: emoji)
+                let search = KeyboardLayout(width: width, field: .webSearch, showsEmoji: emoji)
+                let label = "\(width) emoji \(emoji)"
+                XCTAssertEqual(search.keys.filter { $0.row < 3 }, text.keys.filter { $0.row < 3 }, label)
+                let letter = text.key(.character("z"))!.frame.width
+                let pitch = letter + text.metrics.gap
+                let dot = search.key(.character("."))!.frame
+                let space = search.key(.space)!.frame
+                let ret = search.key(.returnKey)!.frame
+                XCTAssertEqual(search.key(.layerSwitch(.numbers))!.frame, text.key(.layerSwitch(.numbers))!.frame, label)
+                XCTAssertEqual(space.minX, text.key(.space)!.frame.minX, accuracy: 0.001, label)
+                XCTAssertEqual(space.maxX, text.key(.space)!.frame.maxX - pitch / 4, accuracy: 0.001, label)
+                XCTAssertEqual(dot.width, letter, accuracy: 0.001, label)
+                XCTAssertEqual(dot.minX - space.maxX, text.metrics.gap, accuracy: 0.001, label)
+                XCTAssertEqual(ret.width, 1.75 * pitch - text.metrics.gap, accuracy: 0.001, label)
+                XCTAssertEqual(ret.maxX, text.key(.returnKey)!.frame.maxX, accuracy: 0.001, label)
+            }
+        }
+        XCTAssertEqual(
+            bottomRow(KeyboardLayout(width: 744, field: .webSearch, pad: .docked(.mini))),
+            bottomRow(KeyboardLayout(width: 744, pad: .docked(.mini)))
         )
     }
 
@@ -1106,6 +1155,223 @@ final class KeyboardLayoutTests: XCTestCase {
         let punctuated = KeyboardLayout(width: 402, language: .english, letters: .dvorak, dvorakPunctuation: true)
         XCTAssertTrue(punctuated.hasDvorakPunctuationRow)
         XCTAssertNotEqual(try plane(punctuated), try plane(apple), "the narrower row 1 is its own plane")
+    }
+
+    /// Settings › Experiments › Comma and period keys changes only an iPhone's letters page in a
+    /// text field: every other page, field, arrangement and iPad builds the same keys with it on
+    /// as with it off, and where Dvorak punctuation is drawn its row 1 already has both.
+    func testCommaAndPeriodKeysChangeOnlyAnIPhonesLettersPage() {
+        for width in portraitWidths {
+            for layer in layers {
+                for field in fields {
+                    for letters in [KeyboardLetterLayout.qwerty, .dvorak] {
+                        for globe in [false, true] {
+                            let label = "\(width) \(layer) \(field) \(letters) globe \(globe)"
+                            let off = KeyboardLayout(
+                                width: width, layer: layer, field: field, showsGlobe: globe,
+                                language: .english, letters: letters
+                            )
+                            let on = KeyboardLayout(
+                                width: width, layer: layer, field: field, showsGlobe: globe,
+                                language: .english, letters: letters, commaPeriodKeys: true
+                            )
+                            XCTAssertEqual(on.commaPeriodKeys, layer == .letters && field == .text, label)
+                            if on.commaPeriodKeys {
+                                XCTAssertNotEqual(on.keys, off.keys, label)
+                                XCTAssertEqual(on.keys.filter { $0.kind == .character(",") }.count, 1, label)
+                                XCTAssertEqual(on.keys.filter { $0.kind == .character(".") }.count, 1, label)
+                            } else {
+                                XCTAssertEqual(on.keys, off.keys, label)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // An iPad keeps Apple's bottom row, docked or floating, where Hex draws the iPhone's rows.
+        for pad in [KeyboardPadPlacement.docked(.mini), .docked(.medium), .docked(.large), .floating] {
+            for orientation in [KeyboardOrientation.portrait, .landscape] {
+                let off = KeyboardLayout(width: 402, orientation: orientation, pad: pad)
+                let on = KeyboardLayout(width: 402, orientation: orientation, pad: pad, commaPeriodKeys: true)
+                XCTAssertFalse(on.commaPeriodKeys, "\(pad) \(orientation)")
+                XCTAssertEqual(on.keys, off.keys, "\(pad) \(orientation)")
+            }
+        }
+        // Dvorak punctuation already puts comma and period on row 1, so they aren't added again
+        // and the semicolon stays exactly where it was.
+        let dvorakOff = KeyboardLayout(width: 402, language: .english, letters: .dvorak, dvorakPunctuation: true)
+        let dvorakOn = KeyboardLayout(
+            width: 402, language: .english, letters: .dvorak,
+            dvorakPunctuation: true, commaPeriodKeys: true
+        )
+        XCTAssertFalse(dvorakOn.commaPeriodKeys)
+        XCTAssertEqual(dvorakOn.keys, dvorakOff.keys)
+        // A web search field keeps Apple's one `.` by the space bar, and gains no comma.
+        let search = KeyboardLayout(width: 402, field: .webSearch, commaPeriodKeys: true)
+        XCTAssertEqual(search.keys.filter { $0.kind == .character(".") }.count, 1)
+        XCTAssertNil(search.key(.character(",")))
+        XCTAssertEqual(dvorakOn.key(.character(","))?.row, 0, "row 1's, not the bottom row's")
+        XCTAssertEqual(dvorakOn.key(.character(";"))?.row, 3, "the semicolon stays")
+    }
+
+    /// Settings › Experiments › Comma and period keys, on: a comma sits just left of the space
+    /// bar and a period just right of it, a letter wide and taking their width from the bar,
+    /// and no other key moves. It fits every joined bottom row the iPhone builds.
+    func testCommaAndPeriodKeysSitBesideTheSpaceBar() throws {
+        let cases: [(CGFloat, KeyboardOrientation, KeyboardPosture, CGFloat, KeyboardPhoneSize, Bool)] = [
+            (320, .portrait, .phone, 0, .regular, false),
+            (375, .portrait, .phone, 0, .homeButton, false),
+            (402, .portrait, .phone, 0, .regular, false),
+            (440, .portrait, .phone, 0, .large, false),
+            (667, .landscape, .phone, 0, .regular, false),
+            (874, .landscape, .phone, 0, .regular, false),
+            (956, .landscape, .phone, 60, .regular, false),
+            (452, .portrait, .cover, 7, .regular, false),
+            (655, .portrait, .unfoldedTall, 7, .regular, false),
+            (801, .portrait, .unfoldedWide, 75, .regular, true),
+        ]
+        for (width, orientation, posture, inset, phoneSize, joins) in cases {
+            let off = KeyboardLayout(
+                width: width, orientation: orientation, language: .english, posture: posture,
+                windowInset: inset, phoneSize: phoneSize, joinsUnfoldedKeyboard: joins
+            )
+            let on = KeyboardLayout(
+                width: width, orientation: orientation, language: .english, posture: posture,
+                windowInset: inset, phoneSize: phoneSize, joinsUnfoldedKeyboard: joins,
+                commaPeriodKeys: true
+            )
+            let label = "\(width)pt \(orientation) \(posture) joins=\(joins)"
+            XCTAssertTrue(on.commaPeriodKeys, label)
+            let m = on.metrics
+            let offSpace = try XCTUnwrap(off.key(.space)).frame
+            let space = try XCTUnwrap(on.key(.space)).frame
+            let comma = try XCTUnwrap(on.key(.character(",")))
+            let period = try XCTUnwrap(on.key(.character(".")))
+            XCTAssertEqual(comma.row, 3, label)
+            XCTAssertEqual(period.row, 3, label)
+            XCTAssertEqual(comma.frame.width, off.letterWidth, accuracy: 0.001, label)
+            XCTAssertEqual(period.frame.width, off.letterWidth, accuracy: 0.001, label)
+            XCTAssertEqual(comma.frame.height, offSpace.height, accuracy: 0.001, label)
+            XCTAssertEqual(period.frame.height, offSpace.height, accuracy: 0.001, label)
+            XCTAssertEqual(comma.frame.minX, offSpace.minX, accuracy: 0.001, "\(label): at the bar's left end")
+            XCTAssertEqual(comma.frame.maxX + m.gap, space.minX, accuracy: 0.001, "\(label): just left of space")
+            XCTAssertEqual(space.maxX + m.gap, period.frame.minX, accuracy: 0.001, "\(label): just right of space")
+            XCTAssertEqual(period.frame.maxX, offSpace.maxX, accuracy: 0.001, "\(label): at the bar's right end")
+            XCTAssertEqual(
+                space.width, offSpace.width - 2 * (off.letterWidth + m.gap), accuracy: 0.001,
+                "\(label): space gives up both"
+            )
+            XCTAssertNil(comma.shifted, label)
+            XCTAssertNil(period.shifted, label)
+            for key in off.keys where key.row == 3 && key.kind != .space {
+                XCTAssertEqual(on.keys.first { $0.kind == key.kind }?.frame, key.frame, "\(label) \(key.label)")
+            }
+            XCTAssertEqual(
+                try XCTUnwrap(AdaptiveTouchGeometry(layout: on)).key,
+                try XCTUnwrap(AdaptiveTouchGeometry(layout: off)).key,
+                "\(label): the letters' key plane doesn't move"
+            )
+        }
+    }
+
+    /// Settings › Experiments › Comma and period keys on the Duo's split keyboard: a comma just
+    /// left of the left half's space bar and a period just right of the right half's, each a
+    /// split letter wide and taking its width from that half's bar, which keeps its far end;
+    /// the halves keep their edges and every other key stays put.
+    func testCommaAndPeriodKeysOnTheSplitDuo() throws {
+        let off = KeyboardLayout(width: 801, language: .english, posture: .unfoldedWide, windowInset: 75)
+        let on = KeyboardLayout(
+            width: 801, language: .english, posture: .unfoldedWide, windowInset: 75,
+            commaPeriodKeys: true
+        )
+        let split = try XCTUnwrap(on.split)
+        XCTAssertEqual(split, off.split, "the halves keep their edges")
+        func bar(_ layout: KeyboardLayout, left: Bool) throws -> KeyboardKey {
+            try XCTUnwrap(layout.keys.first {
+                $0.row == 3 && $0.kind == .space && ($0.frame.midX < split.middle) == left
+            })
+        }
+        let offLeft = try bar(off, left: true)
+        let left = try bar(on, left: true)
+        let offRight = try bar(off, left: false)
+        let right = try bar(on, left: false)
+        let comma = try XCTUnwrap(on.key(.character(",")))
+        let period = try XCTUnwrap(on.key(.character(".")))
+        XCTAssertNil(on.key(.character(";")), "the semicolon is Dvorak punctuation's")
+        XCTAssertEqual(comma.frame.minX, offLeft.frame.minX, accuracy: 0.01, "at the left bar's left end")
+        XCTAssertEqual(comma.frame.maxX + SplitGeometry.gap, left.frame.minX, accuracy: 0.01, "just left of space")
+        XCTAssertEqual(left.frame.maxX, offLeft.frame.maxX, accuracy: 0.01, "the left bar ends where it did")
+        XCTAssertEqual(right.frame.minX, offRight.frame.minX, accuracy: 0.01, "the right bar starts where it did")
+        XCTAssertEqual(right.frame.maxX + SplitGeometry.gap, period.frame.minX, accuracy: 0.01, "just right of space")
+        XCTAssertEqual(period.frame.maxX, offRight.frame.maxX, accuracy: 0.01, "at the right bar's right end")
+        for (key, side) in [(comma, true), (period, false)] {
+            XCTAssertEqual(key.row, 3)
+            XCTAssertEqual(key.frame.width, SplitGeometry.keyWidth, accuracy: 0.01, "a split letter wide")
+            XCTAssertEqual(key.frame.height, left.frame.height, accuracy: 0.01)
+            XCTAssertEqual(key.frame.midX < split.middle, side, "on its own half")
+            XCTAssertNil(key.shifted)
+        }
+        let moved: (KeyboardKey) -> Bool = { $0.kind != .space && $0.kind != .character(",") && $0.kind != .character(".") }
+        XCTAssertEqual(
+            on.keys.filter(moved).map(\.frame).sorted { ($0.minX, $0.minY) < ($1.minX, $1.minY) },
+            off.keys.filter(moved).map(\.frame).sorted { ($0.minX, $0.minY) < ($1.minX, $1.minY) },
+            "every other key stays put"
+        )
+        for key in on.keys {
+            XCTAssertEqual(on.hitTest(CGPoint(x: key.frame.midX, y: key.frame.midY))?.kind, key.kind, key.label)
+        }
+    }
+
+    /// Settings › Experiments › Comma and period keys on the portrait bottom row, across widths,
+    /// phone sizes, globe and emoji, and every Hex key placement: the comma and period are there
+    /// if and only if the space bar held three letters and two gaps, the bar they leave is still
+    /// a letter wide, every key is inside the keyboard, and its midpoint hits itself.
+    func testCommaAndPeriodKeysFitEveryPortraitBottomRow() throws {
+        var cases: [(KeyboardLayout, KeyboardLayout)] = []
+        for width in portraitWidths {
+            for phoneSize in [KeyboardPhoneSize.homeButton, .regular, .large] {
+                for (globe, emoji) in [(false, false), (true, false), (false, true), (true, true)] {
+                    for placement in [HexKeyPlacement.leftOfSpace, .rightOfSpace, .stripLeading, .stripTrailing] {
+                        func layout(_ punctuation: Bool) -> KeyboardLayout {
+                            KeyboardLayout(
+                                width: width, showsGlobe: globe, showsEmoji: emoji,
+                                hexPlacement: placement, phoneSize: phoneSize,
+                                commaPeriodKeys: punctuation
+                            )
+                        }
+                        cases.append((layout(false), layout(true)))
+                    }
+                }
+            }
+        }
+        for (off, on) in cases {
+            let label = describe(on) + " emoji=\(on.showsEmoji) hex=\(on.hexPlacement.rawValue)"
+            let gap = on.metrics.gap
+            let letterWidth = on.letterWidth
+            let offSpace = try XCTUnwrap(off.key(.space)).frame
+            let room = offSpace.width >= 3 * letterWidth + 2 * gap
+            let comma = on.key(.character(","))
+            let period = on.key(.character("."))
+            XCTAssertEqual(comma != nil, room, "\(label): a comma if and only if the bar had room")
+            XCTAssertEqual(period != nil, room, "\(label): a period if and only if the bar had room")
+            if let comma, let period {
+                let space = try XCTUnwrap(on.key(.space)).frame
+                XCTAssertGreaterThanOrEqual(space.width, letterWidth, "\(label): the space bar stays a letter wide")
+                XCTAssertEqual(comma.frame.minX, offSpace.minX, accuracy: 0.001, "\(label): the comma starts where the bar did")
+                XCTAssertEqual(comma.frame.maxX + gap, space.minX, accuracy: 0.001, "\(label): just left of space")
+                XCTAssertEqual(space.maxX + gap, period.frame.minX, accuracy: 0.001, "\(label): just right of space")
+                XCTAssertEqual(period.frame.maxX, offSpace.maxX, accuracy: 0.001, "\(label): the period ends where the bar did")
+                XCTAssertEqual(comma.frame.width, letterWidth, accuracy: 0.001, "\(label): a comma a letter wide")
+                XCTAssertEqual(period.frame.width, letterWidth, accuracy: 0.001, "\(label): a period a letter wide")
+                XCTAssertNil(comma.shifted, label)
+                XCTAssertNil(period.shifted, label)
+            }
+            let bounds = CGRect(x: 0, y: 0, width: on.width, height: on.totalHeight).insetBy(dx: -0.001, dy: -0.001)
+            for key in on.keys {
+                XCTAssertTrue(bounds.contains(key.frame), "\(label) \(key.label)")
+                XCTAssertEqual(on.hitTest(CGPoint(x: key.frame.midX, y: key.frame.midY))?.kind, key.kind, "\(label) \(key.label)")
+            }
+        }
     }
 
     /// Settings › Keyboard › Languages › Layout is kept per language in the App Group; a language
@@ -1918,6 +2184,11 @@ final class KeyboardLayoutTests: XCTestCase {
         XCTAssertEqual(automatic("pl_PL"), .polish)
         XCTAssertEqual(automatic(nil, modes: ["emoji", "pl_PL", "en-US"]), .polish)
         XCTAssertEqual(automatic(nil, preferred: ["pl-PL", "en-US"]), .polish)
+        // Hex's own input mode is `mul` (Info.plist), so it never stands for English: Hex listed
+        // above Apple's AZERTY on a French iPhone, before Hex wrote a dictation language or
+        // without Full Access, typed QWERTY when it said en-US (TestFlight build 140).
+        XCTAssertEqual(automatic(nil, modes: ["mul", "fr_FR", "emoji"], preferred: ["fr-FR"]), .french)
+        XCTAssertEqual(automatic(nil, modes: ["mul", "emoji"], preferred: ["fr-FR"]), .french)
         XCTAssertEqual(automatic("ro-RO", modes: ["en-US"]), .romanian)
         XCTAssertEqual(automatic("ro_RO"), .romanian)
         XCTAssertEqual(automatic("el-GR", modes: ["en-US"]), .greek)
@@ -2035,6 +2306,29 @@ final class KeyboardLayoutTests: XCTestCase {
         XCTAssertEqual(AccentCatalog.options(for: "n", uppercase: false, language: .spanish), ["n", "ń"])
     }
 
+    /// English and Deutsch chosen together are Apple's bilingual English & German keyboard the
+    /// same way (TestFlight build 128: Apple's "DE EN" on QWERTZ showed ten keys a row, Hex's
+    /// Deutsch eleven). German leading on its QWERTZ: ten keys a row for both, ä ö ü and ß held
+    /// right after their letters, as Apple's (iOS 27.2 and 26.5 simulators).
+    func testEnglishAndGermanTypeOnTheFirstOnesKeys() {
+        func layout(_ chosen: [KeyboardLanguage], _ current: KeyboardLanguage) -> KeyboardLanguage {
+            KeyboardLanguageList.resolve(chosen: chosen, stored: current, automatic: .english).layout
+        }
+        XCTAssertEqual(layout([.german, .english], .english), .german, "English on German's keys")
+        XCTAssertEqual(layout([.german, .english], .german), .german)
+        XCTAssertEqual(layout([.english, .german], .german), .english, "Deutsch on English's keys")
+        XCTAssertEqual(layout([.german], .german), .german)
+        XCTAssertEqual(layout([.german, .spanish], .spanish), .spanish, "no English beside them")
+        XCTAssertEqual(layout([.german, .spanish, .english], .spanish), .spanish, "Spanish's pair leads with Spanish")
+
+        XCTAssertEqual(KeyboardLanguage.german.letterRows(.qwertz).map { $0.joined() }, ["qwertzuiop", "asdfghjkl", "yxcvbnm"])
+        let holds = KeyboardLanguage.german.letterHolds(on: .qwertz)
+        XCTAssertEqual(holds["a"], ["a", "ä", "à", "á", "â", "æ", "ã", "å", "ā"])
+        XCTAssertEqual(holds["o"], ["o", "ö", "ô", "ò", "ó", "õ", "œ", "ø", "ō"])
+        XCTAssertEqual(holds["u"], ["u", "ü", "û", "ù", "ú", "ū"])
+        XCTAssertEqual(holds["s"], ["s", "ß", "ś", "š"])
+    }
+
     /// While the keyboard switches between two or more languages, Automatic dictates in the
     /// one it shows (TestFlight build 56: Spanish dictation came out "incomprehensible"),
     /// in the iPhone's region; a language picked by hand, one keyboard language, or an iPhone
@@ -2117,6 +2411,11 @@ final class KeyboardLayoutTests: XCTestCase {
         XCTAssertEqual(
             KeyboardLanguage.suggested(inputModes: ["pl_PL", "emoji"], preferred: ["pl-PL", "en-US"]),
             [.polish, .english]
+        )
+        XCTAssertEqual(
+            KeyboardLanguage.suggested(inputModes: ["fr_FR", "emoji", "mul"], preferred: ["fr-FR"]),
+            [.french],
+            "Hex's own input mode isn't English on this iPhone"
         )
         XCTAssertEqual(KeyboardLanguage.polish.dictationLanguage(supported: supported + ["pl-PL"], preferred: ["pl-PL"]), "pl-PL")
         XCTAssertEqual(KeyboardLanguage.polish.dictationLanguage(supported: [], preferred: []), "pl-PL", "not listed yet")
@@ -2208,7 +2507,7 @@ final class KeyboardLayoutTests: XCTestCase {
     }
 
     /// The input mode's language (`UIInputViewController.primaryLanguage`) is BCP 47 and
-    /// supersedes the Info.plist's en-US, so each layout names the language the host's
+    /// supersedes the Info.plist's `mul`, so each layout names the language the host's
     /// spelling and autocorrection follow.
     func testEachLanguageNamesItsInputMode() {
         XCTAssertEqual(KeyboardLanguage.english.inputModeLanguage, "en-US")
@@ -2607,6 +2906,37 @@ final class KeyboardLayoutTests: XCTestCase {
         }
     }
 
+    /// The gap between rows 3 and 4 is the space bar's only across its width (row 3's keys whose
+    /// middle is over the space bar end at their keycaps); over 123, emoji, return and the rest it
+    /// splits, so a tap just under m or delete above return stays m or delete (a low m sent
+    /// return in Ryan's logged taps). English, AZERTY with its apostrophe key, a twelve-key row.
+    func testTheGapAboveRowFourIsTheSpaceBarsOnlyOverTheSpaceBar() {
+        let layouts = [
+            KeyboardLayout(width: 402), KeyboardLayout(width: 440, phoneSize: .large),
+            KeyboardLayout(width: 375, showsGlobe: true, phoneSize: .homeButton),
+            KeyboardLayout(width: 874, orientation: .landscape, horizontalInset: 62),
+            KeyboardLayout(width: 402, language: .french), KeyboardLayout(width: 402, language: .ukrainian),
+            KeyboardLayout(width: 402, numberRow: true),
+        ]
+        for layout in layouts {
+            let space = layout.key(.space)!
+            for key in layout.keys where key.row == 2 {
+                let below = CGPoint(x: key.frame.midX, y: key.frame.maxY + 1)
+                let overSpace = key.frame.midX > space.frame.minX && key.frame.midX < space.frame.maxX
+                XCTAssertEqual(layout.hitTest(below)?.kind, overSpace ? .space : key.kind, "\(describe(layout)) under \(key.label)")
+            }
+            let gap = CGPoint(x: space.frame.midX, y: space.frame.minY - 1)
+            XCTAssertEqual(layout.hitTest(gap)?.kind, .space, describe(layout))
+            XCTAssertEqual(layout.hitTest(CGPoint(x: space.frame.midX, y: space.frame.minY - layout.metrics.rowGap + 0.5))?.kind, .space, describe(layout))
+        }
+        let pro = KeyboardLayout(width: 402)
+        let m = pro.key(.character("m"))!
+        XCTAssertEqual(pro.hitTest(CGPoint(x: m.frame.midX, y: m.frame.maxY + 1))?.kind, .character("m"), "above return")
+        let french = KeyboardLayout(width: 402, language: .french)
+        let delete = french.key(.delete)!
+        XCTAssertEqual(french.hitTest(CGPoint(x: delete.frame.midX, y: delete.frame.maxY + 1))?.kind, .delete, "AZERTY: delete above return")
+    }
+
     /// With the number row the touch targets still tile the keys with no gaps: the digits take
     /// the gap under the strip, as row 1 did, and row 1 starts halfway down the gap under them.
     /// The 123 page draws the digits in the band too, so a tap there types that digit.
@@ -2630,11 +2960,9 @@ final class KeyboardLayoutTests: XCTestCase {
                     x: CGFloat.random(in: 0..<layout.width, using: &generator),
                     y: CGFloat.random(in: area.minY..<area.maxY, using: &generator)
                 )
-                let hits = layout.keys.filter { $0.hitFrame.contains(point) }
+                let hits = layout.keys.filter { $0.takes(point) }
                 let emoji = layout.key(.emoji)
-                // Row 4 starts at row 3's keycaps (the gap above it is row 4's, on the iPhone).
-                let rowFourTop = layout.metrics.pad == nil && !layout.isSplit ? layout.metrics.rowGap : layout.metrics.rowGap / 2
-                let inEmojiMargin = emoji.map { $0.row == 3 && !$0.hitFrame.contains(point) && point.y >= $0.frame.minY - rowFourTop
+                let inEmojiMargin = emoji.map { $0.row == 3 && !$0.hitFrame.contains(point) && point.y >= $0.frame.minY - layout.metrics.rowGap / 2
                     && point.x >= $0.frame.minX - layout.metrics.gap / 2 && point.x < $0.frame.maxX + layout.metrics.gap / 2 } ?? false
                 if !inEmojiMargin {
                     XCTAssertEqual(hits.count, 1, "\(describe(layout)) at \(point): \(hits.map(\.label))")
@@ -3016,6 +3344,23 @@ final class FullKeyboardSettingsTests: XCTestCase {
         XCTAssertTrue(settings.hexKeyOnLeft)
     }
 
+    /// Key haptics are Light until a strength is chosen; a chosen one stays, Medium included.
+    func testKeyHapticStrengthIsLightUntilChosen() throws {
+        let suite = "FullKeyboardSettingsTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = FullKeyboardSettings(defaults: defaults)
+
+        XCTAssertEqual(settings.hapticStrength, .light)
+        XCTAssertEqual(FullKeyboardSettings(defaults: nil).hapticStrength, .light, "without the App Group")
+        for strength in KeyHapticStrength.allCases {
+            settings.hapticStrength = strength
+            XCTAssertEqual(FullKeyboardSettings(defaults: defaults).hapticStrength, strength)
+        }
+        defaults.set("medium", forKey: "settings.keyboardHapticStrength")
+        XCTAssertEqual(settings.hapticStrength, .medium, "a stored Medium stays Medium")
+    }
+
     /// The experiment is off until its switch is turned on, and it keeps its App Group key.
     func testHideWordSuggestionsIsOffByDefaultAndKeepsItsAppGroupKey() throws {
         let suite = "FullKeyboardSettingsTests-\(UUID().uuidString)"
@@ -3135,5 +3480,33 @@ final class FullKeyboardSettingsTests: XCTestCase {
         settings.applyLaunchArguments(["HEX", FullKeyboardSettings.dvorakPunctuationLaunchArgument])
         XCTAssertTrue(settings.dvorakPunctuation)
         XCTAssertEqual(defaults.object(forKey: "experiments.dvorakPunctuation") as? Bool, true)
+    }
+
+    /// Settings › Experiments › Comma and period keys is off by default, keeps its App Group
+    /// key, and `--experiment-comma-period-keys` turns it on.
+    func testCommaAndPeriodKeysAreOffByDefault() throws {
+        let suite = "FullKeyboardSettingsTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = FullKeyboardSettings(defaults: defaults)
+        XCTAssertFalse(settings.commaPeriodKeys)
+        XCTAssertFalse(FullKeyboardSettings(defaults: nil).commaPeriodKeys, "without the App Group")
+        settings.applyLaunchArguments(["HEX", FullKeyboardSettings.commaPeriodKeysLaunchArgument])
+        XCTAssertTrue(settings.commaPeriodKeys)
+        XCTAssertEqual(defaults.object(forKey: "experiments.commaPeriodKeys") as? Bool, true)
+    }
+
+    /// Settings › Experiments › Quick accents is off by default, keeps its App Group key
+    /// (`experiments.quickAccents`), and `--experiment-quick-accents` turns it on.
+    func testQuickAccentsIsOffByDefault() throws {
+        let suite = "FullKeyboardSettingsTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = FullKeyboardSettings(defaults: defaults)
+        XCTAssertFalse(settings.quickAccents)
+        XCTAssertFalse(FullKeyboardSettings(defaults: nil).quickAccents, "without the App Group")
+        settings.applyLaunchArguments(["HEX", FullKeyboardSettings.quickAccentsLaunchArgument])
+        XCTAssertTrue(settings.quickAccents)
+        XCTAssertEqual(defaults.object(forKey: "experiments.quickAccents") as? Bool, true)
     }
 }

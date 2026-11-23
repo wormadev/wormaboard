@@ -1,9 +1,9 @@
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, SyncSender};
-use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -15,7 +15,6 @@ use crate::desktop::events::now_ms;
 use crate::durable::{lock_contended, sync_directory, sync_file};
 
 const SAMPLE_RATE: u32 = 16_000;
-const TRANSCRIPT_TURN_GAP_MS: u64 = 3_000;
 /// Beside the manifest of a meeting Hex quit while recording or during its
 /// final transcription: its audio is
 /// saved and its final transcript runs at the next launch.
@@ -60,6 +59,7 @@ pub(crate) mod generator;
 pub(crate) mod import;
 #[cfg(any(target_os = "windows", test))]
 mod loopback_route;
+mod markdown;
 pub(crate) mod mcp;
 mod notes;
 mod notes_file;
@@ -69,8 +69,10 @@ mod recovery;
 mod retention;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(crate) mod runtime;
+pub(crate) mod seen_calls;
 pub(crate) mod sweep;
 mod transcript;
+mod turn;
 mod warning;
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub(crate) mod watcher;
@@ -84,6 +86,10 @@ pub use chapters::{Chapter, chapter_entries, section_markdown};
 pub use delete::DeleteRefusal;
 pub use delete::{DeleteError, TrashedMeeting, delete, trash};
 pub use delta::*;
+pub use markdown::{
+    live_transcript_markdown, render_turns_markdown, speaker_label, transcript_markdown,
+    transcript_markdown_with,
+};
 pub use notes::{MeetingNotes, display_title, notes_in_progress, notes_wanted, spawn_summary};
 #[cfg(all(debug_assertions, target_os = "macos"))]
 pub use notes::{summarize, summarize_file};
@@ -92,6 +98,7 @@ pub use recording::recording;
 pub use retention::audio_expired;
 pub use retention::{expire, expire_audio, list, retention_for};
 pub use transcript::TranscriptReader;
+pub use turn::coalesce_transcript;
 pub use warning::TrackWarning;
 
 /// What the recorder knows about a meeting when it starts.
@@ -259,11 +266,7 @@ impl MeetingManifest {
     /// What a transcript line's source is called in the user's Markdown: an
     /// imported meeting has one track, so every turn is just Speaker.
     pub fn speaker_label(&self, source: MeetingSource) -> &'static str {
-        if self.imported {
-            "Speaker"
-        } else {
-            source.label()
-        }
+        markdown::speaker_label(source, self.imported)
     }
 
     /// Where `title` came from, inferred for manifests that predate the field.
@@ -299,14 +302,6 @@ impl MeetingStatus {
     pub fn is_active(self) -> bool {
         matches!(self, Self::Starting | Self::Recording | Self::Transcribing)
     }
-}
-
-pub fn active(meetings: &[MeetingManifest]) -> Option<&MeetingManifest> {
-    meetings.iter().find(|meeting| meeting.status.is_active())
-}
-
-pub fn active_or_latest(meetings: &[MeetingManifest]) -> Option<&MeetingManifest> {
-    active(meetings).or_else(|| meetings.first())
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -365,27 +360,6 @@ pub struct TranscriptEntry {
     pub start_ms: u64,
     pub end_ms: u64,
     pub text: String,
-}
-
-pub fn coalesce_transcript(
-    entries: impl IntoIterator<Item = TranscriptEntry>,
-) -> Vec<TranscriptEntry> {
-    let mut turns: Vec<TranscriptEntry> = Vec::new();
-    for entry in entries {
-        if let Some(turn) = turns.last_mut()
-            && turn.source == entry.source
-            && entry.start_ms.saturating_sub(turn.end_ms) <= TRANSCRIPT_TURN_GAP_MS
-        {
-            if !turn.text.ends_with(char::is_whitespace) {
-                turn.text.push(' ');
-            }
-            turn.text.push_str(entry.text.trim());
-            turn.end_ms = turn.end_ms.max(entry.end_ms);
-        } else {
-            turns.push(entry);
-        }
-    }
-    turns
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -471,7 +445,7 @@ pub fn record(
     let (_, transcription_selection) = crate::app_settings::transcription_selection();
     let transcription_model = crate::transcription::models::validate(&transcription_selection)?;
     if !crate::transcription::models::is_installed(
-        transcription_model,
+        &transcription_model,
         &transcription_selection.language,
     ) {
         return Err(eyre!("{} is not installed", transcription_model.name));
@@ -551,7 +525,6 @@ pub fn record(
         let mut rolling =
             transcript::Rolling::start(meeting_dir.clone(), transcription_selection.clone());
         let rolling_feed = rolling.feed();
-        let flush_registration = transcript::register_flusher(&manifest.id, rolling.flusher());
         let writer_dir = meeting_dir.clone();
         let writer = thread::spawn(move || write_tracks(&writer_dir, receiver, rolling_feed));
         let cleanup_failed_setup =
@@ -622,7 +595,6 @@ pub fn record(
         drop(titles);
         drop(live_chapters);
         keep_rename(&meeting_dir, &mut manifest);
-        drop(flush_registration);
         drop(system_capture);
         drop(microphone_capture);
         drop(sender);
@@ -1142,22 +1114,6 @@ pub fn notes_markdown(notes: &MeetingNotes) -> String {
         .to_string()
 }
 
-/// Speaker turns as Markdown, for copying.
-pub fn transcript_markdown(entries: &[TranscriptEntry]) -> String {
-    coalesce_transcript(entries.iter().cloned())
-        .into_iter()
-        .map(|turn| {
-            format!(
-                "**{}** · {}\n{}",
-                turn.source.label(),
-                format_duration(turn.start_ms),
-                turn.text.trim()
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n\n")
-}
-
 /// The exported Markdown while it is still on disk: the file the pane's
 /// `Reveal Markdown` selects, and the one Trash takes with the recording.
 fn exported_markdown(manifest: &MeetingManifest) -> Option<PathBuf> {
@@ -1305,7 +1261,7 @@ fn rename_meeting_with(
 pub fn transcribe_meeting(id: &str) -> Result<MeetingManifest> {
     let (_, selection) = crate::app_settings::transcription_selection();
     let model = crate::transcription::models::validate(&selection)?;
-    if !crate::transcription::models::is_installed(model, &selection.language) {
+    if !crate::transcription::models::is_installed(&model, &selection.language) {
         return Err(eyre!("{} is not installed", model.name));
     }
     let directory = root()?.join(id);

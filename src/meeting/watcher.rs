@@ -151,6 +151,12 @@ impl ActiveRecording {
     }
 }
 
+fn flush_withdrawn_offers(detector: &mut MeetingDetector, events: &SyncSender<ControllerEvent>) {
+    for id in detector.take_withdrawn_offers() {
+        let _ = events.send(ControllerEvent::OfferWithdrawn(id));
+    }
+}
+
 /// The meeting state mirrored into the menu bar.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MeetingMenuState {
@@ -190,6 +196,7 @@ pub(crate) fn controller_loop(
     meeting_requests: Receiver<MeetingRequest>,
 ) -> Result<()> {
     let mut detector = MeetingDetector::default();
+    let mut seen_calls = crate::meeting::seen_calls::SeenCalls::default();
     let mut recording: Option<ActiveRecording> = None;
     let mut importing: Option<ImportWorker> = None;
     let mut reminders = Reminders::default();
@@ -201,7 +208,6 @@ pub(crate) fn controller_loop(
 
     while !shutdown.load(Ordering::Relaxed) {
         let enabled = crate::app_settings::meetings_enabled();
-        let previous_offer = detector.open_offer();
         poll_import(&mut importing, &events);
         let requested_commands = meeting_requests
             .try_iter()
@@ -243,13 +249,17 @@ pub(crate) fn controller_loop(
                 &mut detector,
                 &mut observed_microphone_apps,
                 &mut browser,
+                &mut seen_calls,
                 &choices,
+                crate::app_settings::meeting_default_policy(),
             ) {
                 Err(()) => {
+                    flush_withdrawn_offers(&mut detector, &events);
                     thread::sleep(Duration::from_secs(2));
                     continue;
                 }
                 Ok(Some(Detection::Offer(candidate))) => {
+                    flush_withdrawn_offers(&mut detector, &events);
                     // Offers record by hand, which never watches a page: the
                     // call whose page named this one is not kept for it.
                     detector.take_switched_from();
@@ -258,6 +268,7 @@ pub(crate) fn controller_loop(
                     }
                 }
                 Ok(Some(Detection::Record(candidate))) => {
+                    flush_withdrawn_offers(&mut detector, &events);
                     let mut start = reminders.start_for(&candidate);
                     // Detected while the page still named the stopped call:
                     // this recording keeps that code, so the page naming it
@@ -279,11 +290,7 @@ pub(crate) fn controller_loop(
         if !enabled || recording.is_some() {
             detector.withdraw_offer();
         }
-        if let Some(id) = previous_offer
-            && detector.open_offer() != Some(id)
-        {
-            let _ = events.send(ControllerEvent::OfferWithdrawn(id));
-        }
+        flush_withdrawn_offers(&mut detector, &events);
         thread::sleep(Duration::from_millis(500));
     }
 
@@ -673,6 +680,7 @@ impl Reminders {
                 let automatic = records_automatically(
                     &meeting,
                     &crate::app_settings::meeting_provider_choices(),
+                    crate::app_settings::meeting_default_policy(),
                 );
                 tracing::info!(
                     provider = meeting.link.as_ref().map(|link| link.provider.label()),
@@ -726,21 +734,23 @@ impl Reminders {
     }
 }
 
-/// Whether the meeting's call service is set to Always record, so its call
-/// records once detected.
+/// Whether the meeting's call service records automatically, by its own
+/// answer or `default`, so its call records once detected.
 fn records_automatically(
     meeting: &CalendarMeeting,
     choices: &[crate::app_settings::MeetingProviderChoice],
+    default: crate::app_settings::MeetingPolicy,
 ) -> bool {
     meeting
         .link
         .as_ref()
         .and_then(|link| link.provider.choice_key())
         .is_some_and(|key| {
-            choices.iter().any(|choice| {
-                choice.key == key
-                    && choice.policy == crate::app_settings::MeetingPolicy::AlwaysRecord
-            })
+            choices
+                .iter()
+                .find(|choice| choice.key == key)
+                .map_or(default, |choice| choice.policy)
+                == crate::app_settings::MeetingPolicy::AlwaysRecord
         })
 }
 
@@ -1347,7 +1357,9 @@ fn detect_meeting(
     detector: &mut MeetingDetector,
     observed_microphone_apps: &mut Vec<(i32, String)>,
     browser: &mut BrowserWatch,
+    seen_calls: &mut crate::meeting::seen_calls::SeenCalls,
     choices: &[crate::app_settings::MeetingProviderChoice],
+    default: crate::app_settings::MeetingPolicy,
 ) -> Result<Option<Detection>, ()> {
     let microphone_apps = match active_microphone_applications() {
         Ok(applications) => applications,
@@ -1382,7 +1394,19 @@ fn detect_meeting(
     });
     let candidate =
         application.and_then(|application| candidate_from_microphone(&application, &context));
-    let detection = detector.detect(candidate, choices);
+    // A Don't offer call shows nothing, but Settings still lists where it was.
+    let unoffered = candidate
+        .as_ref()
+        .filter(|candidate| {
+            candidate.policy(choices, default) == crate::app_settings::MeetingPolicy::NeverOffer
+        })
+        .cloned();
+    let detection = detector.detect(candidate, choices, default);
+    if let Some(Detection::Offer(seen) | Detection::Record(seen)) = &detection {
+        seen_calls.note(seen, crate::calendar::wall_clock_ms());
+    } else if let Some(seen) = &unoffered {
+        seen_calls.note(seen, crate::calendar::wall_clock_ms());
+    }
     if let Some(Detection::Offer(candidate)) = &detection {
         tracing::info!(
             source = candidate.source.label(),
@@ -2250,7 +2274,9 @@ mod tests {
                 first = false;
             }
             let candidate = candidate_from_microphone(&brave(), &context);
-            if let Some(detection) = detector.detect(candidate, &[]) {
+            if let Some(detection) =
+                detector.detect(candidate, &[], crate::app_settings::MeetingPolicy::Ask)
+            {
                 break detection;
             }
             thread::sleep(Duration::from_millis(50));

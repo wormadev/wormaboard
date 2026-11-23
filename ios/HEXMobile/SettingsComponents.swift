@@ -29,18 +29,26 @@ enum SettingsPage: String, Hashable, CaseIterable {
 /// A settings page: a short scrolling column of cards under an inline title.
 struct SettingsPageScaffold<Content: View>: View {
     let title: LocalizedStringKey
+    /// The `id` of a row to start at instead of the top.
+    var startsAt: String?
     @ViewBuilder var content: Content
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                content
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    content
+                }
+                .frame(maxWidth: 500)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 28)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: 500)
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 28)
-            .frame(maxWidth: .infinity)
+            .onAppear {
+                guard let startsAt else { return }
+                DispatchQueue.main.async { proxy.scrollTo(startsAt, anchor: .top) }
+            }
         }
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
@@ -286,6 +294,9 @@ enum SettingsSnapshotFixture {
         keyboard.arabicKeyboard = on
         keyboard.dvorakPunctuation = on
         keyboard.clipboardHistory = on
+        keyboard.commaPeriodKeys = on
+        keyboard.quickAccents = on
+        keyboard.emojiShortcodes = on
         keyboard.emojiLettersUnderEmojiKey = on
         GifSearchSettings().isEnabled = on
         keyboard.keyboardThemesEnabled = false
@@ -295,6 +306,7 @@ enum SettingsSnapshotFixture {
         keyboard.haptics = true
         keyboard.emoji = true
         keyboard.swipeTyping = true
+        keyboard.swipeMoreLanguages = on
         let emojiUsage = EmojiUsageStore()
         emojiUsage.clear()
         if on {
@@ -310,6 +322,8 @@ enum SettingsSnapshotFixture {
         CustomVocabularySettings().isEnabled = on
         CustomVocabularySettings().terms = on ? ["OpenCode", "SwiftUI", "TestFlight"] : []
         DictationTranslationSettings().isEnabled = on
+        LiveDictationSettings().showsPreview = true
+        LiveDictationSettings().typesIntoField = on
         DictationTranslationSettings().targetLanguage = "ja"
         TypingJournalSettings().isEnabled = on
         TypingJournalSettings().learnsPerLanguage = on
@@ -317,6 +331,7 @@ enum SettingsSnapshotFixture {
         HinglishSettings().isEnabled = on
         GreeklishSettings().isEnabled = on
         TwoLanguageDictationSettings().isEnabled = on
+        VoiceIsolationSettings().isEnabled = on
         AdaptiveTouchSettings().isEnabled = on
         // Settings scenes skip preparing a model, so this only draws the switch.
         MultilingualParakeetSettings().isEnabled = on

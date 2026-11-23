@@ -6,6 +6,7 @@
 pub(crate) mod browser_media;
 mod call_input;
 mod devices;
+pub(crate) mod effect_holds;
 mod fixture;
 #[cfg_attr(any(target_os = "linux", target_os = "windows"), allow(dead_code))]
 pub(crate) mod hex_microphone;
@@ -33,6 +34,8 @@ pub(crate) mod system_idle;
 mod transport;
 #[cfg_attr(any(target_os = "linux", target_os = "windows"), allow(dead_code))]
 pub(crate) mod voice_filter;
+#[cfg(target_os = "macos")]
+mod voice_processing;
 #[cfg(target_os = "windows")]
 mod wasapi_capture;
 

@@ -12,10 +12,13 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use strings::TRANSLATIONS;
 
 mod agents;
+mod annotate_dictation;
+mod calls;
 mod clock;
 mod failures;
 mod french;
 mod history;
+mod hud_height;
 mod labs;
 mod meetings;
 mod menu;
@@ -29,6 +32,7 @@ mod strings;
 mod style;
 mod text_language;
 mod traditional_chinese;
+mod voice_isolation;
 
 pub(crate) use clock::{clock_time, twelve_hour_clock};
 
@@ -324,7 +328,7 @@ pub(crate) fn tr(english: &str) -> &str {
 
 /// Whether the interface is in English, for labels whose English form
 /// differs from the translated key (macOS menus' title case).
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", test))]
 pub(crate) fn english() -> bool {
     current() == ENGLISH
 }
@@ -383,6 +387,7 @@ pub(super) fn all_translations() -> impl Iterator<Item = &'static (&'static str,
         .chain(labs::TRANSLATIONS)
         .chain(style::TRANSLATIONS)
         .chain(signature::TRANSLATIONS)
+        .chain(annotate_dictation::TRANSLATIONS)
         .chain(agents::TRANSLATIONS)
         .chain(failures::TRANSLATIONS)
         .chain(onboarding::TRANSLATIONS)
@@ -593,6 +598,7 @@ mod tests {
         include_str!("../rune_ui/hud_lab.rs"),
         include_str!("../rune_ui/labs.rs"),
         include_str!("../rune_ui/labs/group.rs"),
+        include_str!("../rune_ui/labs/hud_height.rs"),
         include_str!("../rune_ui/labs/screenshots.rs"),
         include_str!("../rune_ui/labs/signature.rs"),
         include_str!("../rune_ui/labs/store.rs"),
@@ -664,10 +670,13 @@ mod tests {
         include_str!("../rune_ui/settings.rs"),
         include_str!("../rune_ui/shortcut_mode.rs"),
         include_str!("../rune_ui/sound_sets.rs"),
+        include_str!("../rune_ui/calls.rs"),
+        include_str!("../rune_ui/meeting_capsules/offer.rs"),
         include_str!("../rune_ui/speech_model.rs"),
         include_str!("../rune_ui/vocabulary.rs"),
         include_str!("../rune_ui/windows_host.rs"),
         include_str!("tray_menu.rs"),
+        include_str!("../updater/presentation.rs"),
         include_str!("../calendar_menu.rs"),
         include_str!("../macos_rune/status_item.rs"),
         include_str!("../rune_ui/history/unified.rs"),

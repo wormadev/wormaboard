@@ -499,7 +499,7 @@ Secure input turns on  // dictate.secure-input
 │   in front when it turned on (kCGSSessionSecureInputPID, as `ioreg -l` shows
 │   it), which is not necessarily the one holding secure input
 ├── Registered as Carbon hotkeys: Annotate, Annotate replay, Paste last,
-│   Paste meeting, and with Labs › Screenshots its two shortcuts
+│   and with Labs › Screenshots its two shortcuts
 │   ├── A press -> the same key down the tap would have sent (log: "shortcut
 │   │   arrived through secure input"); a release -> its key up
 │   ├── Annotate's "starts once a modifier comes up" still works: the tap
@@ -753,7 +753,7 @@ Labs > Second dictation shortcut > recorder    // dictate.second-dictation
 │   └── Own flavour -> processed and pasted exactly like dictation
 │       (modes, History kind Dictation, last dictation updated)
 ├── Clear (trash) -> unbound again; the lab off -> inactive and unregistered
-└── Paste Last and meeting paste -> only from the main shortcut
+└── Paste Last -> only from the main shortcut
 ```
 
 Checks: `second_dictation_shortcut_owns_the_capture_it_starts` (Linux reducer),
@@ -772,17 +772,27 @@ build never lists, accepts, or runs it, and `DisableLabs` holds it off. With it
 off, Paste Last pastes the newest dictation exactly as before; Windows and
 Linux are unchanged. The gate, `crate::labs::paste_last_picker()`, is where the
 work starts: the picker and its gesture, History's unified list and the rows it
-reads, and the cancel path's word writer.
+reads, and the cancel path's word writer. The listener reads it on every pass,
+so switching it on or off applies at once, without a restart; off drops the
+picker (closing one that is open) and the writer. Check:
+`toggling_the_lab_after_start_changes_what_holding_paste_last_does` in
+[recognition/paste_picker.rs](../../src/recognition/paste_picker.rs).
 
 ```ts
 Tap, Paste Last menu, or hex paste-last → newest ready, noncancelled dictation or marked annotation
-Hold 300 ms on the Mac event tap → up to eight recent items, without taking focus
+Hold 200 ms on the Mac event tap → up to eight recent items, without taking focus
+├── Rows are read from the press, so the picker fades in as the hold passes
+├── Centred on the display under the pointer; stays open once the keys come up
 ├── Initially select what tap would paste; with only Cancelled rows select nothing
 ├── Show all History → open the searchable archive, not a paste
 ├── Click a row → recheck that item and paste it once into the original field
-├── Arrow keys → move selection; Enter or release the chord modifiers → choose
-└── Escape or changed focus → close without touching the clipboard
+├── ↑/↓, Tab, or Paste Last's key again (with or without ⌥⇧) → move; its repeats do nothing
+├── Return or keypad Enter → paste the selected item into the original field
+└── Escape, a click outside the card, another key, or changed focus → close without touching the clipboard
 ```
+
+Check: `a_tap_pastes_and_a_hold_opens_a_picker_that_stays_until_escape` in
+[paste/browse.rs](../../src/paste/browse.rs). Scene: `mac-paste-picker`.
 
 With it on, the Mac History puts dictations, annotations, screenshots and
 screen recordings in one list. All types is the default. Search works inside the
@@ -987,6 +997,40 @@ Whole-clip run starts -> labs::skip_pauses()        // dictate.skip-pauses
 ```
 
 Details and checks in [labs.md](labs.md).
+
+### Voice Isolation (Labs, macOS)
+
+With Labs › Voice isolation on (`labs.voice_isolation`, off by default),
+dictation's microphone opens through Apple's voice processing instead of
+cpal's raw input stream, so macOS Control Center's Mic Mode can offer Voice
+Isolation for Hex. The voice-processed microphone stays open while idle, as
+the raw warm one does (unless Release microphone while idle is on), so
+ducking applies while Hex is listening, not only during a dictation. An
+engine configuration change reopens it through voice processing again; a
+real voice-processing failure (an exception or refused graph, the wrong
+device, a stream that stalls or fails, or more than three reconfigurations
+in 30 s) switches that resolved microphone to normal capture until the lab
+is toggled or the microphone changes:
+
+```ts
+Dictation stream opens -> labs::voice_isolation()
+├── Off -> cpal's raw input stream, exactly as before
+├── On -> AVAudioEngine's input node with setVoiceProcessingEnabled(true)
+│   ├── Voice processing starts -> channel-0 float tap carries CaptureInstant::from_mach_ticks
+│   └── It fails -> log, then the same cpal open as Off, remembered for
+│       this resolved microphone until the lab is toggled or it changes
+├── Engine configuration change (after start, engine stopped) -> reopens
+│   through voice processing again; more than three in 30 s -> normal capture
+└── Gate changes while idle -> the stream reopens on the other path;
+    during a capture -> waits until nothing records
+Never: meetings, Annotate captures, the level meter, the local API's host
+audio, open_named_input, or another OS
+```
+
+Not verified on hardware: Control Center's Mic Mode offering Voice Isolation
+for Hex, the tap's latency against the 200 ms release tail, and a meeting
+sharing the microphone while the voice-processed stream is open. Details and
+checks in [labs.md](labs.md).
 
 **Fixed November 3, 2026 (issue 1194):** a clip longer than the model's
 window (Cohere's 35 s) is transcribed in chunks, and a chunk that was only
@@ -1804,7 +1848,8 @@ Model advertises streaming, GPU device             // dictate.streaming
        ├── ≥ 300 ms of speech it heard > 400 ms before the text (1.2 s for a
        │   buffered Parakeet stream, which also refuses speech starting 1.5 s
        │   or more before the text once 100 ms is detected more than 400 ms
-       │   before it), outside the pre-roll and start tone
+       │   before it), outside the pre-roll, the start tone, and (macOS) audio
+       │   from before Hex's output suppression took effect (#2338)
        │   -> Transcribe the whole clip offline (source=fallback)  // lost opening
        ├── ≥ 300 ms of speech the stream heard lies > 400 ms past its text's end
        │   -> Transcribe the whole clip offline (source=fallback)   // #1101
@@ -2200,6 +2245,44 @@ timestamp lag. Checks:
 `parakeets_opening_slack_still_refuses_a_lost_opening`, and
 `parakeets_opening_slack_edge_is_one_frame` (synthetic tones, a fake stream).
 Not measured on a microphone or a device.
+
+**Fixed November 23, 2026 (opening after output suppression, macOS):** with
+Lower audio, Mute, or Pause media, a hotkey capture keeps no pre-roll and
+asks for output suppression only once it passes the 300 ms hold; Lower audio
+then ramps over `output_ducking::LOWER` (120 ms) on its own thread. Audio
+still coming from the speakers in that window was counted as speech the
+stream missed, so nearly every dictation with something playing fell back to
+the whole clip. The head only widens when the recording environment reports
+that suppression actually took effect, and each source reports its own
+moment: Lower audio sends when the ramp first writes its full target (a late
+Bluetooth readback no longer delays it), Mute when a write lands over a
+non-zero volume, and Pause media the latest of the player pause command being
+issued and the browser pause being sent — the browser's confirmation windows
+after the command are not part of the moment. Nothing is reported for an
+effect that changed nothing, was skipped on headphones under Labs › Only on
+speakers, or was stopped before its target was written; the report is sent
+from the environment or ramp thread, so a stop is never held up behind it.
+The audio owner maps the moment onto the recorded timeline (a report handled
+late maps back into audio already captured) and adds
+`SPEAKER_TO_MIC_MARGIN` (40 ms) for the output-to-microphone path; the head
+is whatever is later, that position or Hex's own sounds. Up to one resampler
+input buffer is still unprocessed when the report lands, so the position can
+sit slightly early; that only ever ignores less speech, and the margin covers
+it. The head is raised on the live stream with `Command::IgnoreHead`, which
+`PauseCap` applies before its finalize if it arrives before the `Finish`
+command; one that arrives after the finish is ignored. A report that lands
+during the release tail still reaches the finish. The Linux and Windows
+listeners have the same pattern but no effective report yet, so their head
+stays as it was. Checks:
+`a_reported_effect_raises_the_head_from_the_recorded_timeline`,
+`media_speech_before_output_suppression_took_effect_is_not_a_lost_opening`,
+`speech_after_the_raised_head_is_still_a_lost_opening`,
+`a_head_raised_before_the_finish_keeps_the_stream`,
+`a_head_raised_after_the_finish_cannot_save_the_stream`,
+`a_guard_reports_when_the_target_is_written_not_when_the_readback_settles`,
+`a_guard_that_changes_nothing_reports_no_moment`, and
+`muting_an_already_silent_output_changes_nothing`. Not measured on a
+microphone or a device.
 
 ### Ongoing Jobs And Output
 
@@ -2988,15 +3071,30 @@ dictation::indicator::tests::top_capsule` covers the math only; placement over a
 fullscreen app on a notched Mac is not yet observed.
 
 At the bottom position the plate keeps its 24 pt gap above
-`visibleFrame.y` (`rune_hud::hud_placement::BOTTOM_OFFSET`). The whole 320 x 128
-pt window sits on that display, with `Layout.center` moving the plate inside it,
-so its transparent shadow padding never hangs onto a display below. The HUD is
+`visibleFrame.y` (`rune_hud::hud_placement::BOTTOM_OFFSET`), or the
+`labs.hud_bottom_gap` points (0–400, 24 by default) that Labs › HUD height
+chooses. A gap of 24 pt or less keeps the window's bottom on the visible
+bottom and moves `Layout.center` (24 pt is exactly the old placement), so the
+window's transparent shadow padding never hangs onto a display below; a larger
+gap raises the window by gap − 24 with the plate at its usual offset inside it,
+keeping its shadow padding. The plate only moves up inside the window once the
+raised window would reach the visible top (a gap above the visible height
+minus 104 pt), which within 0–400 only happens on a very short visible frame,
+and placement clamps it under the menu bar or notch.
+The HUD is
 also pinned to the pointer screen's `NSScreenNumber` with a display-local rect;
 that resolves to the same frame as the global `Primary` rect, so the pin is
 consistency only, and `Primary` remains the fallback when the number is
-unavailable. Checks: `hud_placement::tests::the_bottom_window_stays_on_its_own_screen`
-and `hud_placement::tests::the_bottom_window_clears_a_dock` cover the pure
-geometry; the two-display panel is not yet observed.
+unavailable. Checks: `hud_placement::tests::the_bottom_window_stays_on_its_own_screen`,
+`hud_placement::tests::the_bottom_window_clears_a_dock`,
+`hud_placement::tests::the_default_bottom_gap_places_exactly_as_before`,
+`hud_placement::tests::a_small_bottom_gap_sits_inside_the_window`,
+`hud_placement::tests::a_tall_bottom_gap_raises_the_window_and_keeps_the_gap_exact`,
+`hud_placement::tests::a_gap_that_reaches_the_visible_top_keeps_the_plate_inside`,
+`hud_placement::tests::a_raised_bottom_gap_works_on_a_display_below_the_primary`,
+and `hud_placement::tests::a_huge_bottom_gap_keeps_the_plate_inside_the_visible_frame`
+cover the pure geometry; the two-display panel and a raised gap on a Mac are
+not yet observed.
 
 ### Dot scope
 

@@ -544,6 +544,23 @@ nonisolated enum KeyboardLanguage: String, CaseIterable, Sendable {
         }
     }
 
+    /// Settings › Experiments › Quick accents: the accent a held letter picks first, where the
+    /// language has one clear most-used spelling rather than whatever the system callout lists
+    /// next to the key (`AccentCatalog.primaryVariant`). Lowercase base → lowercase variant; a
+    /// value a key doesn't actually hold is ignored and the callout's own next option stands.
+    var quickAccentPrimaries: [String: String] {
+        switch self {
+        case .english, .spanish, .portuguese:
+            ["a": "á", "e": "é", "i": "í", "o": "ó", "u": "ú"]
+        case .french, .frenchCanadian, .frenchSwiss:
+            ["e": "é"]
+        case .italian:
+            ["a": "à", "e": "è", "i": "ì", "o": "ò", "u": "ù"]
+        default:
+            [:]
+        }
+    }
+
     /// `letterHolds` on `letters`. A plain layout leaves out the keys the language's own has
     /// for its letters (German's ä ö ü, Spanish's ñ), and Apple's keyboard then holds each right
     /// after its base letter (iOS 27.0 simulator, German QWERTZ and QWERTY: A Ä À Á…, O Ö Ô…,
@@ -919,16 +936,19 @@ nonisolated struct KeyboardLanguageList: Equatable, Sendable {
     var switches: Bool { languages.count > 1 }
 
     /// The language whose letters and long presses the keys show while `current` types. Apple
-    /// types English and Spanish on one bilingual keyboard laid out as the first of the two
-    /// (iOS 27.2 simulator, black box: Spanish added to the English keyboard is QWERTY with ñ
-    /// on a held n and English's long presses; English added to the Spanish keyboard keeps its
-    /// ñ key and Spanish's). So with both chosen, both type on whichever comes first, and the
+    /// types English and Spanish, and English and German, on one bilingual keyboard laid out as
+    /// the first of the two (iOS 27.2 simulator, black box: Spanish added to the English keyboard
+    /// is QWERTY with ñ on a held n and English's long presses; English added to the Spanish
+    /// keyboard keeps its ñ key and Spanish's. German added to the English keyboard is QWERTY
+    /// with English's long presses; English added to the German keyboard keeps QWERTZ – German's
+    /// ü ö ä keys, and on its QWERTZ, ten keys a row with ä ö ü held, German's long presses;
+    /// iOS 26.5 the same). So with both chosen, both type on whichever comes first, and the
     /// space bar switches the language they autocorrect and dictate in; any other language
     /// types on its own.
     var layout: KeyboardLanguage {
-        let bilingual: Set<KeyboardLanguage> = [.english, .spanish]
-        guard bilingual.contains(current), bilingual.isSubset(of: languages) else { return current }
-        return languages.first(where: bilingual.contains) ?? current
+        let pairs: [Set<KeyboardLanguage>] = [[.english, .spanish], [.english, .german]]
+        let sharing = pairs.filter { $0.contains(current) && $0.isSubset(of: languages) }.flatMap { $0 }
+        return languages.first(where: sharing.contains) ?? current
     }
 
     /// The language a swipe along the space bar goes to: `step` 1 the next, -1 the one

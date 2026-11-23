@@ -88,17 +88,24 @@ private final class FakeAudioManager: AudioManaging {
 
 /// A preparation that never answers, as Speech or its asset store not answering.
 private actor SilentTranscriber: LocalTranscribing {
-    nonisolated let displayName = "Apple Speech"
+    nonisolated let engine: DictationEngine = .appleSpeech
     let languageName = "English"
+    private(set) var preparationCancelled = false
 
     func prepare(progressHandler: @escaping @Sendable (ModelPreparationProgress) -> Void) async throws {
-        try await Task.sleep(for: .seconds(3_600))
+        do {
+            try await Task.sleep(for: .seconds(3_600))
+        } catch {
+            preparationCancelled = true
+            throw error
+        }
     }
 
     func transcribe(_ audioURL: URL) async throws -> String { "" }
 }
 
 private actor ControlledTranscriber: LocalTranscribing {
+    nonisolated let engine: DictationEngine = .appleSpeech
     nonisolated let displayName = "Controlled Speech"
     let languageName = "English"
 
@@ -163,7 +170,7 @@ private actor ControlledTranscriber: LocalTranscribing {
 
 /// A transcriber whose model can't be got ready, such as a language Apple Speech can't install.
 private actor UnpreparableTranscriber: LocalTranscribing {
-    nonisolated let displayName = "Apple Speech"
+    nonisolated let engine: DictationEngine = .appleSpeech
     let languageName = "Russian"
     let error: Error
 
@@ -444,9 +451,6 @@ final class DictationControllerTests: XCTestCase {
         )
         controller.prepareModel()
         try await settle()
-        // With a duration: Off where the keyboard dictates by itself warms nothing
-        // (testKeepMicWarmFollowsWhetherTheKeyboardDictatesItself).
-        controller.setWarmDuration(.fifteenMinutes)
 
         // 1. Expired (>10s) handoff warms session without surprise-recording.
         controller.handleKeyboardLaunch(
@@ -594,10 +598,12 @@ final class DictationControllerTests: XCTestCase {
         XCTAssertFalse(audio.isKeepaliveRunning)
     }
 
-    /// Where the keyboard dictates by itself Keep mic warm reads Off and hides: a Dictate that
-    /// opened Hex too late to record warms nothing, one the keyboard handed over for lack of
-    /// memory brings back the 15-minute default and its row, and the keyboard dictating by
-    /// itself again takes them away. (iOS 18 to 25: `KeyboardBridgeTests`.)
+    /// Where the keyboard dictates by itself Keep mic warm reads Off and hides. TestFlight build
+    /// 129: a keyboard that opened Hex anyway, for a reason it left no record of, got a one
+    /// shot every time and no warm session, so every tap opened Hex. Any dictation the keyboard
+    /// hands to Hex now brings back the 15-minute default and its row from that moment (a late
+    /// one warms as before 129), and a dictation the keyboard finishes by itself takes them
+    /// away. (iOS 18 to 25: `KeyboardBridgeTests`.)
     func testKeepMicWarmFollowsWhetherTheKeyboardDictatesItself() async throws {
         try XCTSkipUnless(ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 26)
         let now = 9_000.0
@@ -616,18 +622,21 @@ final class DictationControllerTests: XCTestCase {
         XCTAssertEqual(controller.warmDuration, .off)
         XCTAssertFalse(controller.showsKeepMicWarm)
 
+        let record = KeyboardSelfDictation(defaults: defaults)
+        XCTAssertNil(record.handedToHex)
         controller.handleKeyboardLaunch(.startRecording(jobID: "late", requestedAt: now - 30, style: .polished))
         try await settle()
         XCTAssertEqual(controller.handoffNotice, String(localized: "Timed out"))
-        XCTAssertFalse(controller.keyboardSessionEnabled)
-        XCTAssertFalse(audio.isKeepaliveRunning)
-
-        KeyboardSelfDictation(defaults: defaults).recordHandedToHex(.memory)
-        controller.handleKeyboardLaunch(.startSession(requestedAt: now))
-        try await settle()
+        XCTAssertEqual(record.handedToHex?.reason, .openedHex, "no record from the keyboard: Hex writes one")
         XCTAssertEqual(controller.warmDuration, .fifteenMinutes)
         XCTAssertTrue(controller.showsKeepMicWarm)
-        XCTAssertTrue(controller.keyboardSessionEnabled)
+        XCTAssertTrue(controller.keyboardSessionEnabled, "a late handoff warms, as before 129")
+        XCTAssertTrue(audio.isKeepaliveRunning)
+
+        record.recordHandedToHex(.memory)
+        controller.handleKeyboardLaunch(.startSession(requestedAt: now))
+        try await settle()
+        XCTAssertEqual(record.handedToHex?.reason, .memory, "the keyboard's reason stays")
 
         KeyboardSelfDictation(defaults: defaults).clearHandedToHex()
         controller.refreshWarmDuration()
@@ -1511,6 +1520,14 @@ final class DictationControllerTests: XCTestCase {
         }
         XCTAssertEqual(controller.phase, .failed("The speech model isn't ready. Try again."), "never a spinner for good")
 
+        // The preparation Hex gave up on is cancelled, so it can't publish after the failure.
+        var cancelled = false
+        for _ in 0..<100 where !cancelled {
+            cancelled = await stuck.preparationCancelled
+            if !cancelled { try await Task.sleep(for: .milliseconds(10)) }
+        }
+        XCTAssertTrue(cancelled)
+
         // Try again (Set up) starts a new preparation, which gets ready.
         controller.performPrimaryAction()
         try await settle()
@@ -1759,10 +1776,19 @@ final class DictationControllerTests: XCTestCase {
         )
     }
 
-    func testSpeechModelInKeyboardIsOffByDefaultAndNeedsTheMemory() {
+    func testSpeechModelInKeyboardIsOnUnlessTurnedOffAndNeedsTheMemory() {
         let settings = KeyboardParakeetSettings(defaults: defaults)
-        XCTAssertFalse(settings.isEnabled, "off by default: the keyboard keeps Apple's speech recognition")
+        XCTAssertTrue(settings.isEnabled, "on by default")
         XCTAssertFalse(settings.isTurnedOff, "never set: nothing to delete")
+        XCTAssertFalse(settings.isTurnedOnByHand, "on by default waits for Wi-Fi and the keyboard's measure")
+        settings.isEnabled = false
+        XCTAssertFalse(settings.isEnabled)
+        XCTAssertTrue(settings.isTurnedOff)
+        settings.isEnabled = true
+        XCTAssertTrue(settings.isTurnedOnByHand, "turned back on: downloads at once")
+        XCTAssertNil(settings.keyboardLimit, "until the keyboard first opens")
+        settings.recordKeyboardLimit(177 * KeyboardParakeetBudget.megabyte)
+        XCTAssertEqual(settings.keyboardLimit, 177 * KeyboardParakeetBudget.megabyte)
         XCTAssertTrue(KeyboardParakeetSettings.fits(physicalMemory: Self.sixGB))
         XCTAssertFalse(KeyboardParakeetSettings.fits(physicalMemory: Self.fourGB))
         settings.setKeyboardState(.preparing, now: Date(timeIntervalSince1970: 100))
@@ -1774,29 +1800,111 @@ final class DictationControllerTests: XCTestCase {
 
     func testTheKeyboardLoadsParakeetOnlyWithTheRoomMeasuredOnAnIPhone() {
         let mb = KeyboardParakeetBudget.megabyte
-        XCTAssertEqual(KeyboardParakeetBudget.requiredLimit(multilingual: false), 96 * mb)
-        XCTAssertEqual(KeyboardParakeetBudget.requiredLimit(multilingual: true), 115 * mb)
+        XCTAssertEqual(KeyboardParakeetBudget.requiredLimit, 131 * mb, "V2 and Ultra alike")
         // An iPhone 17 Pro's keyboard: a 177 MB limit, 33 MB used before Hex's keyboard records.
-        XCTAssertTrue(KeyboardParakeetBudget.allowsLoad(multilingual: false, footprint: 33 * mb, available: 144 * mb))
-        XCTAssertTrue(KeyboardParakeetBudget.allowsLoad(multilingual: true, footprint: 33 * mb, available: 144 * mb))
+        XCTAssertTrue(KeyboardParakeetBudget.allowsLoad(footprint: 33 * mb, available: 144 * mb))
         XCTAssertFalse(
-            KeyboardParakeetBudget.allowsLoad(multilingual: false, footprint: 33 * mb, available: 44 * mb),
+            KeyboardParakeetBudget.allowsLoad(footprint: 20 * mb, available: 80 * mb),
+            "a 100 MB limit: with the model loaded the keyboard records at up to 91 MB"
+        )
+        XCTAssertFalse(
+            KeyboardParakeetBudget.allowsLoad(footprint: 33 * mb, available: 44 * mb),
             "a 77 MB limit keeps Apple's speech recognition"
         )
         XCTAssertFalse(
-            KeyboardParakeetBudget.allowsLoad(multilingual: false, footprint: 120 * mb, available: 50 * mb),
+            KeyboardParakeetBudget.allowsLoad(footprint: 120 * mb, available: 50 * mb),
             "too little left, whatever the limit"
         )
-        XCTAssertTrue(KeyboardParakeetBudget.allowsTranscription(multilingual: false, footprint: 60 * mb, available: 117 * mb))
+        XCTAssertTrue(KeyboardParakeetBudget.allowsTranscription(footprint: 60 * mb, available: 117 * mb, audioSeconds: 10))
         XCTAssertTrue(
-            KeyboardParakeetBudget.allowsTranscription(multilingual: false, footprint: 56 * mb, available: 121 * mb),
+            KeyboardParakeetBudget.allowsTranscription(footprint: 56 * mb, available: 121 * mb, audioSeconds: 9.4),
             "Hex's keyboard recording on the iPhone 17 Pro"
         )
-        XCTAssertFalse(KeyboardParakeetBudget.allowsTranscription(multilingual: true, footprint: 160 * mb, available: 17 * mb))
+        XCTAssertFalse(KeyboardParakeetBudget.allowsTranscription(footprint: 160 * mb, available: 17 * mb, audioSeconds: 5))
         XCTAssertTrue(
-            KeyboardParakeetBudget.allowsLoad(multilingual: false, footprint: 20 * mb, available: 0),
+            KeyboardParakeetBudget.allowsLoad(footprint: 20 * mb, available: 0),
             "no limit where iOS sets none (the simulator)"
         )
+    }
+
+    func testALongDictationGoesToApplesEngineWhichStreamsIt() {
+        let mb = KeyboardParakeetBudget.megabyte
+        XCTAssertEqual(KeyboardParakeetBudget.transcribeHeadroom(audioSeconds: 60), 54 * mb, "24 MB and 0.5 MB a second")
+        // The iPhone 17 Pro's keyboard after many dictations: 91 MB of its 177 MB.
+        XCTAssertTrue(KeyboardParakeetBudget.allowsTranscription(footprint: 91 * mb, available: 86 * mb, audioSeconds: 60))
+        XCTAssertTrue(KeyboardParakeetBudget.allowsTranscription(footprint: 91 * mb, available: 86 * mb, audioSeconds: 90))
+        XCTAssertFalse(
+            KeyboardParakeetBudget.allowsTranscription(footprint: 91 * mb, available: 86 * mb, audioSeconds: 91),
+            "longer than 90 s goes to Apple's engine, whatever the room"
+        )
+        XCTAssertFalse(
+            KeyboardParakeetBudget.allowsTranscription(footprint: 91 * mb, available: 50 * mb, audioSeconds: 60),
+            "a keyboard with less room: 60 s needs 54 MB"
+        )
+        XCTAssertTrue(KeyboardParakeetBudget.allowsTranscription(footprint: 91 * mb, available: 50 * mb, audioSeconds: 40))
+        XCTAssertFalse(
+            KeyboardParakeetBudget.allowsTranscription(footprint: 20 * mb, available: 0, audioSeconds: 120),
+            "the cap holds where iOS sets no limit (the simulator)"
+        )
+    }
+
+    func testTheKeyboardsSpeechModelDownloadsByItselfOnlyWhereTheKeyboardWouldUseIt() {
+        let mb = KeyboardParakeetBudget.megabyte
+        func hold(
+            otherEngine: Bool = false,
+            english: Bool = true,
+            limit: Int? = 177 * mb,
+            unmetered: Bool? = true,
+            free: Int64? = 8_000_000_000
+        ) -> KeyboardParakeetDownload.Hold? {
+            KeyboardParakeetDownload.hold(
+                otherEngine: otherEngine, english: english, keyboardLimit: limit, unmetered: unmetered, freeBytes: free
+            )
+        }
+        XCTAssertNil(hold(), "an iPhone 17 Pro on Wi-Fi with room")
+        XCTAssertEqual(hold(english: false), .notEnglish)
+        XCTAssertEqual(hold(otherEngine: true), .otherEngine)
+        XCTAssertEqual(hold(limit: nil), .keyboardNotMeasured, "nothing before the keyboard has opened")
+        XCTAssertEqual(hold(limit: 80 * mb), .keyboardTooSmall)
+        XCTAssertEqual(hold(limit: 100 * mb), .keyboardTooSmall, "barely above what the keyboard records at")
+        XCTAssertEqual(hold(unmetered: false), .notOnWiFi, "cellular, a hotspot or Low Data Mode")
+        XCTAssertEqual(hold(unmetered: nil), .notOnWiFi, "before the connection is known")
+        XCTAssertEqual(hold(free: 1_500_000_000), .needsSpace)
+        XCTAssertNil(hold(free: nil), "space iOS doesn't report doesn't hold it")
+    }
+
+    func testHomesSpeechModelCardShowsOnlyWhereTheKeyboardWouldUseItAndStaysDismissed() {
+        func shows(enabled: Bool = true, fits: Bool = true, hold: KeyboardParakeetDownload.Hold? = nil, dismissed: Bool = false) -> Bool {
+            SpeechModelHomeCard.shows(enabled: enabled, fits: fits, hold: hold, dismissed: dismissed)
+        }
+        XCTAssertTrue(shows(), "downloading, downloaded or ready")
+        XCTAssertTrue(shows(hold: .notOnWiFi), "waiting says why")
+        XCTAssertTrue(shows(hold: .keyboardNotMeasured))
+        XCTAssertTrue(shows(hold: .needsSpace))
+        XCTAssertFalse(shows(enabled: false), "the switch turned off")
+        XCTAssertFalse(shows(fits: false), "under 6 GB")
+        XCTAssertFalse(shows(hold: .notEnglish))
+        XCTAssertFalse(shows(hold: .otherEngine))
+        XCTAssertFalse(shows(hold: .keyboardTooSmall))
+        XCTAssertFalse(shows(dismissed: true))
+        let suite = "speech-model-card-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertFalse(SpeechModelHomeCard.isDismissed(defaults))
+        SpeechModelHomeCard.dismiss(defaults)
+        XCTAssertTrue(SpeechModelHomeCard.isDismissed(UserDefaults(suiteName: suite)!), "dismissed stays dismissed")
+    }
+
+    func testTheKeyboardsSpeechModelNeverDownloadsByItselfOverCellular() {
+        func unmetered(satisfied: Bool = true, expensive: Bool = false, constrained: Bool = false, cellular: Bool = false) -> Bool {
+            KeyboardParakeetDownload.isUnmetered(satisfied: satisfied, expensive: expensive, constrained: constrained, cellular: cellular)
+        }
+        XCTAssertTrue(unmetered(), "Wi-Fi, or a VPN over Wi-Fi")
+        XCTAssertFalse(unmetered(satisfied: false), "no connection")
+        XCTAssertFalse(unmetered(expensive: true), "a personal hotspot, or cellular as iOS usually prices it")
+        XCTAssertFalse(unmetered(constrained: true), "Low Data Mode")
+        XCTAssertFalse(unmetered(cellular: true), "5G that iOS calls not expensive under Allow More Data on 5G")
+        XCTAssertFalse(unmetered(expensive: true, cellular: true), "ordinary cellular")
     }
 
     func testParakeetsFilesMoveIntoTheAppGroupRatherThanDownloadingAgain() throws {
@@ -1817,17 +1925,22 @@ final class DictationControllerTests: XCTestCase {
             try files.createDirectory(at: folder, withIntermediateDirectories: true)
             try Data("w".utf8).write(to: folder.appendingPathComponent("weight.bin.partial"))
         }
+        let compiled = ParakeetCompileRecord(key: "test.compiledForSystem", defaults: defaults, system: "27.2")
+        compiled.markCurrent()
         try partial(in: old)
-        SpeechModelStore.move(from: old, to: new, isComplete: { _ in false }, fileManager: files)
+        SpeechModelStore.move(from: old, to: new, isComplete: { _ in false }, forgetting: compiled, fileManager: files)
         XCTAssertTrue(files.fileExists(atPath: new.appendingPathComponent("weight.bin.partial").path), "a download under way moves, partial file and all")
         XCTAssertFalse(files.fileExists(atPath: old.path))
         XCTAssertFalse(SpeechModelStore.isComplete(new))
+        XCTAssertFalse(compiled.isCurrent, "Core ML compiles moved files again, and the next load says so")
 
+        compiled.markCurrent()
         SpeechModelStore.markComplete(new)
         try partial(in: old)
-        SpeechModelStore.move(from: old, to: new, isComplete: { SpeechModelStore.isComplete($0) }, fileManager: files)
+        SpeechModelStore.move(from: old, to: new, isComplete: { SpeechModelStore.isComplete($0) }, forgetting: compiled, fileManager: files)
         XCTAssertTrue(SpeechModelStore.isComplete(new), "a complete copy in the App Group stays")
         XCTAssertFalse(files.fileExists(atPath: old.path), "and the old, partial one goes")
+        XCTAssertTrue(compiled.isCurrent, "nothing moved: what Core ML compiled still holds")
     }
 
     func testTheMultilingualDownloadResumesFromItsPartialFileAndSaysItsBytes() async throws {
@@ -1880,6 +1993,40 @@ final class DictationControllerTests: XCTestCase {
         download.start()
         try await waitUntil(seconds: 10) { download.state == .loading || download.isFailed }
         XCTAssertEqual(download.state, .loading, "each drop came after more bytes, so it kept going")
+        XCTAssertTrue(ParakeetUltraModel.isDownloaded(in: model.folder, files: model.files))
+    }
+
+    func testTheMultilingualDownloadRestartsOnlyAfterALongBackgroundTrip() async throws {
+        let model = try UltraStubModel()
+        defer { model.remove() }
+        UltraStubProtocol.script([.hang(1200), .serve])
+        var now = Date(timeIntervalSinceReferenceDate: 0)
+        let download = model.download(stallLimit: .seconds(30), now: { now })
+        download.start()
+        try await waitUntil(seconds: 5) { download.state == .downloading(1200) }
+
+        // Inactive to active (Control Center, Face ID, an alert) suspends nothing.
+        download.appBecameActive()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(UltraStubProtocol.requested.count, 1, "nothing was suspended, so nothing restarts")
+
+        // A trip too short for iOS to have dropped the connection is left alone too.
+        download.appMovedToBackground()
+        now = now.addingTimeInterval(10)
+        download.appBecameActive()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(UltraStubProtocol.requested.count, 1, "a short trip suspends nothing long enough")
+
+        // One long enough for iOS to cut it starts over from the bytes on disk.
+        download.appMovedToBackground()
+        now = now.addingTimeInterval(30)
+        download.appBecameActive()
+        try await waitUntil(seconds: 5) { download.state == .loading }
+        XCTAssertEqual(
+            Array(UltraStubProtocol.requested.prefix(2)),
+            [nil, "bytes=1200-"],
+            "the suspended transfer resumed from its partial file"
+        )
         XCTAssertTrue(ParakeetUltraModel.isDownloaded(in: model.folder, files: model.files))
     }
 
@@ -1974,7 +2121,7 @@ final class DictationControllerTests: XCTestCase {
         XCTAssertEqual(controller.phase, .ready)
 
         // Turned off while Parakeet Ultra dictated: Hex prepares the engine it picks without it.
-        controller.engineName = ParakeetUltraTranscriber.name
+        controller.engine = .parakeetUltra
         controller.multilingualParakeetChanged()
         try await settle()
         XCTAssertEqual(made, 2)
@@ -2106,6 +2253,44 @@ final class DictationControllerTests: XCTestCase {
         XCTAssertEqual(bridge.snapshot().state, .recording)
         XCTAssertEqual(bridge.snapshot().jobID, "mic-back-job")
         controller.cancelCurrentJob()
+    }
+
+    /// Home after a microphone that didn't start, with the model still ready: the button is
+    /// Dictate (as home's Ready says), not Set up, and a tap records instead of loading the
+    /// model again.
+    func testHomeDictatesAgainAfterAMicrophoneFailureWithTheModelReady() async throws {
+        let audio = FakeAudioManager()
+        let transcriber = ControlledTranscriber()
+        let controller = DictationController(
+            audio: audio,
+            keyboardBridge: KeyboardBridge(defaults: defaults),
+            transcriber: transcriber,
+            transcriberFactory: { transcriber },
+            now: { 53_000 },
+            autoPrepareOnInit: false
+        )
+        XCTAssertTrue(controller.primaryActionPreparesModel, "no model yet: Set up")
+        controller.prepareModel()
+        try await settle()
+        XCTAssertFalse(controller.primaryActionPreparesModel)
+
+        audio.captureShouldThrow = true
+        controller.performPrimaryAction()
+        try await settle()
+        XCTAssertEqual(controller.phase, .failed("WormaBoard couldn't start the microphone. Try again."))
+        XCTAssertTrue(controller.isModelReady)
+        XCTAssertFalse(controller.primaryActionPreparesModel, "Dictate, not Set up")
+
+        audio.captureShouldThrow = false
+        controller.performPrimaryAction()
+        try await settle()
+        XCTAssertEqual(controller.phase, .recording)
+        controller.cancelCurrentJob()
+
+        // A failed model with none ready still sets up.
+        controller.isModelReady = false
+        controller.failModel("The speech model isn't ready. Try again.")
+        XCTAssertTrue(controller.primaryActionPreparesModel)
     }
 
     /// A warm session's microphone failed for a keyboard's dictation (another app held it):
@@ -2537,7 +2722,10 @@ private struct UltraStubModel {
         UltraStubProtocol.reset(bodies: bodies)
     }
 
-    func download(stallLimit: Duration = .seconds(1)) -> ParakeetUltraDownload {
+    func download(
+        stallLimit: Duration = .seconds(1),
+        now: @escaping () -> Date = { Date() }
+    ) -> ParakeetUltraDownload {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [UltraStubProtocol.self]
         return ParakeetUltraDownload(
@@ -2546,7 +2734,8 @@ private struct UltraStubModel {
             base: "https://stub.invalid/model",
             session: URLSession(configuration: configuration),
             stallLimit: stallLimit,
-            backoff: { _ in 0 }
+            backoff: { _ in 0 },
+            now: now
         )
     }
 
@@ -2983,12 +3172,19 @@ final class SpeechModelInstallTests: XCTestCase {
         var downloads: [SpeechModuleKind: Download] = [:]
         var dictationHas = true
         var online = true
+        /// A status call that never answers, as after the speech daemon stops responding.
+        var hangsStatus = false
         var downloaded: [SpeechModuleKind] = []
 
         var steps: SpeechModelInstall.Steps {
             SpeechModelInstall.Steps(
                 dictationEquivalent: { [self] locale in dictationHas ? locale : nil },
-                status: { [self] language in lock.withLock { status[language.module] ?? .unsupported } },
+                status: { [self] language in
+                    if lock.withLock({ hangsStatus }) {
+                        try? await Task.sleep(for: .seconds(60))
+                    }
+                    return lock.withLock { status[language.module] ?? .unsupported }
+                },
                 download: { [self] language, progress in
                     let outcome = lock.withLock {
                         downloaded.append(language.module)
@@ -3024,6 +3220,18 @@ final class SpeechModelInstallTests: XCTestCase {
         let installed = try await run(assets)
         XCTAssertEqual(installed, russian)
         XCTAssertTrue(assets.downloaded.isEmpty)
+    }
+
+    func testAStatusThatNeverAnswersFailsInsteadOfInstalling() async throws {
+        let assets = FakeAssets()
+        assets.hangsStatus = true
+        do {
+            _ = try await run(assets)
+            XCTFail("a status that never answers must not install")
+        } catch {
+            XCTAssertTrue(error is SpeechModelUnresponsive, "\(error)")
+        }
+        XCTAssertTrue(assets.downloaded.isEmpty, "nothing is downloaded behind a hung status call")
     }
 
     func testASpeechTranscriberAssetThatNeverArrivesFallsBackToDictationTranscriber() async throws {
@@ -3148,6 +3356,15 @@ final class SpeechModelInstallTests: XCTestCase {
             XCTAssertEqual(UserFacingError.message(for: shown, context: .transcription), "Open WormaBoard to download English.")
             XCTAssertTrue(settings.keyboardNeedsHex(), "the Hex key opens Hex, which downloads it")
         }
+        // Hebrew picked by hand on an English iPhone: the keyboard's install failing names
+        // English to try, but Hex set nothing aside, so Hex downloads Hebrew too.
+        let hebrew = SpeechModelUnavailable(language: "he-IL", reason: .notOnThisIPhone, fallback: "en-US", automatic: false)
+        settings.clearKeyboardNeedsHex()
+        let first = SpeechModelNeedsHex.keyboardError(for: hebrew, language: "he-IL", settings: settings)
+        XCTAssertEqual(UserFacingError.message(for: first, context: .transcription), "WormaBoard couldn't transcribe that. Try again.")
+        let shown = SpeechModelNeedsHex.keyboardError(for: hebrew, language: "he-IL", settings: settings)
+        XCTAssertEqual(UserFacingError.message(for: shown, context: .transcription), "Open WormaBoard to download Hebrew.")
+        XCTAssertTrue(settings.keyboardNeedsHex())
     }
 
     func testAKeyboardDictationThatWorksBetweenTwoFailuresKeepsTheKeyboardDictating() async throws {
@@ -3167,9 +3384,14 @@ final class SpeechModelInstallTests: XCTestCase {
         XCTAssertTrue(settings.noteKeyboardModelFailure(at: marked.addingTimeInterval(LanguageSettings.keyboardStrikeWindow + 60)))
     }
 
+    /// Only a language Hex itself set aside keeps the sentence naming another one to try.
     func testTheKeyboardKeepsAMoveToAnotherLanguageAndACancel() {
         let switched = SpeechModelUnavailable(language: "ru-RU", reason: .notOnThisIPhone, fallback: "en-US")
         let offer = SpeechModelUnavailable(language: "ru-RU", reason: .notOnThisIPhone, fallback: "en-US", automatic: false)
+        // Hex's own installs of Russian failed twice in a row.
+        settings.noteUnavailable("ru-RU")
+        settings.noteUnavailable("ru-RU")
+        XCTAssertTrue(settings.isUnavailable("ru-RU"))
         for error in [switched, offer] {
             let shown = SpeechModelNeedsHex.keyboardError(for: error, language: "ru-RU", settings: settings)
             XCTAssertEqual(shown as? SpeechModelUnavailable, error, "the next dictation works without Hex")
@@ -3323,6 +3545,9 @@ private final class FakeAudioSession: AudioSessionControlling {
 
     var calls: [Call] = []
     var isOtherAudioPlaying = false
+    private(set) var category = AVAudioSession.Category.soloAmbient
+    private(set) var mode = AVAudioSession.Mode.default
+    private(set) var categoryOptions: AVAudioSession.CategoryOptions = []
     /// What iOS offers: Bluetooth hands-free inputs only in a category that allows them.
     var connected: [Microphone] = []
     private var allowsBluetooth = false
@@ -3337,7 +3562,13 @@ private final class FakeAudioSession: AudioSessionControlling {
         options: AVAudioSession.CategoryOptions
     ) throws {
         calls.append(.category(category, mode, options))
-        allowsBluetooth = options.contains(.allowBluetoothHFP)
+        self.category = category
+        self.mode = mode
+        // iOS adds the active mode's implicit options: `.voiceChat` records
+        // Bluetooth hands-free itself, whether or not it was asked for.
+        let implicit: AVAudioSession.CategoryOptions = mode == .voiceChat ? [.allowBluetoothHFP] : []
+        categoryOptions = options.union(implicit)
+        allowsBluetooth = categoryOptions.contains(.allowBluetoothHFP)
     }
 
     func prefer(_ microphone: Microphone?) throws {
@@ -3357,6 +3588,64 @@ private let wiredHeadset = Microphone(uid: "Wired Headset Microphone", name: "He
 
 @MainActor
 final class AudioSessionSetupTests: XCTestCase {
+    /// TestFlight build 129 (iOS 27.3): a warm session's dictation began in the background
+    /// with the category set again, unchanged, and iOS 27 refused it ("Another app is using
+    /// audio"). The category is set only when it changes; a choice that needs another one
+    /// (Bluetooth) still sets it.
+    func testTheCategoryIsSetOnlyWhenItChanges() throws {
+        let session = FakeAudioSession()
+        let audio = SystemAudioManager(session: session)
+        try audio.configureAudioSession(recordingFrom: nil)
+        try audio.configureAudioSession(recordingFrom: .automatic)
+        let categoryCalls = session.calls.filter { if case .category = $0 { true } else { false } }
+        XCTAssertEqual(categoryCalls.count, 1, "the keepalive's category serves the dictation")
+        try audio.configureAudioSession(recordingFrom: .bluetooth)
+        XCTAssertEqual(session.calls.filter { if case .category = $0 { true } else { false } }.count, 2)
+    }
+
+    /// Experiments › Voice isolation: on, Hex records in `.voiceChat` mode, whose voice
+    /// processing lets Control Center's Mic Mode offer Voice Isolation; off, `.measurement`
+    /// exactly as before. The options stay today's either way, and the category (with the
+    /// mode) is still set only when it changes, even though `.voiceChat` adds
+    /// `.allowBluetoothHFP` itself.
+    func testVoiceIsolationRecordsInVoiceChatModeAndOffKeepsMeasurement() throws {
+        let suite = "hex.tests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = VoiceIsolationSettings(defaults: defaults)
+
+        let offSession = FakeAudioSession()
+        try SystemAudioManager(session: offSession, voiceIsolation: settings)
+            .configureAudioSession(recordingFrom: .automatic)
+        XCTAssertEqual(offSession.mode, .measurement, "off keeps today's mode")
+        XCTAssertEqual(
+            offSession.calls.first,
+            .category(.playAndRecord, .measurement, [.mixWithOthers, .allowBluetoothA2DP, .defaultToSpeaker])
+        )
+
+        settings.isEnabled = true
+        let onSession = FakeAudioSession()
+        let audio = SystemAudioManager(session: onSession, voiceIsolation: settings)
+        try audio.configureAudioSession(recordingFrom: .automatic)
+        XCTAssertEqual(onSession.mode, .voiceChat)
+        guard case .category(.playAndRecord, .voiceChat, let options)? = onSession.calls.first else {
+            return XCTFail("the category and mode are set together")
+        }
+        XCTAssertTrue(options.contains(.mixWithOthers), "the experiment keeps today's options")
+        XCTAssertFalse(options.contains(.duckOthers))
+        XCTAssertTrue(
+            onSession.categoryOptions.contains(.allowBluetoothHFP),
+            "iOS adds hands-free Bluetooth itself in .voiceChat"
+        )
+
+        try audio.configureAudioSession(recordingFrom: nil)
+        XCTAssertEqual(
+            onSession.calls.filter { if case .category = $0 { true } else { false } }.count,
+            1,
+            "the implicit option doesn't set the category again while the mode stays the same"
+        )
+    }
+
     func testRecordingMixesWithOtherAppsAudioWhateverTheMicrophone() throws {
         let choices: [MicrophoneChoice?] = [nil] + MicrophoneChoice.allCases.map { $0 }
         for choice in choices {
@@ -3475,6 +3764,32 @@ final class AudioSessionSetupTests: XCTestCase {
             .active(true, []),
             .active(false, .notifyOthersOnDeactivation),
         ])
+    }
+}
+
+final class VoiceIsolationSettingsTests: XCTestCase {
+    /// Off by default, and turned on in the shared App Group so the keyboard reads it too.
+    func testVoiceIsolationIsOffByDefaultAndPersists() throws {
+        let suite = "hex.tests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        XCTAssertFalse(VoiceIsolationSettings(defaults: defaults).isEnabled)
+        XCTAssertNil(defaults.object(forKey: "experiments.voiceIsolation"), "reading writes nothing")
+
+        VoiceIsolationSettings(defaults: defaults).isEnabled = true
+        XCTAssertEqual(defaults.object(forKey: "experiments.voiceIsolation") as? Bool, true)
+        XCTAssertTrue(VoiceIsolationSettings(defaults: defaults).isEnabled)
+    }
+
+    func testTheLaunchArgumentTurnsVoiceIsolationOn() throws {
+        let suite = "hex.tests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let settings = VoiceIsolationSettings(defaults: defaults)
+        settings.applyLaunchArguments([VoiceIsolationSettings.launchArgument])
+        XCTAssertTrue(settings.isEnabled)
     }
 }
 

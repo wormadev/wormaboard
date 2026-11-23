@@ -143,16 +143,19 @@ registry rereads `models/custom/` when its folder changes).
 ## Found On This Computer
 
 ```ts
-Picker opens, or onboarding starts -> one scan (found_models::scan)   // setup.found-models
+Picker opens, onboarding starts, or `hex model list`/`hex model status` runs
+one scan (found_models::scan)                                // setup.found-models
 ├── Where: $HF_HUB_CACHE, else $HF_HOME/hub, else ~/.cache/huggingface/hub
 │   (Windows %USERPROFILE%\.cache\huggingface\hub); models--*/snapshots/*/*.gguf
 ├── Cheap: headers only, through the import's checks; each file's result is kept
 │   by path, size, mtime, and file ID, so an unchanged file is never read twice.
-│   Never in the background, never a full hash during the scan
+│   Never in the background, and never a full hash during the scan
 ├── Exact catalog match: the snapshot links to blobs/<sha256> and that digest and
 │   size are a catalog pin (a plain copy: repository, file name, and size)
 │   -> that catalog model counts as downloaded; its card says "Found on this
-│   computer" and offers Use, never Download
+│   computer" and offers Use, never Download. It is not ready yet: only Hex's
+│   receipt for the full check (models/found/<model>.json) makes it ready, so
+│   Setup, Settings, and every listener agree (models::is_ready)
 ├── Other compatible files -> "Found on this computer" at the top of the picker:
 │   name · Not tested by Hex · Q8_0/F16/F32 · owner/name@revision · languages,
 │   "It may be too big for this computer's GPU memory." when the tensor data
@@ -171,8 +174,10 @@ Picker opens, or onboarding starts -> one scan (found_models::scan)   // setup.f
 ```
 
 `hex model list` scans too and shows each model's source: `download`, `hex`,
-`imported`, or `found: owner/name@abcdef1`; a compatible file not yet used is
-listed as `custom-<first 16 hex of its blob>` with `(not tested by Hex)`, and
+`imported`, or `found: owner/name@abcdef1`. `hex model status` scans for the
+same installed/unverified answer but prints no source. A compatible file not
+yet used is listed as `custom-<first 16 hex of its blob>` with `(not tested by
+Hex)`, and
 `hex model use <that id>` checks it in full and uses it in place. The local
 API's `/models` and the SDK's `ModelInfo.source` carry the same field.
 
@@ -220,7 +225,12 @@ in-place use and forgetting, a forgotten catalog file no longer counting as
 downloaded, the full check refusing a mismatched file),
 `transcription::gguf_header::tests`, `transcription::custom_models::tests`
 (including `a_relinked_copy_reads_as_changed_and_check_again_accepts_only_the_same_contents`,
-`a_receipt_survives_a_renumbered_volume_but_not_another_file`, and `a_file_added_in_place_is_recorded_by_path_copied_nowhere_and_forgetting_leaves_it`),
+`a_receipt_survives_a_renumbered_volume_but_not_another_file`,
+`a_file_added_in_place_is_recorded_by_path_copied_nowhere_and_forgetting_leaves_it`,
+`renaming_many_times_keeps_one_entry_and_frees_earlier_definitions`,
+`a_held_snapshot_keeps_its_name_across_a_rename`,
+`removing_an_import_frees_its_definition_after_the_last_reader`, and
+`an_in_place_path_change_rebuilds_the_definition`),
 `desktop::onboarding::tests::a_held_download_waits_for_the_person`,
 `a_found_model_moves_on_without_a_download_and_back_returns_to_it`,
 `the_onboarding_model_list_starts_the_row_picked_or_the_recommended_one`,
@@ -230,6 +240,35 @@ downloaded, the full check refusing a mismatched file),
 `rune-onboarding-model-found-downloading-light`,
 `rune-onboarding-model-found-recommended-light`, and
 `rune-onboarding-model-found-back-light`.
+
+## Readiness And Enable
+
+```ts
+Saved model ready? one check everywhere  // models::is_ready, model_ready
+├── Hex's own download or import -> installed, and its receipt is the check
+├── Catalog file in another app's cache, not checked yet -> installed but not
+│   ready; onboarding, Settings, and `hex status` never call it ready
+├── Enable while it is not ready ->
+│   ├── Its file is here -> the existing installed-only preparation checks it
+│   │   against its pin (adopting it as models/found/<model>.json), then the
+│   │   listener starts. No scan and no download run here
+│   └── No file, or none a scan has found yet -> Model required, unchanged
+│       (no preparation and no error)
+├── A check is verify-only: it never replaces the saved selection with a
+│   lost import's fallback (Windows, Linux, and macOS commit no settings)
+├── `hex model use` on the saved, unverified model -> the same check runs
+│   instead of answering "already in use", and reports success only once the
+│   model is ready
+└── macOS launch with the listener waiting -> recognition starts with an
+    installed model, as before (the macOS loader does not require the pinned
+    check); Settings' speech model row still checks and adopts a found file
+    when chosen
+```
+
+Observed: not run on Windows or macOS hardware. Checks:
+`transcription::models::tests::readiness_needs_the_pinned_files_verification_receipt`
+and
+`transcription::found_models::tests::a_found_catalog_model_is_not_ready_until_adopted_in_place`.
 
 ## A Download Another Process Runs
 

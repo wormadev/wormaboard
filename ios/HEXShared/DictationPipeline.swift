@@ -124,8 +124,9 @@ nonisolated struct GreeklishSettings {
 /// (`KeyboardLocalDictation`), so a style and Lowercase apply on every path.
 ///
 /// In order: Hinglish (Hindi in Latin letters, while that experiment is on) or Greeklish
-/// (Greek in Latin letters, while that one is on), learned fixes, custom vocabulary, Clean up
-/// what I say (`CleanupTagger.cleanIfEnabled`, which guards its own memory in the keyboard),
+/// (Greek in Latin letters, while that one is on), learned fixes, custom vocabulary, Numbers as
+/// digits and Clean up what I say (`CleanupTagger.cleanIfEnabled`, which guards its own memory
+/// in the keyboard),
 /// `refine` (Clean up with Apple Intelligence, only in the app), translation, the style
 /// (`TranscriptFormatter`, with Format lists' `SpokenLists` and Spoken punctuation's
 /// `SpokenPunctuation` inside it), the spellings again,
@@ -145,6 +146,9 @@ nonisolated struct DictationPipeline: Sendable {
     var formatLists = false
     /// Settings › Dictation › Spoken punctuation (`SpokenPunctuation`), inside the style.
     var spokenPunctuation = false
+    /// Settings › Dictation › Numbers as digits (`SpokenNumbers`), before Clean up what I say's
+    /// tagger, in every style but Verbatim.
+    var numbersAsDigits = false
     /// Experiments › Hinglish: Hindi is written in Latin letters before every other step, so
     /// learned fixes, vocabulary and the style see the Latin words.
     var hinglish = false
@@ -154,6 +158,101 @@ nonisolated struct DictationPipeline: Sendable {
     var endsWithPeriod = true
     /// Translate what I say's translator; nil is Apple's. Tests stand in for it.
     var translationEngine: TranslationEngine?
+
+    /// Snapshot of processing preferences captured once when a dictation starts, shared by
+    /// `DictationController` and `KeyboardLocalDictation` so neither path re-reads defaults mid-flight.
+    struct Preferences: Equatable, Sendable {
+        var style: DictationStyle
+        var vocabulary: [String] = []
+        var corrections: [DictationCorrection] = []
+        var lowercase = false
+        var formatLists = false
+        var spokenPunctuation = false
+        var numbersAsDigits = false
+        var hinglish = false
+        var greeklish = false
+        var endsWithPeriod = true
+
+        /// Custom vocabulary plus the learned fixes' meant words, for speech recognition hints.
+        var recognitionHints: [String] {
+            DictationCorrections.recognitionHints(vocabulary: vocabulary, corrections: corrections)
+        }
+
+        static func current(
+            style: DictationStyle,
+            vocabulary: CustomVocabularySettings = CustomVocabularySettings(),
+            corrections: [DictationCorrection] = [],
+            lowercase: DictationLowercaseSettings = DictationLowercaseSettings(),
+            lists: DictationListSettings = DictationListSettings(),
+            punctuation: DictationPunctuationSettings = DictationPunctuationSettings(),
+            numbers: DictationNumberSettings = DictationNumberSettings(),
+            hinglish: HinglishSettings = HinglishSettings(),
+            greeklish: GreeklishSettings = GreeklishSettings(),
+            period: DictationPeriodSettings = DictationPeriodSettings()
+        ) -> Preferences {
+            Preferences(
+                style: style,
+                vocabulary: vocabulary.activeTerms,
+                corrections: corrections,
+                lowercase: lowercase.isEnabled,
+                formatLists: lists.isEnabled,
+                spokenPunctuation: punctuation.isEnabled,
+                numbersAsDigits: numbers.isEnabled,
+                hinglish: hinglish.isEnabled,
+                greeklish: greeklish.isEnabled,
+                endsWithPeriod: period.isEnabled
+            )
+        }
+    }
+
+    init(
+        style: DictationStyle,
+        language: String,
+        vocabulary: [String] = [],
+        corrections: [DictationCorrection] = [],
+        lowercase: Bool = false,
+        formatLists: Bool = false,
+        spokenPunctuation: Bool = false,
+        numbersAsDigits: Bool = false,
+        hinglish: Bool = false,
+        greeklish: Bool = false,
+        endsWithPeriod: Bool = true,
+        translationEngine: TranslationEngine? = nil
+    ) {
+        self.style = style
+        self.language = language
+        self.vocabulary = vocabulary
+        self.corrections = corrections
+        self.lowercase = lowercase
+        self.formatLists = formatLists
+        self.spokenPunctuation = spokenPunctuation
+        self.numbersAsDigits = numbersAsDigits
+        self.hinglish = hinglish
+        self.greeklish = greeklish
+        self.endsWithPeriod = endsWithPeriod
+        self.translationEngine = translationEngine
+    }
+
+    init(
+        preferences: Preferences,
+        language: String,
+        translationEngine: TranslationEngine? = nil
+    ) {
+        self.init(
+            style: preferences.style,
+            language: language,
+            vocabulary: preferences.vocabulary,
+            corrections: preferences.corrections,
+            lowercase: preferences.lowercase,
+            formatLists: preferences.formatLists,
+            spokenPunctuation: preferences.spokenPunctuation,
+            numbersAsDigits: preferences.numbersAsDigits,
+            hinglish: preferences.hinglish,
+            greeklish: preferences.greeklish,
+            endsWithPeriod: preferences.endsWithPeriod,
+            translationEngine: translationEngine
+        )
+    }
 
     /// Each step's text, for Record typing logs.
     struct Stages: Equatable, Sendable {
@@ -197,12 +296,13 @@ nonisolated struct DictationPipeline: Sendable {
             : romanizesGreek ? GreeklishRomanizer.romanize(spoken)
             : spoken
         let fixed = DictationCorrections.apply(corrections, to: translatesLatin ? spoken : heard)
-        let spelled = VocabularySpelling.apply(vocabulary, to: fixed)
+        let spelled = SoundAlikeSpelling.apply(vocabulary, to: VocabularySpelling.apply(vocabulary, to: fixed), language: language)
         let tagged = await CleanupTagger.cleanIfEnabled(
             spelled,
             style: style,
             language: language,
-            protectedTerms: DictationCorrections.recognitionHints(vocabulary: vocabulary, corrections: corrections)
+            protectedTerms: DictationCorrections.recognitionHints(vocabulary: vocabulary, corrections: corrections),
+            numbers: numbersAsDigits
         )
         let refined = await refine?(tagged) ?? tagged
         let outcome = await DictationTranslator.translate(

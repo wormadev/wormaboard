@@ -7,6 +7,8 @@
 //! and is hidden while off.
 
 mod group;
+#[cfg(target_os = "macos")]
+mod hud_height;
 #[cfg(all(target_os = "macos", hex_capture))]
 pub(super) mod screenshots;
 mod signature;
@@ -22,7 +24,7 @@ use rune::{El, Icon, TextEdit, Tx, row, text};
 pub(super) use self::store::{page, search_field, tabs};
 use super::controls::{self, Paint};
 use super::icons::{
-    BOOK, CALENDAR, CAMERA, CLOCK, FOLDER, GLOBE, KEYBOARD, MOUSE, PANEL, SPARKLES, TERMINAL,
+    BOOK, CALENDAR, CAMERA, CLOCK, FOLDER, GLOBE, KEYBOARD, MIC, MOUSE, PANEL, SPARKLES, TERMINAL,
     TIMER, WAVE,
 };
 use super::sidebar::{NAV_ROW_GAP, NAV_ROW_HEIGHT, VOICE_FILTER_ICON};
@@ -231,6 +233,10 @@ pub(super) struct Store {
     pub(super) signature: TextEdit,
     /// Whether `signature` started from the saved line.
     pub(super) signature_synced: bool,
+    /// Labs › HUD height's slider while it drags: the point gap shown
+    /// before release saves it.
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+    pub(super) hud_gap: Option<u16>,
     /// The lab a `hex://labs/<feature>` link named and when, so its card
     /// shows a focus border for [`FLASH`].
     pub(super) flash: Option<(&'static str, std::time::Instant)>,
@@ -495,11 +501,20 @@ fn shown(ui: &Ui) -> Vec<Row> {
         .collect()
 }
 
-pub(super) fn offered(ui: &Ui, feature: Feature) -> bool {
-    feature.audience() == crate::labs::Audience::Everyone
-        && shown(ui)
-            .iter()
-            .any(|row| row.lab.id() == feature.name() && !row.locked)
+/// Every lab this build offers anyone: its audience is everyone, it shows on
+/// this OS, and nothing locks it, each with the icon its card draws. What's
+/// new lists its newest entries from this.
+pub(super) fn offered_labs(ui: &Ui) -> Vec<(Feature, &'static Icon)> {
+    shown(ui)
+        .into_iter()
+        .filter(|row| !row.locked)
+        .filter_map(|row| match row.lab {
+            Lab::Feature(feature) if feature.audience() == crate::labs::Audience::Everyone => {
+                Some((feature, row.icon))
+            }
+            _ => None,
+        })
+        .collect()
 }
 
 /// Search only the cards the current store can reveal. This also covers
@@ -616,6 +631,10 @@ fn rows(ui: &Ui) -> Vec<Row> {
         }
     }
     rows.push(row(Feature::VocabularyFiles, Some(&BOOK)));
+    // macOS's menu-bar menu offers it, right under Speech Model.
+    if caps.os == super::platform::Os::Macos {
+        rows.push(row(Feature::VocabularyMenu, None));
+    }
     // macOS reads the focused window through Accessibility as a capture
     // becomes real.
     if caps.os == super::platform::Os::Macos {
@@ -675,6 +694,8 @@ fn rows(ui: &Ui) -> Vec<Row> {
             // macOS's app menu Quit Hex closes the window instead.
             // macOS's HUD reads the screen's notch from NSScreen.
             rows.push(row(Feature::NotchIndicator, Some(&WAVE)));
+            // macOS's HUD reads its bottom gap from the saved setting.
+            rows.push(row(Feature::HudHeight, Some(&PANEL)));
             // Hex's session tap takes the shortcut; ScreenCaptureKit shoots.
             #[cfg(hex_capture)]
             rows.push(row(Feature::Screenshots, Some(&CAMERA)));
@@ -748,6 +769,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
         });
     }
     rows.push(row(Feature::HistoryStats, None));
+    rows.push(row(Feature::HistoryStatsStrip, None));
     rows.push(row(Feature::KeepRecordings, None));
     rows.push(row(Feature::CopyDictationAudio, None));
     // The picker is a Mac gesture and History; elsewhere neither exists.
@@ -795,6 +817,11 @@ fn rows(ui: &Ui) -> Vec<Row> {
     rows.push(row(Feature::ApiTimestamps, None));
     rows.push(row(Feature::SpeakersOnly, None));
     rows.push(row(Feature::KeepMicrophoneOpen, Some(&TIMER)));
+    // macOS opens dictation's microphone through Apple's voice processing, so
+    // Control Center's Mic Mode can offer Voice Isolation.
+    if caps.os == super::platform::Os::Macos {
+        rows.push(row(Feature::VoiceIsolation, Some(&MIC)));
+    }
     let ultra_locked = Feature::ParakeetUltra.managed().is_none()
         && Feature::ParakeetUltra.off_refusal(&ui.settings).is_some();
     let ultra = row(Feature::ParakeetUltra, None);
@@ -826,50 +853,13 @@ fn rows(ui: &Ui) -> Vec<Row> {
     }
     #[cfg(hex_capture)]
     if ui.platform.scrawl.is_some() {
-        // A written capture's copy runs through the same engine and the same
-        // Annotate lock.
-        let annotate_locked = crate::policy::Policy::current().locks(crate::policy::Lock::Annotate);
-        let locked = annotate_locked || Feature::CopyCaptureZip.managed().is_some();
-        let copy_zip = row(Feature::CopyCaptureZip, Some(&FOLDER));
-        rows.push(Row {
-            locked,
-            about: if locked {
-                super::managed_note().into()
-            } else {
-                copy_zip.about.clone()
-            },
-            on: !locked && Feature::CopyCaptureZip.on(settings),
-            ..copy_zip
-        });
-        // `hex annotate inspect|zoom|frames|skill` for coding agents: the
-        // same engine and Annotate lock as the copy above.
-        let agent_locked = annotate_locked || Feature::AnnotateAgentTools.managed().is_some();
-        let agent_tools = row(Feature::AnnotateAgentTools, Some(&TERMINAL));
-        rows.push(Row {
-            locked: agent_locked,
-            about: if agent_locked {
-                super::managed_note().into()
-            } else {
-                agent_tools.about.clone()
-            },
-            on: !agent_locked && Feature::AnnotateAgentTools.on(settings),
-            ..agent_tools
-        });
-        // The Annotate pane's Agents section writes that skill into each
-        // coding agent's folder and links hex onto PATH (macOS).
-        let install_locked = annotate_locked || Feature::AnnotateAgentInstall.managed().is_some();
-        let agent_install = row(Feature::AnnotateAgentInstall, Some(&TERMINAL));
-        rows.push(Row {
-            locked: install_locked,
-            about: if install_locked {
-                super::managed_note().into()
-            } else {
-                agent_install.about.clone()
-            },
-            on: !install_locked && Feature::AnnotateAgentInstall.on(settings),
-            ..agent_install
-        });
-        let locked = annotate_locked;
+        // Every Annotate-group feature carries Lock::Annotate in its managed()
+        // check, so `row` locks them under DisableAnnotate automatically.
+        rows.push(row(Feature::CopyCaptureZip, Some(&FOLDER)));
+        rows.push(row(Feature::AnnotateAgentTools, Some(&TERMINAL)));
+        rows.push(row(Feature::AnnotateAgentInstall, Some(&TERMINAL)));
+        rows.push(row(Feature::DictateWhileAnnotating, Some(&KEYBOARD)));
+        let locked = crate::policy::Policy::current().locks(crate::policy::Lock::Annotate);
         rows.push(Row {
             lab: Lab::Annotate,
             icon: Pane::Annotate.icon(),
@@ -919,12 +909,12 @@ fn live_text_note_for(
         return cpu_engine
             .then(|| tr("Live words need the GPU, and Speech engine is set to CPU").to_owned());
     }
-    let streaming: Vec<&'static str> = MODELS
+    let streaming: Vec<&str> = MODELS
         .iter()
         .filter(|model| model.streams && model.available() && model.supports_language(language))
-        .map(|model| model.name)
+        .map(|model| model.name.as_ref())
         .collect();
-    match *streaming.as_slice() {
+    match streaming.as_slice() {
         [first, second, ..] => Some(tr_named(
             "This speech model doesn't show live words; pick {first} or {second}",
             &[("first", first), ("second", second)],
@@ -980,6 +970,7 @@ fn row_key(lab: Lab) -> &'static str {
         Feature::ParakeetUltra => "lab-parakeet-ultra",
         Feature::StandaloneSpecialKeys => "lab-special-keys",
         Feature::HistoryStats => "lab-history-stats",
+        Feature::HistoryStatsStrip => "lab-history-stats-strip",
         Feature::RecentDictations => "lab-recent-dictations",
         Feature::SkipPauses => "lab-skip-pauses",
         Feature::OutputFixes => "lab-output-fixes",
@@ -1008,6 +999,7 @@ fn row_key(lab: Lab) -> &'static str {
         Feature::CopyCaptureZip => "lab-copy-capture-zip",
         Feature::AnnotateAgentTools => "lab-annotate-agent-tools",
         Feature::AnnotateAgentInstall => "lab-annotate-agent-install",
+        Feature::DictateWhileAnnotating => "lab-dictate-while-annotating",
         Feature::MeetingImport => "lab-meeting-import",
         Feature::OpenCodeInWsl => "lab-opencode-in-wsl",
         Feature::YoloMode => "lab-yolo-mode",
@@ -1019,10 +1011,13 @@ fn row_key(lab: Lab) -> &'static str {
         Feature::CursorContext => "lab-cursor-context",
         Feature::StopPhrase => "lab-stop-phrase",
         Feature::Signature => "lab-signature",
+        Feature::HudHeight => "lab-hud-height",
+        Feature::VoiceIsolation => "lab-voice-isolation",
         Feature::HoldThroughKeys => "lab-hold-through-keys",
         Feature::ModesEditor => "lab-modes-editor",
         Feature::DropTranscribe => "lab-drop-transcribe",
         Feature::VocabularyFiles => "lab-vocabulary-files",
+        Feature::VocabularyMenu => "lab-vocabulary-menu",
         Feature::DictationStyle => "lab-dictation-style",
     }
 }
@@ -1158,6 +1153,8 @@ fn extras(ui: &Ui, p: Paint, entry: &Row, layer: &mut Vec<El>) -> Option<El> {
         Lab::Feature(Feature::VoicePrompt) => Some(voice_prompt::body(ui, p)),
         Lab::Feature(Feature::StopPhrase) => Some(stop_phrase::body(ui, p)),
         Lab::Feature(Feature::Signature) => Some(signature::body(ui, p)),
+        #[cfg(target_os = "macos")]
+        Lab::Feature(Feature::HudHeight) => Some(hud_height::body(ui, p)),
         Lab::Feature(Feature::DictationStyle) => Some(
             row()
                 .key("dictation-style-row")
@@ -1328,7 +1325,7 @@ mod tests {
         let streaming: Vec<&str> = crate::transcription::models::MODELS
             .iter()
             .filter(|model| model.streams && model.available() && model.supports_language("en"))
-            .map(|model| model.name)
+            .map(|model| model.name.as_ref())
             .collect();
         for name in streaming.iter().take(2) {
             assert!(note.contains(*name), "{note:?} names {name}");

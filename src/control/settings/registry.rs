@@ -370,6 +370,12 @@ pub(super) const KEYS: &[Key] = &[
         "Labs: import vocabulary terms from a CSV file in the Vocabulary sheet, and export the list as one",
     ),
     key(
+        "labs.vocabulary_menu",
+        Kind::Bool,
+        "Labs: the menu bar's Vocabulary submenu lists the last five saved terms and offers \
+         Add term… and Open vocabulary… (macOS)",
+    ),
+    key(
         "labs.screen_vocabulary",
         Kind::Bool,
         "Labs: use names and terms visible in the focused window as temporary vocabulary for each dictation (macOS)",
@@ -555,6 +561,11 @@ pub(super) const KEYS: &[Key] = &[
         "Labs: a summary of retained dictations at the top of History, with a year-long heatmap and all-time totals from a daily rollup in usage.json (counts only, no text or app names) kept beyond History's retention. While off, the rollup is never written or read; hex history stats prints it too",
     ),
     key(
+        "labs.history_stats_strip",
+        Kind::Bool,
+        "Labs: History draws the Dictation stats dialog's six headline numbers as one compact strip above its list; it needs Labs: history stats and changes nothing else, and off History is exactly as before",
+    ),
+    key(
         "labs.recent_dictations",
         Kind::Bool,
         "Labs: a Copy Recent Dictation submenu in the menu bar that copies one of the last five dictations (macOS)",
@@ -590,9 +601,27 @@ pub(super) const KEYS: &[Key] = &[
         "Labs: on a screen with a notch, the recording indicator grows out of the notch at either visible position; Hidden still hides it, and flat screens keep the Top or Bottom setting (macOS)",
     ),
     key(
+        "labs.hud_height",
+        Kind::Bool,
+        "Labs: with the HUD position Bottom, the plate sits labs.hud_bottom_gap points above the Dock or the screen's bottom edge, clamped so it stays under the menu bar or notch (macOS)",
+    ),
+    key(
+        "labs.hud_bottom_gap",
+        Kind::Integer {
+            min: 0,
+            max: crate::app_settings::HUD_BOTTOM_GAP_MAX as u64,
+        },
+        "Points the dictation HUD sits above the Dock or the screen's bottom edge at the Bottom position while Labs: HUD height is on; 24 by default, and 0 to 400 (macOS)",
+    ),
+    key(
         "labs.skip_pauses",
         Kind::Bool,
         "Labs: a dictation transcribed as a whole clip hears only the start and end of each long pause, so slow computers paste sooner (Linux and Windows)",
+    ),
+    key(
+        "labs.voice_isolation",
+        Kind::Bool,
+        "Labs: dictation's microphone opens through Apple's voice processing, so Control Center's Mic Mode can offer Voice Isolation and background noise is reduced; meetings, captures, and the level meter stay on normal capture (macOS)",
     ),
     key(
         "labs.screenshots",
@@ -638,6 +667,11 @@ pub(super) const KEYS: &[Key] = &[
         "labs.gnome_annotate",
         Kind::Bool,
         "Labs: on Wayland desktops without layer-shell, such as GNOME, Annotate's capsule and ink float over the screen through XWayland while it is already running; Esc can't stop drawing there, so use the capsule's pen button or let go of a held Annotate key (Linux)",
+    ),
+    key(
+        "labs.dictate_while_annotating",
+        Kind::Bool,
+        "Labs: while an Annotate capture records, the dictation shortcut dictates as usual; the text pastes into the app in front and the capture keeps recording",
     ),
     key(
         "labs.annotate_pointer_screen",
@@ -837,7 +871,12 @@ pub(super) const KEYS: &[Key] = &[
     key(
         "meetings.providers",
         Kind::Json,
-        "Per-app call choices, as a JSON array of {key, label, policy: ask|always_record|never_offer}",
+        "Per-app call choices, as a JSON array of {key, label, policy: ask|always_record|never_offer} (Ask each time, Always record, Don't offer)",
+    ),
+    key(
+        "meetings.default_policy",
+        Kind::Choice(&["ask", "always_record", "never_offer"]),
+        "What to do when a call starts in a website or app with no entry in meetings.providers: ask (Ask each time), always_record (Always record), or never_offer (Don't offer)",
     ),
     read_only(
         "meetings.calendar.connected",

@@ -7,6 +7,7 @@ struct ModelPreparationProgress: Sendable {
 }
 
 protocol LocalTranscribing: Actor {
+    nonisolated var engine: DictationEngine { get }
     nonisolated var displayName: String { get }
     var languageName: String { get }
     /// The BCP 47 identifier of the language it transcribes.
@@ -21,6 +22,8 @@ protocol LocalTranscribing: Actor {
 }
 
 extension LocalTranscribing {
+    nonisolated var displayName: String { engine.displayName }
+
     /// English unless the engine says otherwise.
     var languageIdentifier: String { "en-US" }
 
@@ -75,10 +78,10 @@ actor ParakeetTranscriber: LocalTranscribing {
 
     private var manager: AsrManager?
 
-    nonisolated let displayName = "Parakeet V2"
+    nonisolated let engine: DictationEngine = .parakeetV2
     let languageName = "English"
 
-    /// In the App Group (`SpeechModelStore`), so Experiments › Speech model in keyboard can load
+    /// In the App Group (`SpeechModelStore`), so Settings › Dictation › Speech model in keyboard can load
     /// it too; FluidAudio finds it by its repo's folder name.
     nonisolated static var cacheDirectory: URL {
         SpeechModelStore.root.appendingPathComponent(Repo.parakeetV2.folderName, isDirectory: true)
@@ -151,7 +154,7 @@ actor ParakeetTranscriber: LocalTranscribing {
         }
     }
 
-    /// The download, for the app's engine and for Experiments › Speech model in keyboard;
+    /// The download, for the app's engine and for Settings › Dictation › Speech model in keyboard;
     /// `progress` gets the share downloaded. Marks the folder complete once every file is there.
     nonisolated static func downloadModel(progress: @escaping @Sendable (Double) -> Void) async throws {
         let fraction = ProgressReading()
@@ -367,6 +370,11 @@ nonisolated struct ParakeetCompileRecord {
 
     func markCurrent() {
         defaults.set(system, forKey: key)
+    }
+
+    /// Core ML compiles again for files that moved: the next load says so and takes its time.
+    func forget() {
+        defaults.removeObject(forKey: key)
     }
 }
 

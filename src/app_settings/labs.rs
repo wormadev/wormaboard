@@ -182,6 +182,9 @@ pub struct LabsSettings {
     /// Menu, Pause, and Scroll Lock may be shortcut keys (Linux, issue 767).
     pub standalone_special_keys: bool,
     pub history_stats: bool,
+    /// History draws the Dictation stats dialog's headline numbers as one
+    /// compact strip above its list; it needs `history_stats` too.
+    pub history_stats_strip: bool,
     pub recent_dictations: bool,
     pub skip_pauses: bool,
     /// Output's Try card offers Vocabulary and Fix this beside its result (issue 989).
@@ -223,6 +226,16 @@ pub struct LabsSettings {
     pub typed_text: bool,
     /// At either visible indicator position, the HUD grows out of the notch on a screen with one (macOS).
     pub notch_indicator: bool,
+    /// With the HUD position Bottom, the plate sits `hud_bottom_gap` points
+    /// above the Dock or the screen's bottom edge (macOS, Labs › HUD height).
+    pub hud_height: bool,
+    /// The gap in points above the Dock while `hud_height` is on; a saved
+    /// value above [`HUD_BOTTOM_GAP_MAX`] is clamped at placement.
+    pub hud_bottom_gap: u16,
+    /// Dictation's microphone opens through Apple's voice processing, so
+    /// Control Center's Mic Mode can offer Voice Isolation (macOS, Labs ›
+    /// Voice isolation).
+    pub voice_isolation: bool,
     /// The meeting capsules float on a running XWayland on Wayland desktops without layer-shell, such as GNOME (Linux, issue 1274).
     pub gnome_meeting_capsules: bool,
     /// Annotate's capsule and ink float on a running XWayland on Wayland desktops without layer-shell, such as GNOME (Linux).
@@ -259,6 +272,9 @@ pub struct LabsSettings {
     /// The Vocabulary sheet imports terms from a CSV file and exports the
     /// list as one (Labs › Vocabulary files).
     pub vocabulary_files: bool,
+    /// The menu bar's Vocabulary submenu adds a term or opens the sheet, and
+    /// lists the last five saved terms (macOS; Labs › Vocabulary menu).
+    pub vocabulary_menu: bool,
     /// `hex annotate inspect`, `zoom`, `frames`, and `skill` read a capture
     /// bundle for a coding agent (Labs › Agent tools for captures).
     pub annotate_agent_tools: bool,
@@ -266,6 +282,9 @@ pub struct LabsSettings {
     /// coding agents' own folders and, on macOS, links `hex` onto PATH
     /// (Labs › Install agent skill from Annotate).
     pub annotate_agent_install: bool,
+    /// While an Annotate capture records, the dictation shortcut dictates
+    /// as it always does, and the capture keeps recording.
+    pub dictate_while_annotating: bool,
     /// The local API's `process=global` returns transcripts after Global
     /// mode's output processing.
     pub api_processing: bool,
@@ -351,6 +370,14 @@ pub struct LabsSettings {
 
 /// The idle times Labs › Free memory when idle offers, in minutes.
 pub const UNLOAD_IDLE_MINUTES: [u32; 4] = [5, 15, 30, 60];
+
+/// The gap above the Dock or the screen's bottom edge the dictation HUD
+/// keeps while Labs › HUD height is off, in points.
+pub const HUD_BOTTOM_GAP_DEFAULT: u16 = 24;
+
+/// The highest gap Labs › HUD height offers, in points. Placement clamps it
+/// further so the plate stays inside the visible frame.
+pub const HUD_BOTTOM_GAP_MAX: u16 = 400;
 
 /// The times Labs › Keep mic open after dictating offers, in seconds:
 /// 30 s, 1, 3, 5, and 30 minutes.
@@ -475,6 +502,7 @@ impl Default for LabsSettings {
             parakeet_ultra: false,
             standalone_special_keys: false,
             history_stats: false,
+            history_stats_strip: false,
             recent_dictations: false,
             skip_pauses: false,
             output_fixes: false,
@@ -493,6 +521,9 @@ impl Default for LabsSettings {
             gnome_clipboard_restore: false,
             typed_text: false,
             notch_indicator: false,
+            hud_height: false,
+            hud_bottom_gap: HUD_BOTTOM_GAP_DEFAULT,
+            voice_isolation: false,
             annotate_replay: false,
             opencode_in_wsl: false,
             yolo_mode: false,
@@ -500,8 +531,10 @@ impl Default for LabsSettings {
             drop_transcribe: false,
             paste_last_picker: false,
             vocabulary_files: false,
+            vocabulary_menu: false,
             annotate_agent_tools: false,
             annotate_agent_install: false,
+            dictate_while_annotating: false,
             api_processing: false,
             api_timestamps: false,
             speakers_only: false,
@@ -532,5 +565,19 @@ impl Default for LabsSettings {
             expire_meeting_audio: None,
             yearly_stats: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// An older settings file has no `hud_bottom_gap`, and the struct's
+    /// default supplies the fixed 24 pt.
+    #[test]
+    fn a_saved_file_without_the_hud_gap_keeps_the_fixed_default() {
+        let labs: LabsSettings = serde_json::from_str(r#"{"notch_indicator":true}"#).unwrap();
+        assert_eq!(labs.hud_bottom_gap, HUD_BOTTOM_GAP_DEFAULT);
+        assert!(!labs.hud_height);
     }
 }

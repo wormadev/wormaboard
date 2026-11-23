@@ -45,7 +45,11 @@ struct ContentView: View {
     @State private var keyboardSpeech = KeyboardSpeechPreparation()
     @State private var onboardingPage = OnboardingProgress.launchPage
     @State private var settingsPath = SettingsSnapshotFixture.initialPath
+    /// Settings › Dictation opened from the speech model card: it starts at that card's row.
+    @State private var dictationOpensAtSpeechModel = false
     @State private var showAcknowledgements = false
+    /// Whether Hex went to the background, so only a real return starts the keyboard's check over.
+    @State private var keyboardCheckWasInBackground = false
 
     private static let stageWellHeight: CGFloat = 48
     private static let stageControlHeight: CGFloat = 36
@@ -84,10 +88,24 @@ struct ContentView: View {
                 TranslationSessionHostView()
             }
         }
-        .task { keyboardSpeech.start { dictation.engineName } }
+        .task { keyboardSpeech.start { dictation.engine } }
         .onChange(of: scenePhase) { _, phase in
-            // Opened from a keyboard handing its dictations to Hex: check again whether it must.
-            if phase == .active { keyboardSpeech.recheckKeyboardHandoff { dictation.engineName } }
+            switch phase {
+            case .background:
+                keyboardCheckWasInBackground = true
+            case .active:
+                // Only after a real background trip: an alert, Face ID or Control Center goes
+                // inactive and back without suspending anything, and launch starts active. The
+                // app's own preparation resumes in HEXMobileApp, which tracks it the same way.
+                if keyboardCheckWasInBackground {
+                    keyboardCheckWasInBackground = false
+                    keyboardSpeech.resumeOnForeground { dictation.engine }
+                }
+                // Opened from a keyboard handing its dictations to Hex: check again whether it must.
+                keyboardSpeech.recheckKeyboardHandoff { dictation.engine }
+            default:
+                break
+            }
         }
         .animation(HexMotion.reducedFade, value: openedFromKeyboard)
         .animation(HexMotion.reducedFade, value: onboardingPage == nil)
@@ -165,17 +183,27 @@ struct ContentView: View {
         .sheet(isPresented: $showSetup) {
             SetupSheet(dictation: dictation, monitor: setupMonitor, keyboardSpeech: keyboardSpeech)
         }
-        .task {
-            while !Task.isCancelled {
-                setupMonitor.refresh()
-                try? await Task.sleep(for: .seconds(1))
-            }
-        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 setupMonitor.refresh()
             }
         }
+        // While Home or its setup sheet shows, once a second: what changes with Hex still in
+        // front (the keyboard's Allow Paste flag, keyboards added from Settings beside it in
+        // Split View) has no notification of its own.
+        .task(id: setupIsShowing) {
+            while setupIsShowing, !Task.isCancelled {
+                setupMonitor.refresh()
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+        .onChange(of: settingsPath) { _, path in
+            if path.isEmpty { dictationOpensAtSpeechModel = false }
+        }
+    }
+
+    private var setupIsShowing: Bool {
+        scenePhase == .active && (settingsPath.isEmpty || showSetup)
     }
 
     /// Fits one screen: the header and its status line, Dictate, and the four pages.
@@ -211,6 +239,23 @@ struct ContentView: View {
                     turnOff: { dictation.turnOffMultilingualParakeet() }
                 )
 
+                SpeechModelHomeCard(download: KeyboardParakeetDownload.shared, open: {
+                    dictationOpensAtSpeechModel = true
+                    settingsPath = [.dictation]
+                })
+
+                if setupMonitor.needsAllowPasteSetting {
+                    AllowPasteBanner(
+                        openSettings: {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                openURL(url)
+                            }
+                        },
+                        dismiss: { setupMonitor.dismissAllowPasteSetting() }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                }
+
                 SettingsCard {
                     ForEach(Array(SettingsPage.allCases.enumerated()), id: \.element) { index, page in
                         if index > 0 {
@@ -230,7 +275,7 @@ struct ContentView: View {
                             openURL(url)
                         }
                     } label: {
-                        SettingsLinkLabel(title: String(localized: "Keyboard settings"), icon: "gearshape", trailingIcon: "arrow.up.right")
+                        SettingsLinkLabel(title: String(localized: "iOS Settings"), icon: "gearshape", trailingIcon: "arrow.up.right")
                     }
                     .buttonStyle(.plain)
 
@@ -286,6 +331,7 @@ struct ContentView: View {
             .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: dictation.keyboardSessionEnabled)
             .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: hasTranscript)
             .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: setupStepsLeft)
+            .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: setupMonitor.needsAllowPasteSetting)
         }
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
@@ -296,9 +342,13 @@ struct ContentView: View {
     private func settingsPage(_ page: SettingsPage) -> some View {
         switch page {
         case .dictation:
-            DictationSettingsPage(dictation: dictation)
+            DictationSettingsPage(dictation: dictation, opensAtSpeechModel: dictationOpensAtSpeechModel)
         case .keyboard:
-            KeyboardSettingsPage(fullAccessOn: setupMonitor.fullAccessOn)
+            KeyboardSettingsPage(
+                fullAccessOn: setupMonitor.fullAccessOn,
+                needsAllowPasteSetting: setupMonitor.needsAllowPasteSetting,
+                onDismissAllowPasteSetting: { setupMonitor.dismissAllowPasteSetting() }
+            )
         case .privacy:
             PrivacySettingsPage()
         case .experiments:
@@ -783,21 +833,11 @@ struct ContentView: View {
     }
 
     private var primaryActionLabel: String {
-        switch dictation.phase {
-        case .modelRequired, .failed:
-            String(localized: "Set up")
-        default:
-            String(localized: "Dictate")
-        }
+        dictation.primaryActionPreparesModel ? String(localized: "Set up") : String(localized: "Dictate")
     }
 
     private var primaryActionIcon: String {
-        switch dictation.phase {
-        case .modelRequired, .failed:
-            "arrow.down"
-        default:
-            "mic.fill"
-        }
+        dictation.primaryActionPreparesModel ? "arrow.down" : "mic.fill"
     }
 
     private var handoffStatusLine: String? {

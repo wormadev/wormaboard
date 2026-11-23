@@ -2,7 +2,6 @@
 //! the transition; only the shell stretches. The controller still owns the
 //! offer, its deadlines and every consequential action.
 use super::*;
-use crate::calendar::CallProvider;
 use crate::meeting::detection::MeetingSource;
 use rune::Transition;
 
@@ -134,7 +133,7 @@ impl Presentation {
             + if provider.is_some() { 34.0 + 8.0 } else { 0.0 };
         let rules = button(tr("Cancel"))
             + 8.0
-            + button(tr("Never offer"))
+            + button(tr("Don't offer"))
             + if c.can_always_record() {
                 8.0 + button(tr("Always record"))
             } else {
@@ -184,27 +183,13 @@ impl Presentation {
 }
 
 fn web(c: &MeetingCandidate) -> bool {
-    c.site.is_some()
-        || crate::microphone_activity::is_browser_id(c.application.as_deref())
-        || matches!(
-            c.source,
-            MeetingSource::BrowserCall | MeetingSource::GoogleMeet | MeetingSource::Banshee
-        )
+    c.on_web()
 }
 
 pub(super) fn native_icon(id: &str) -> Option<rune::Pixels> {
     static CACHE: std::sync::OnceLock<rune::ImageCache> = std::sync::OnceLock::new();
     let apps = crate::application_catalog::discover();
-    let entry = apps
-        .iter()
-        .find(|a| a.bundle_id.as_deref() == Some(id))
-        .or_else(|| {
-            apps.iter().find(|a| {
-                // The desktop catalogs on Windows and Linux identify apps by executable.
-                let key = a.bundle_id.as_deref().unwrap_or(&a.name);
-                crate::microphone_activity::canonical_bundle_id_for(key, None) == Some(id)
-            })
-        })?;
+    let entry = crate::application_catalog::find(&apps, id)?;
     if !entry.path.exists() {
         return None;
     }
@@ -223,13 +208,20 @@ pub(super) fn local_bundle(c: &MeetingCandidate) -> Option<&str> {
     }
 }
 
-fn fallback(c: &MeetingCandidate) -> Option<CallProvider> {
+/// The name a web call's service mark is found by: its site, or the
+/// service's name.
+fn fallback_key(c: &MeetingCandidate) -> String {
+    if c.source == MeetingSource::BrowserCall {
+        c.site.clone().unwrap_or_default()
+    } else {
+        c.source.label().to_owned()
+    }
+}
+
+#[cfg(test)]
+fn fallback(c: &MeetingCandidate) -> Option<crate::calendar::CallProvider> {
     if web(c) {
-        CallProvider::from_meeting_app(if c.source == MeetingSource::BrowserCall {
-            c.site.as_deref().unwrap_or("")
-        } else {
-            c.source.label()
-        })
+        crate::calendar::CallProvider::from_meeting_app(&fallback_key(c))
     } else {
         None
     }
@@ -246,7 +238,12 @@ pub(super) fn fallback_name(c: &MeetingCandidate) -> &'static str {
 
 pub(super) fn load_icon(panel: OverlayHandle<Capsule>, id: OfferId) {
     panel.clone().update(move |c, _| {
-        let Some(Kind::Offer(current, found)) = &c.kind else {
+        let State::Offer {
+            id: current,
+            candidate: found,
+            ..
+        } = &c.state
+        else {
             return;
         };
         if *current != id || web(found) {
@@ -258,7 +255,7 @@ pub(super) fn load_icon(panel: OverlayHandle<Capsule>, id: OfferId) {
         std::thread::spawn(move || {
             if let Some(icon) = native_icon(&bundle) {
                 panel.update(move |c, _| {
-                    if matches!(c.kind,Some(Kind::Offer(shown,_)) if shown==id) {
+                    if matches!(c.state, State::Offer { id: shown, .. } if shown == id) {
                         c.presentation.icon = Some(icon)
                     }
                 });
@@ -277,9 +274,10 @@ fn mark(p: Paint, c: &MeetingCandidate, local: Option<&rune::Pixels>) -> El {
         slot.pixels(icon)
     } else {
         // A missing local app has no native icon. Web services have their
-        // bundled marks, never the browser's Dock icon.
-        let glyph = fallback(c).map(crate::rune_ui::platform_settings::provider_icon);
-        slot.child(rune::icon(glyph.unwrap_or(&crate::rune_ui::icons::CALL), 18.0).color(p.muted()))
+        // bundled marks, never the browser's Dock icon; other websites a
+        // globe, as Settings › Calls shows them.
+        let glyph = crate::rune_ui::calls::glyph(web(c), &fallback_key(c));
+        slot.child(rune::icon(glyph, 18.0).color(p.muted()))
     }
 }
 
@@ -289,7 +287,10 @@ pub(super) fn view(p: Paint, c: &Capsule, id: OfferId, candidate: &MeetingCandid
 
 pub(super) fn transition(c: &Capsule, p: Paint, dark: Paint) -> Option<El> {
     let departure = c.presentation.departure.as_ref()?;
-    if !matches!(c.drawn(), Some(Kind::Offer(..) | Kind::Recording(_))) {
+    if !matches!(
+        c.drawn(),
+        Some(State::Offer { .. } | State::Recording { .. })
+    ) {
         return None;
     }
     Some(draw(p, dark, c, departure.id, &departure.candidate))
@@ -376,13 +377,13 @@ fn draw(p: Paint, dark: Paint, c: &Capsule, id: OfferId, candidate: &MeetingCand
         .opacity(alpha * offer.opacity)
         .scale(offer.scale)
         .blur(offer.blur);
-    let page = if a.inherits_offer_window() || rules != c.more_open || alpha < 0.2 {
+    let page = if a.inherits_offer_window() || rules != c.more_open() || alpha < 0.2 {
         page.inert().a11y_hidden()
     } else {
         page
     };
     let label = match c.drawn() {
-        Some(Kind::Recording(r)) => format!("{} · {}", tr("Recording"), r.title),
+        Some(State::Recording { recording: r, .. }) => format!("{} · {}", tr("Recording"), r.title),
         _ if a.inherits_offer_window() => tr("Starting…").to_owned(),
         _ => title,
     };
@@ -411,7 +412,7 @@ fn draw(p: Paint, dark: Paint, c: &Capsule, id: OfferId, candidate: &MeetingCand
         );
     }
     if live.shows()
-        && let Some(Kind::Recording(r)) = c.drawn()
+        && let Some(State::Recording { recording: r, .. }) = c.drawn()
     {
         // The recording's own header, on the path it will draw it at, so
         // the meter is one node from its first frame to the finished meeting.

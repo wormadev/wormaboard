@@ -216,10 +216,10 @@ final class TypingJournal {
         )
     }
 
-    /// Fields a journal may learn from: plain text that allows autocorrect, never
-    /// addresses, codes, or anything credential-shaped.
+    /// Fields a journal may learn from: plain text or web search that allows autocorrect,
+    /// never addresses, codes, or anything credential-shaped.
     static func allows(field: KeyboardFieldKind, target: KeyboardTextTarget) -> Bool {
-        guard field == .text, target.autocorrectionType != .no else { return false }
+        guard field.takesWords, target.autocorrectionType != .no else { return false }
         let blocked: Set<UITextContentType> = [
             .password, .newPassword, .oneTimeCode, .username, .emailAddress, .URL,
             .creditCardNumber, .telephoneNumber,
@@ -284,12 +284,13 @@ final class TypingJournal {
         erasedWord = word
     }
 
-    /// Called when a word is finished; a retyped word close to the erased one is a fix.
+    /// Called when a word is finished; a retyped word the erased one was a slip of is a fix
+    /// (`TypingLearning.isSlip`), never a change of mind.
     func didFinish(word: String?, language: String? = nil) {
         defer { erasedWord = nil }
         guard let erased = erasedWord, let word, !word.isEmpty,
               erased.lowercased() != word.lowercased(),
-              Self.distance(erased.lowercased(), word.lowercased()) <= max(2, word.count / 2)
+              TypingLearning.isSlip(typed: erased, final: word, language: language)
         else { return }
         record(.retyped, typed: erased, final: word, language: language)
     }
@@ -379,9 +380,5 @@ final class TypingJournal {
 
     private static func modificationDate(_ url: URL) -> Date? {
         (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
-    }
-
-    static func distance(_ a: String, _ b: String) -> Int {
-        DictationText.distance(a, b)
     }
 }

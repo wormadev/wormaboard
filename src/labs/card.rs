@@ -44,6 +44,7 @@ impl Feature {
             Self::ParakeetUltra => "Parakeet Ultra",
             Self::StandaloneSpecialKeys => "Special keys alone",
             Self::HistoryStats => "Dictation stats",
+            Self::HistoryStatsStrip => "Stats on History",
             Self::RecentDictations => "Copy recent dictations",
             Self::SkipPauses => "Skip long pauses",
             Self::OutputFixes => "Fix results in Output",
@@ -84,10 +85,14 @@ impl Feature {
             Self::DropTranscribe => "Transcribe dropped audio",
             Self::PasteLastPicker => "Paste Last picker",
             Self::VocabularyFiles => "Vocabulary files",
+            Self::VocabularyMenu => "Vocabulary menu",
             Self::AnnotateAgentTools => "Agent tools for captures",
             Self::AnnotateAgentInstall => "Install agent skill from Annotate",
             Self::Signature => "Signature",
             Self::DictationStyle => "Dictation style",
+            Self::HudHeight => "HUD height",
+            Self::VoiceIsolation => "Voice isolation",
+            Self::DictateWhileAnnotating => "Dictate while annotating",
         }
     }
 
@@ -188,6 +193,9 @@ impl Feature {
             }
             Self::HistoryStats => {
                 "Add a Stats button to History that summarizes the dictations you kept, with time saved against your typing speed, the hour you dictate most, a year-long heatmap, and all-time totals kept beyond History's retention (counts only, no text). The hex history stats command prints it too"
+            }
+            Self::HistoryStatsStrip => {
+                "Show your dictation totals in a compact strip at the top of History. Needs Dictation stats."
             }
             Self::RecentDictations => {
                 "Copy one of your last five dictations from the menu bar, under Paste Last Dictation"
@@ -310,6 +318,9 @@ impl Feature {
             Self::VocabularyFiles => {
                 "Import terms from a CSV file in the Vocabulary sheet, or save the whole list as one"
             }
+            Self::VocabularyMenu => {
+                "Add terms to Vocabulary from the menu bar, or open the Vocabulary sheet"
+            }
             Self::AnnotateAgentTools => {
                 "Adds hex annotate zoom, inspect, frames, and skill so coding agents can read a capture closely"
             }
@@ -319,6 +330,15 @@ impl Feature {
             Self::Signature => "Add a line to the end of each dictation, such as \"Sent from Hex\"",
             Self::DictationStyle => {
                 "Format every dictation as Polished, Casual, Notes, or Verbatim, like the iPhone app, without an AI model"
+            }
+            Self::HudHeight => {
+                "Choose how high the dictation HUD sits above the Dock when it's at the bottom"
+            }
+            Self::VoiceIsolation => {
+                "Record dictation through Apple's voice processing so Mic Mode can turn on Voice Isolation and cut background noise."
+            }
+            Self::DictateWhileAnnotating => {
+                "Dictate while a capture records: the text pastes as usual, and the capture keeps going"
             }
         }
     }

@@ -101,6 +101,18 @@ pub(super) const SCENES: &[Scene] = &[
         crate::labs::apply(&ui.settings.labs);
         ui.pane = Pane::History;
     }),
+    // Labs › Stats on History: the dialog's six headline numbers as one
+    // compact strip above History's list.
+    ("history-stats-strip", |ui| {
+        *ui = portal_fixture();
+        ui.history = history::HistoryPane::fixture();
+        ui.history.stats = Some(history::HistoryPane::fixture_stats());
+        ui.history.usage = Some(history::HistoryPane::fixture_usage());
+        ui.settings.labs.history_stats = true;
+        ui.settings.labs.history_stats_strip = true;
+        crate::labs::apply(&ui.settings.labs);
+        ui.pane = Pane::History;
+    }),
     // Two entries selected, with the card
     // that copies or deletes them.
     ("history-selection", |ui| {
@@ -159,6 +171,15 @@ pub(super) const SCENES: &[Scene] = &[
         ui.history.unified.picked = Some(std::path::PathBuf::from(
             "/Users/alex/Library/Application Support/Scrawl/captures/1.scrawl",
         ));
+    }),
+    // The Paste Last picker a held Paste Last opens, centred over the
+    // window as it is over the display: a capture, a cancelled dictation,
+    // and the newest dictation selected.
+    #[cfg(all(target_os = "macos", hex_capture))]
+    ("mac-paste-picker", |ui| {
+        *ui = mac_fixture();
+        ui.settings.labs.paste_last_picker = true;
+        ui.paste_preview = true;
     }),
     #[cfg(all(target_os = "macos", hex_capture))]
     ("mac-history-empty", |ui| {
@@ -618,6 +639,24 @@ pub(super) const SCENES: &[Scene] = &[
         *ui = mac_fixture();
         ui.meetings.view = meetings::View::Settings;
         ui.pane = Pane::Meetings;
+        calls_fixture(ui, false);
+    }),
+    // The Calls sheet: Ask each time for every call, Slack huddles
+    // recording automatically, a website not offered, and the calls Hex
+    // has seen, newest first.
+    ("meetings-calls", |ui| {
+        *ui = mac_fixture();
+        ui.meetings.view = meetings::View::Settings;
+        ui.pane = Pane::Meetings;
+        calls_fixture(ui, true);
+    }),
+    // Before Hex has seen a call or saved an answer.
+    ("meetings-calls-empty", |ui| {
+        *ui = mac_fixture();
+        ui.meetings.view = meetings::View::Settings;
+        ui.pane = Pane::Meetings;
+        ui.settings.meetings.providers.clear();
+        calls::fixture(ui, Vec::new(), CALLS_NOW_MS, true);
     }),
     // Summaries' picker open: Off, On this Mac, OpenCode, each saying what
     // it does; then with Apple Intelligence off, On this Mac kept, disabled,
@@ -975,6 +1014,39 @@ fn unified_history(ui: &mut Ui) {
     ui.history.reload(ui.settings.labs.history_stats);
     ui.captures = captures::CapturesPane::fixture();
     ui.pane = Pane::History;
+}
+
+/// Saturday, 21 November 2026, 12:00 UTC: the Calls fixtures' now.
+const CALLS_NOW_MS: i64 = 1_795_262_400_000;
+
+/// Calls Hex saw: Slack and Zoom with their catalog icons, Google Meet's
+/// website, and one other website.
+fn calls_fixture(ui: &mut Ui, open: bool) {
+    use crate::meeting::seen_calls::SeenCall;
+    let hour = 60 * 60 * 1000;
+    let seen = |key: &str, label: &str, application: Option<&str>, ago: i64| SeenCall {
+        key: key.into(),
+        label: label.into(),
+        application: application.map(Into::into),
+        last_seen_ms: CALLS_NOW_MS - ago * hour,
+    };
+    modes::fixture_call_catalog(ui);
+    calls::fixture(
+        ui,
+        vec![
+            seen(
+                "com.tinyspeck.slackmacgap",
+                "Slack huddles",
+                Some("com.tinyspeck.slackmacgap"),
+                2,
+            ),
+            seen("us.zoom.xos", "Zoom", Some("us.zoom.xos"), 26),
+            seen("meet.google.com", "Google Meet", None, 50),
+            seen("calls.example.org", "calls.example.org", None, 24 * 9),
+        ],
+        CALLS_NOW_MS,
+        open,
+    );
 }
 
 pub(super) fn mac_fixture() -> Ui {

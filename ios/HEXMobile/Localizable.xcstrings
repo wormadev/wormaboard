@@ -1248,6 +1248,56 @@
         }
       }
     },
+    "Comma and period keys" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "逗号和句号键"
+          }
+        }
+      }
+    },
+    "Quick accents" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快捷变音符号"
+          }
+        }
+      }
+    },
+    "Holding a letter selects its main accent, so letting go types it. Slide to pick another." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住字母会选中它的主要变音符号，松开即输入。滑动可选择其他变音符号。"
+          }
+        }
+      }
+    },
+    "Emoji shortcodes" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表情符号快捷码"
+          }
+        }
+      }
+    },
+    "Type a colon and a name, like :pizza, to pick an emoji." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入冒号和名称，例如 :pizza，即可选择表情符号。"
+          }
+        }
+      }
+    },
     "Edited" : {
       "localizations" : {
         "zh-Hans" : {
@@ -1921,6 +1971,26 @@
         }
       }
     },
+    "Numbers as digits" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数字用阿拉伯数字"
+          }
+        }
+      }
+    },
+    "“Five point five” becomes 5.5" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“five point five”会写成 5.5"
+          }
+        }
+      }
+    },
     "Messages" : {
       "shouldTranslate" : false
     },
@@ -2127,6 +2197,26 @@
         }
       }
     },
+    "New speech model" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的语音模型"
+          }
+        }
+      }
+    },
+    "Downloads in WormaBoard on Wi-Fi" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 WormaBoard 中通过 Wi-Fi 下载"
+          }
+        }
+      }
+    },
     "Open WormaBoard to download %@." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2203,6 +2293,206 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按原话粘贴"
+          }
+        }
+      }
+    },
+    "Ask" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "询问"
+          }
+        }
+      }
+    },
+    "Choose Allow in Settings so Paste doesn't ask every time." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“设置”中选择“允许”，粘贴时就不再每次询问。"
+          }
+        }
+      }
+    },
+    "Dismiss" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        }
+      }
+    },
+    "In Settings, choose Paste from Other Apps › Allow." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“设置”中选择“从其他App粘贴 › 允许”。"
+          }
+        }
+      }
+    },
+    "Paste from Other Apps" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从其他App粘贴"
+          }
+        }
+      }
+    },
+    "Paste from Other Apps › Allow" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从其他App粘贴 › 允许"
+          }
+        }
+      }
+    },
+    "Checks a second keyboard language and keeps the better match." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同时识别另一种键盘语言，并保留更准确的结果。"
+          }
+        }
+      }
+    },
+    "Clear emoji history?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除表情符号历史记录？"
+          }
+        }
+      }
+    },
+    "Feedback" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "反馈"
+          }
+        }
+      }
+    },
+    "Formatting" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "格式"
+          }
+        }
+      }
+    },
+    "In bar" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顶栏"
+          }
+        }
+      }
+    },
+    "Into field" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入框"
+          }
+        }
+      }
+    },
+    "iOS Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS 设置"
+          }
+        }
+      }
+    },
+    "Keyboard layout" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "键盘布局"
+          }
+        }
+      }
+    },
+    "Learns where you tap each key." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "学习你点击每个按键的位置。"
+          }
+        }
+      }
+    },
+    "Live words" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时文字"
+          }
+        }
+      }
+    },
+    "Typing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入"
+          }
+        }
+      }
+    },
+    "Paste without asking" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴时不再询问"
+          }
+        }
+      }
+    },
+    "New: WormaBoard's own speech model" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新功能：WormaBoard 自带的语音模型"
+          }
+        }
+      }
+    },
+    "English dictation, right in the keyboard." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "英文听写，直接在键盘里完成。"
           }
         }
       }
@@ -2637,6 +2927,26 @@
         }
       }
     },
+    "Starting microphone" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在启动麦克风"
+          }
+        }
+      }
+    },
+    "Starting…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在启动…"
+          }
+        }
+      }
+    },
     "Starts or finishes on-device dictation and copies the text." : {
       "localizations" : {
         "zh-Hans" : {
@@ -2860,6 +3170,16 @@
         }
       }
     },
+    "Transcribing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在转录"
+          }
+        }
+      }
+    },
     "Transcribing…" : {
       "localizations" : {
         "zh-Hans" : {
@@ -2966,6 +3286,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用%@"
+          }
+        }
+      }
+    },
+    "English, Spanish, French and Polish only" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅限英语、西班牙语、法语和波兰语"
           }
         }
       }
@@ -3119,6 +3449,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "为英文 Dvorak 键盘添加逗号、句号和分号键。"
+          }
+        }
+      }
+    },
+    "Puts comma and period keys beside the space bar on the letters keyboard." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在字母键盘的空格键两侧放置逗号和句号键。"
           }
         }
       }
@@ -3509,6 +3849,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "需开启“按触点自动改正”"
+          }
+        }
+      }
+    },
+    "Swipe typing in more languages" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多语言的滑行键入"
+          }
+        }
+      }
+    },
+    "English, Spanish, French and Polish" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "英语、西班牙语、法语和波兰语"
+          }
+        }
+      }
+    },
+    "English, Spanish, French, Polish and German" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "英语、西班牙语、法语、波兰语和德语"
+          }
+        }
+      }
+    },
+    "French and Polish, and German with German spatial autocorrect" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "法语和波兰语；德语需开启“德语按触点自动改正”"
           }
         }
       }
@@ -4301,12 +4681,52 @@
         }
       }
     },
-    "%@ download. Until it's ready, the keyboard uses Apple's speech recognition." : {
+    "For English. Uses about %@, downloaded on Wi-Fi. Until then, the keyboard uses Apple's speech recognition." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "需下载 %@。准备好之前，键盘使用 Apple 的语音识别。"
+            "value" : "适用于英语。约占用 %@，通过 Wi-Fi 下载。在此之前，键盘使用 Apple 的语音识别。"
+          }
+        }
+      }
+    },
+    "Only for English dictation." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅用于英语听写。"
+          }
+        }
+      }
+    },
+    "Downloads after you first use the WormaBoard keyboard." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首次使用 WormaBoard 键盘后开始下载。"
+          }
+        }
+      }
+    },
+    "Downloads on Wi-Fi." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接 Wi-Fi 后下载。"
+          }
+        }
+      }
+    },
+    "Downloads once the iPhone has %@ free." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 有 %@ 可用空间后下载。"
           }
         }
       }
@@ -4347,6 +4767,56 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已下载。键盘下次打开时会准备好它。"
+          }
+        }
+      }
+    },
+    "Shows your keyboards: pick Apple's, where iOS offers codes from Messages and Mail" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示你的键盘：选择 Apple 的键盘，iOS 会在那里提供来自“信息”和“邮件”的验证码"
+          }
+        }
+      }
+    },
+    "Listening…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在聆听…"
+          }
+        }
+      }
+    },
+    "Show what I say" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示我说的话"
+          }
+        }
+      }
+    },
+    "Type as I speak" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "边说边输入"
+          }
+        }
+      }
+    },
+    "Words can change until you stop" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停下前文字可能会变"
           }
         }
       }

@@ -85,13 +85,19 @@ nonisolated struct SpeechModelNeedsHex: HexDescribedError, Equatable {
         return SpeechModelNeedsHex(language: language)
     }
 
-    /// What the keyboard says when installing `language`'s model failed there. Automatic
-    /// moving to another language, or a choice that can't be had with one to try instead,
-    /// keeps `SpeechModelUnavailable`'s sentence: the next dictation works without Hex.
-    /// Anything else is Hex's to download (`handOff`).
+    /// What the keyboard says when installing `language`'s model failed there. A daemon that
+    /// never answered says so and counts no strike, like a cancelled try. A language Hex
+    /// itself set aside (its own installs failed, `LanguageSettings.isUnavailable`) keeps
+    /// `SpeechModelUnavailable`'s sentence, which names one to try instead. Anything else is
+    /// Hex's to download (`handOff`): the keyboard sets nothing aside, and its own failures
+    /// (its reservation, a download it couldn't finish) say nothing about Apple's languages.
+    /// Taking them as Apple's, a language picked by hand on an English iPhone (Hebrew,
+    /// Norwegian, German) said "isn't available on this iPhone yet. Try English." at every
+    /// dictation and never went to Hex, which could download it.
     static func keyboardError(for error: Error, language: String, settings: LanguageSettings) -> Error {
-        if error is CancellationError { return error }
-        if let unavailable = error as? SpeechModelUnavailable, unavailable.fallback != nil {
+        if error is CancellationError || error is SpeechModelUnresponsive { return error }
+        if let unavailable = error as? SpeechModelUnavailable, unavailable.fallback != nil,
+           settings.isUnavailable(language) {
             return unavailable
         }
         return handOff(language, settings: settings)
@@ -102,9 +108,11 @@ nonisolated struct SpeechModelNeedsHex: HexDescribedError, Equatable {
 /// dictation: the module the picker chose, then the same language on `DictationTranscriber`
 /// when `SpeechTranscriber`'s won't install (Apple lists some languages whose
 /// `SpeechTranscriber` asset never arrives: "transcription.ar asset not found after attempted
-/// download"). A download whose progress stops moving is given up on rather than awaited.
+/// download"). A download whose progress stops moving is given up on rather than awaited, and
+/// Apple's status and language lookups are watched the same way, so a speech daemon that stops
+/// answering fails instead of holding the screen.
 /// When nothing installs while the iPhone is online, the language is set aside for Automatic
-/// (`LanguageSettings.markUnavailable`) and the error says so plainly.
+/// (`LanguageSettings.noteUnavailable`) and the error says so plainly.
 nonisolated enum SpeechModelInstall {
     enum Availability: Equatable, Sendable {
         case installed
@@ -142,8 +150,15 @@ nonisolated enum SpeechModelInstall {
         progress: @escaping @Sendable (Double) -> Void = { _ in }
     ) async throws -> SpeechLanguage {
         var attempts = [language]
-        if language.module == .speech, let equivalent = await steps.dictationEquivalent(language.locale) {
-            attempts.append(SpeechLanguage(locale: equivalent, module: .dictation))
+        if language.module == .speech {
+            // Apple's modules answer from the speech daemon, which can stop answering: no step
+            // may hold the preparation forever.
+            let equivalent = try await SpeechModelDeadline.run(stallLimit) {
+                await steps.dictationEquivalent(language.locale)
+            }
+            if let equivalent {
+                attempts.append(SpeechLanguage(locale: equivalent, module: .dictation))
+            }
         }
         var downloadable = false
         var stalled = false
@@ -155,7 +170,10 @@ nonisolated enum SpeechModelInstall {
         }
         for attempt in attempts {
             try Task.checkCancellation()
-            switch await steps.status(attempt) {
+            let status = try await SpeechModelDeadline.run(stallLimit) {
+                await steps.status(attempt)
+            }
+            switch status {
             case .installed:
                 return installed(attempt)
             case .unsupported:
@@ -172,12 +190,19 @@ nonisolated enum SpeechModelInstall {
                         progress(value)
                     }
                 }
-                if await steps.status(attempt) == .installed {
+                // The check after a download is Apple's too, and just as silent.
+                let afterDownload = try await SpeechModelDeadline.run(stallLimit) {
+                    await steps.status(attempt)
+                }
+                if afterDownload == .installed {
                     return installed(attempt)
                 }
                 log("speech \(attempt.identifier) \(attempt.module.rawValue): not installed after download")
             } catch is CancellationError {
                 throw CancellationError()
+            } catch let error as SpeechModelUnresponsive {
+                // A daemon that stopped answering won't answer the next module either.
+                throw error
             } catch {
                 if error is StallWatch.Stalled { stalled = true }
                 log("speech \(attempt.identifier) \(attempt.module.rawValue): \(Self.describe(error))")
@@ -189,7 +214,12 @@ nonisolated enum SpeechModelInstall {
             }
         }
         if downloadable {
-            let online = await steps.isOnline()
+            // A path monitor that never answers is a daemon problem, not an offline iPhone: it
+            // is rethrown as `SpeechModelUnresponsive`, so the keyboard counts no strike for
+            // it. The one monitor wait it leaves behind is bounded to one per timeout.
+            let online = try await SpeechModelDeadline.run(stallLimit) {
+                await steps.isOnline()
+            }
             if stalled || !online {
                 throw SpeechModelUnavailable(language: language.identifier, reason: .downloadFailed)
             }

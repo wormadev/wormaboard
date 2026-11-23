@@ -130,6 +130,21 @@ whole clip. CPU devices (including ARM64) always use the whole-clip path. Set
 also set `TRANSCRIBE_CMAKE_ARGS=-DGGML_NATIVE=OFF`; without it ggml tunes its
 CPU kernels to the build machine and the binary can crash on older CPUs.
 
+An x64 PC below the release floor (for example Ivy Bridge: AVX and F16C, but no
+AVX2) can still build from source. In PowerShell:
+
+```powershell
+$env:TRANSCRIBE_CMAKE_ARGS = "-DGGML_NATIVE=OFF -DGGML_SSE42=ON -DGGML_AVX=ON -DGGML_F16C=ON -DGGML_AVX2=OFF -DGGML_BMI2=OFF -DGGML_FMA=OFF"
+$env:HEX_X86_BASELINE = "ivybridge"
+cargo build --release
+```
+
+A missing flag fails the build with the full value. After switching between this
+build and a normal one, run `cargo clean -p transcribe-cpp-sys` first, so ggml
+is configured from scratch. Such a build is not an official release, is slower
+on newer CPUs, and never self-updates: every official artifact targets
+x86-64-v3 and would not start on that PC.
+
 Run the checked-in setup script from the repository root. It keeps an existing
 compatible Visual Studio installation and installs only missing prerequisites.
 
@@ -353,10 +368,10 @@ current-user startup registry, UI Automation, and Windows capture APIs.
 | Signed automatic self-update for managed installs | Implemented for x64 and ARM64; the same ed25519 key and `https://anoma.ly/hex/files` origin as Linux, one feed per architecture, activating into a user-local versions directory. Checks 10 s after launch and every 6 h (or Check for updates); a staged update shows Restart to update in the tray menu and the window's sidebar footer, and the tray tooltip says an update is available. Source builds keep the GitHub release link (Download update); CI test builds never check |
 | Web-domain mode rules and browser context via UI Automation | Implemented; the page URL comes from the browser's UIA document element, bounded so a hung provider degrades to application-only context. Meeting detection reads the microphone-holding browser's own windows the same way (titles first, then document addresses, one read in flight within a 2 s deadline, never searching a page's content), so a Meet or Teams page is named by its site |
 | Meeting call detection and call site names | Implemented on the shared detector: Windows audio sessions and executables map to the macOS keys, and a browser's call page is read from its windows through UI Automation, with whole-window titles reduced to the page's (Edge's profile and other-tab count removed); not observed on a real Windows call |
-| Managed installer with Start Menu integration and clean uninstall | Implemented as `.github/release/install-windows.ps1`; it creates the self-updating versions layout, and updates retarget the managed shortcut and Launch-at-login entry |
+| Managed installer with Start Menu integration and clean uninstall | Implemented as `.github/release/install-windows.ps1`; it creates the self-updating versions layout, and updates retarget the managed shortcut, Desktop shortcuts and taskbar pins pointed at an old `versions\<version>\hex.exe` (and an icon from that version), and the Launch-at-login entry |
 | First-run onboarding | Implemented; a fresh install picks a dictation language, downloads its recommended model with live progress, and starts listening only once setup is recorded — the shared first-run story, with a Microphone page only while the privacy switch is off and the practice game on the real shortcut |
 | Activity pane with the live session and recent dictations | Implemented in developer builds; the shared read-only pane (phases and timing; the event log keeps no dictated text) |
-| Developer Meetings, live drafts, and meeting paste | Missing |
+| Developer Meetings and live drafts | Missing |
 | Local transcription API and public TypeScript SDK host lifecycle on Windows | Missing; see Local Transcription Service |
 | Streaming finish with whole-clip fallback | Implemented on GPU devices with Parakeet Unified English |
 

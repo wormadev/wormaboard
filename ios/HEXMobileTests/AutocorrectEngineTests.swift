@@ -1335,6 +1335,38 @@ final class AutocorrectEngineTests: XCTestCase {
     /// Without it the Deutsch layout keeps the dictionary engine exactly as before: no word
     /// list either, so no letter odds, no model completions in the strip, and no partner model.
     /// English and Spanish never wait on the experiment.
+    /// French's own word list (`fr.valid`) is read in place and, beside its model, says what is a
+    /// word instead of the phone's dictionary: a real word outside the model counts, letters that
+    /// are no word don't even where iOS's dictionary takes any letters, and a missing system
+    /// dictionary doesn't switch the model off.
+    func testFrenchReadsItsOwnWordList() throws {
+        let list = try XCTUnwrap(HexWordList.bundled("fr"), "fr.valid is bundled")
+        XCTAssertTrue(list.contains("abaissait"))
+        XCTAssertFalse(list.contains("qzxjvkq"))
+        XCTAssertFalse(list.contains(""))
+        let model = try XCTUnwrap(TypingDecoderModel.bundled("fr"))
+        let checker = SystemTextChecker()
+        let autocorrect = AutocorrectEngine(checker: checker, learnedWords: LearnedWordsStore(defaults: defaults))
+        autocorrect.setLanguage(.french, available: [])
+        XCTAssertFalse(autocorrect.hasWords, "no dictionary and no model")
+        autocorrect.decoder = TypingDecoder(model: model)
+        XCTAssertTrue(autocorrect.hasWords, "the model needs no system dictionary")
+        XCTAssertNotNil(checker.ownWords)
+        for word in ["maison", "Maison", "c'est", "c\u{2019}est", "abaissait"] {
+            XCTAssertTrue(checker.isWordValid(word), word)
+        }
+        XCTAssertFalse(checker.isWordValid("qzxjvkq"), "only Hex's words count")
+        // fr.capitals, read in place too: a name the books nearly always capitalise is no word
+        // typed lowercase, and is one with its capital.
+        XCTAssertEqual(HexWordList.bundled("fr", "capitals")?.value(of: "paris"), 100)
+        XCTAssertFalse(checker.isWordValid("paris"))
+        XCTAssertTrue(checker.isWordValid("Paris"))
+        XCTAssertTrue(checker.isWordValid("marie"), "94%: also an ordinary word")
+        XCTAssertEqual(checker.guesses(for: "maisn"), [], "no English guesses for French words")
+        autocorrect.decoder = TypingDecoder(model: try XCTUnwrap(TypingDecoderModel.bundled("en")))
+        XCTAssertNil(checker.ownWords, "English ships no list")
+    }
+
     func testTheGermanTypingModelNeedsItsExperiment() {
         let settings = FullKeyboardSettings(defaults: defaults)
         XCTAssertFalse(settings.germanSpatialAutocorrect, "off by default")
@@ -1350,6 +1382,46 @@ final class AutocorrectEngineTests: XCTestCase {
         settings.spatialAutocorrect = true
         XCTAssertEqual(settings.typingModel(for: .english)?.language, "en")
         XCTAssertEqual(settings.typingModel(for: .spanish)?.language, "es")
+    }
+
+    /// Settings › Experiments › Swipe typing in more languages (off by default): English and
+    /// Spanish swipe as ever, and on every other language with a typing model swipes too.
+    /// German still waits on its own model (Spatial autocorrect and the German experiment),
+    /// and a language without one keeps a drag as a slide to another key.
+    func testSwipeTypingInMoreLanguagesWidensTheLayoutsThatSwipe() {
+        let settings = FullKeyboardSettings(defaults: defaults)
+        XCTAssertFalse(settings.swipeMoreLanguages, "off by default")
+        XCTAssertTrue(settings.swipesIn(.english))
+        XCTAssertTrue(settings.swipesIn(.spanish))
+        XCTAssertFalse(settings.swipesIn(.french), "off, French keeps a drag as a slide to another key")
+        XCTAssertFalse(settings.swipesIn(.polish))
+        XCTAssertFalse(settings.swipesIn(.german))
+
+        settings.swipeMoreLanguages = true
+        XCTAssertTrue(settings.swipesIn(.english))
+        XCTAssertTrue(settings.swipesIn(.spanish))
+        XCTAssertTrue(settings.swipesIn(.french), "French (France) reads its own model")
+        XCTAssertTrue(settings.swipesIn(.polish))
+        XCTAssertFalse(settings.swipesIn(.italian), "no Italian model, so no swipe")
+        XCTAssertFalse(settings.swipesIn(.frenchCanadian), "no fr-CA model yet")
+        XCTAssertFalse(settings.swipesIn(.german), "German needs its model first")
+        settings.germanSpatialAutocorrect = true
+        XCTAssertTrue(settings.swipesIn(.german), "with Spatial autocorrect and its experiment on")
+        settings.spatialAutocorrect = false
+        XCTAssertFalse(settings.swipesIn(.german), "Spatial autocorrect off turns it off again")
+    }
+
+    /// French (France) reads taps with Android's French model (`fr.hextm`): the held-out gate's
+    /// critical cases (an accent left out goes back where the plain spelling is no word; "a"
+    /// typed right stays) and a slip on AZERTY's bottom row. Canada's and Switzerland's French
+    /// have no model of their own yet.
+    func testSpatialAutocorrectReadsFrenchWithItsModel() throws {
+        let settings = FullKeyboardSettings(defaults: defaults)
+        XCTAssertEqual(settings.typingModel(for: .french)?.language, "fr")
+        XCTAssertNil(settings.typingModel(for: .frenchCanadian), "no fr-CA model yet")
+        try useDecoder(.french)
+        for word in ["le", "cafe", "il", "a", "faim", "merxi", "vers", "paris"] { typeTaps(word) }
+        XCTAssertEqual(target.text, "le café il a faim merci vers Paris ", "a name takes its capital from fr.capitals")
     }
 
     func testSpatialAutocorrectAddsSpanishAccents() throws {
@@ -1414,6 +1486,49 @@ final class AutocorrectEngineTests: XCTestCase {
         typeTaps("zorbiz")
         typeTaps("zorbix")
         XCTAssertEqual(target.text, "Zorbix zorbix ", "a slip in a name from Contacts, and the name typed right")
+    }
+
+    /// X: "it refuses to capitalize I's in sentences". "i", "im", "ill", "ive" and "id" took
+    /// their capital on space, but "i'm", "i'll", "i've" and "i'd" typed with the apostrophe
+    /// stayed lowercase, with smart quotes too (their ’ ends a token). Auto-capitalization off
+    /// adds no capital, as for "i".
+    func testPronounContractionsTypedWithTheirApostropheTakeTheirCapital() {
+        func type(_ text: String) {
+            for ch in text {
+                if ch == "'" {
+                    tap(.layerSwitch(.numbers))
+                    tap(.character("'"))
+                    if engine.layout.layer != .letters { tap(.layerSwitch(.letters)) }
+                } else {
+                    typeWord(String(ch))
+                }
+            }
+        }
+        type("so i'm in and i'd go ")
+        target.smartQuotesType = .default
+        type("i'll say i've ")
+        engine.autoCapitalizes = false
+        type("i'm ")
+        XCTAssertEqual(target.text, "so I'm in and I'd go I\u{2019}ll say I\u{2019}ve i\u{2019}m ")
+    }
+
+    /// Record typing logs: a word of someone's own in capitals ("DONT", from Contacts or one Hex
+    /// learned) was read for a lowercase slip and put in by space. The strip offers it; space
+    /// puts in the next reading that clears the margin ("don't") or leaves what was typed.
+    /// Names and your vocabulary's spellings are as before.
+    func testSpatialAutocorrectOffersYourWordsInCapitalsWithoutPuttingThemIn() throws {
+        try useDecoder()
+        engine.autocorrect.loadLexiconEntries([("DONT", "DONT"), ("ZORBIX", "ZORBIX"), ("Quorvent", "Quorvent")])
+        for letter in "dpnt" { tapCentre(letter) }
+        XCTAssertTrue(engine.suggestions.contains { $0.replacement == "DONT" }, "offered in the strip")
+        tap(.space)
+        for word in ["zorbiz", "quorvemt"] { typeTaps(word) }
+        XCTAssertEqual(target.text, "don't zorbiz Quorvent ")
+        let autocorrect = engine.autocorrect
+        XCTAssertTrue(autocorrect.isOwnCapitals("McQuorv", typed: "mcquorc"), "capitals inside")
+        XCTAssertFalse(autocorrect.isOwnCapitals("DONT", typed: "DPNT"), "typed in capitals")
+        autocorrect.setVocabulary(["GitHub"])
+        XCTAssertFalse(autocorrect.isOwnCapitals("GitHub", typed: "githib"), "your vocabulary's spelling")
     }
 
     /// "th", then the e aimed high 80 ms later, landing on the strip's lower half under its

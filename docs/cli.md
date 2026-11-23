@@ -668,11 +668,12 @@ Writable keys: `release_microphone_while_idle`,
 `second_dictation_hotkey`, `extra_dictation_hotkeys`, `labs.second_dictation_shortcut`,
 `labs.more_dictation_shortcuts`, `labs.standalone_special_keys`, `labs.app_model_switching`, `show_dock_icon`, `vocabulary_boost`,
 `labs.keep_microphone_open`, `labs.keep_microphone_open_seconds`,
+`labs.hud_height`, `labs.hud_bottom_gap`,
 `dictation_processing.default_mode`, `dictation_processing.modes`,
 `history_retention`, `meetings.enabled`,
 `meetings.output_folder`, `meetings.summaries`, `meetings.opencode_model`,
 `meetings.show_recording_indicator`, `meetings.recording_indicator_corner`,
-`meetings.retention`, `meetings.audio_retention`, `meetings.providers`, `meetings.calendar.excluded_calendars`,
+`meetings.retention`, `meetings.audio_retention`, `meetings.default_policy`, `meetings.providers`, `meetings.calendar.excluded_calendars`,
 `meetings.calendar.remind`, `meetings.calendar.lead_minutes`,
 `experimental.hex_microphone`, `experimental.hex_microphone_mode`,
 `experimental.hex_microphone_comfort_noise`,
@@ -694,6 +695,14 @@ Off a Mac it is `off` or `opencode`. The retired
 `meetings.summarize_with_apple_intelligence` and
 `meetings.summarize_with_opencode` are refused with the `meetings.summaries`
 command to use instead.
+
+`meetings.default_policy` is the answer a call gets when its app or website
+has none of its own in `meetings.providers`: `ask` (Ask each time, the
+default), `always_record` (Always record), or `never_offer` (Don't
+offer); the window calls these the same names. Setting it changes only the
+default; the Calls sheet's radios also move every entry that matched the old
+one. The list of apps and websites Hex has seen a call in
+(`seen-calls.json`) is not a setting and has no key.
 
 A test (`control::settings::tests::every_persisted_setting_has_a_cli_key`)
 fails when a new persisted setting has no key here.
