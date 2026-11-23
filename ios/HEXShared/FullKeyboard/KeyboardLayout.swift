@@ -753,12 +753,11 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
     static let numberRowIndex = -2
     static let numberRowDigits = "1234567890".map(String.init)
 
-    /// Whether this page draws the number row: wherever its band is, but on the 123 page, whose
-    /// row 1 is the same digits in the same columns. Its band stays there, so the keyboard
-    /// keeps its height, and row 1's touch targets reach up through it: a tap where a digit was
-    /// types that digit.
+    /// Whether this page draws the number row: wherever its band is. The 123 page keeps it too,
+    /// and its row 1, the same digits again, takes #+='s first row instead
+    /// (`characterRows(numberRow:)`), so the band never sits empty.
     static func drawsNumberRow(_ metrics: KeyboardMetrics, layer: KeyboardLayer) -> Bool {
-        metrics.numberRowHeight > 0 && layer != .numbers
+        metrics.numberRowHeight > 0
     }
 
     var totalHeight: CGFloat { metrics.totalHeight }
@@ -905,6 +904,19 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
         max(10, rows.prefix(2).map(\.count).max() ?? 10)
     }
 
+    /// `numberRow`: Settings › Keyboard › Number row is on, so the 123 page's digits are already
+    /// above it and its row 1 is #+='s first row ([ ] { } # % ^ * + =).
+    static func characterRows(
+        for layer: KeyboardLayer,
+        language: KeyboardLanguage = .english,
+        letters: KeyboardLetterLayout? = nil,
+        numberRow: Bool
+    ) -> [[String]] {
+        let rows = characterRows(for: layer, language: language, letters: letters)
+        guard numberRow, layer == .numbers else { return rows }
+        return [characterRows(for: .symbols, language: language, letters: letters)[0]] + rows.dropFirst()
+    }
+
     static func characterRows(
         for layer: KeyboardLayer,
         language: KeyboardLanguage = .english,
@@ -954,7 +966,7 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
         dvorakPunctuation: Bool
     ) -> [KeyboardKey] {
         let innerWidth = width - 2 * inset
-        let rows = characterRows(for: layer, language: language, letters: letters)
+        let rows = characterRows(for: layer, language: language, letters: letters, numberRow: m.numberRowHeight > 0)
         let dvorak = layer == .letters && letters == .dvorak
         // Settings › Experiments › Dvorak punctuation: a URL or email field keeps its own `.`
         // key by the space bar, so its row 1 stays Apple's rather than have a second one.
@@ -1313,7 +1325,7 @@ extension KeyboardLayout {
     ) -> (keys: [KeyboardKey], split: SplitGeometry) {
         typealias G = SplitGeometry
         // Dvorak splits like the other layouts, delete ending row 3 (Apple's split Dvorak unobserved).
-        let rows = characterRows(for: layer, language: language, letters: letters)
+        let rows = characterRows(for: layer, language: language, letters: letters, numberRow: m.numberRowHeight > 0)
         // Settings › Experiments › Dvorak punctuation, as on the joined keyboard: a URL or email
         // field keeps its own `.` key, so its row 1 stays Apple's.
         let punctuation = layer == .letters && letters == .dvorak && dvorakPunctuation

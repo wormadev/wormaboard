@@ -2576,18 +2576,22 @@ final class KeyboardLayoutTests: XCTestCase {
             XCTAssertEqual(on.stripFrame, off.stripFrame, describe(on))
             let others = on.keys.filter { !$0.isNumberRow }
             XCTAssertEqual(others.count, off.keys.count, describe(on))
+            // On the 123 page row 1's digits, now above it, give way to #+='s first row.
+            let symbols = KeyboardLayout.characterRows(for: .symbols, language: on.language, letters: on.letters)[0]
+            var symbolsLeft = on.layer == .numbers ? symbols : []
             for (a, b) in zip(others, off.keys) {
-                XCTAssertEqual(a.kind, b.kind, describe(on))
+                if b.row == 0, case .character = b.kind, !symbolsLeft.isEmpty {
+                    XCTAssertEqual(a.kind, .character(symbolsLeft.removeFirst()), describe(on))
+                } else {
+                    XCTAssertEqual(a.kind, b.kind, describe(on))
+                }
                 let shift = b.row < 0 ? 0 : pitch
                 assertSameRect(a.frame, b.frame.offsetBy(dx: 0, dy: shift), "\(describe(on)) \(a.label)")
                 if b.row > 0 { assertSameRect(a.hitFrame, b.hitFrame.offsetBy(dx: 0, dy: shift), "\(describe(on)) \(a.label)") }
             }
 
+            XCTAssertTrue(symbolsLeft.isEmpty, describe(on))
             let digits = on.keys.filter(\.isNumberRow)
-            guard on.layer != .numbers else {
-                XCTAssertTrue(digits.isEmpty, "the 123 page's own row 1 is the digits: \(describe(on))")
-                continue
-            }
             XCTAssertEqual(digits.map(\.label), KeyboardLayout.numberRowDigits, describe(on))
             XCTAssertEqual(digits.map(\.kind), KeyboardLayout.numberRowDigits.map { .character($0) }, describe(on))
             for key in digits {
@@ -2605,14 +2609,13 @@ final class KeyboardLayoutTests: XCTestCase {
 
     /// With the number row the touch targets still tile the keys with no gaps: the digits take
     /// the gap under the strip, as row 1 did, and row 1 starts halfway down the gap under them.
-    /// On the 123 page the band stays (the keyboard keeps its height) and its row 1, the same
-    /// digits, reaches up through it, so a tap where a digit was types that digit.
-    func testNumberRowTargetsTileAndThe123PageReachesUpThroughItsBand() {
+    /// The 123 page draws the digits in the band too, so a tap there types that digit.
+    func testNumberRowTargetsTileOnEveryPage() {
         var generator = SystemRandomNumberGenerator()
         for (layout, _, _) in numberRowLayouts() {
             let area = layout.touchAreaFrame
             XCTAssertEqual(area.minY, layout.metrics.stripArea - layout.rowOneReach, accuracy: 0.001, describe(layout))
-            let top = layout.hasNumberRow && layout.layer != .numbers ? KeyboardLayout.numberRowIndex : 0
+            let top = layout.hasNumberRow ? KeyboardLayout.numberRowIndex : 0
             for key in layout.keys where key.row == top {
                 XCTAssertEqual(key.hitFrame.minY, area.minY, accuracy: 0.001, "\(describe(layout)) \(key.label)")
             }
@@ -2640,7 +2643,7 @@ final class KeyboardLayoutTests: XCTestCase {
                 }
             }
             if layout.layer == .numbers, !layout.isSplit {
-                let three = layout.key(.character("3"))!
+                let three = layout.keys.first { $0.isNumberRow && $0.kind == .character("3") }!
                 let band = CGPoint(x: three.frame.midX, y: layout.metrics.stripArea + layout.metrics.numberRowHeight / 2)
                 XCTAssertEqual(layout.hitTest(band)?.kind, .character("3"), describe(layout))
             }

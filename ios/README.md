@@ -1343,9 +1343,9 @@ never at a launch by itself.
   only digits held on row 1): 34.9 pt keycaps and 45.9 pt more keyboard on a 17 Pro (293 pt,
   granted in a text view, a Safari form and Spotlight on the iOS 27.2 simulator), 47.6 pt on
   a Pro Max, 34 pt turned. The digits sit on the 123 page's columns, take the gap under the
-  strip as row 1 did, and hold what the 123 page's digits hold (0 holds °). On the 123 page
-  the row hides, since its row 1 is the same digits, but its band stays so nothing jumps, and
-  that row 1 reaches up through it; the #+= page keeps the row. The digits never reach
+  strip as row 1 did, and hold what the 123 page's digits hold (0 holds °). The 123 page keeps
+  the row too, and its row 1, the same digits again, becomes #+='s first row ([ ] { } # % ^
+  * + =), so the band is never empty; the #+= page is unchanged. The digits never reach
   Spatial autocorrect, next-letter touch help or Swipe typing (a drag from a digit is no
   swipe), and a word holding digits is never corrected. Where iOS gives less height, the
   number row shrinks with the others (`KeyboardMetrics.fitted`). The iPad keeps Apple's rows
