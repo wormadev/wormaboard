@@ -401,9 +401,13 @@ final class KeyboardStripView: UIView {
             .map { ($0.0, $0.0.sizeThatFits(CGSize(width: bounds.width, height: chipH)).width) }
         let gap: CGFloat = 8
         let total = chips.map(\.1).reduce(0, +) + gap * CGFloat(max(0, chips.count - 1))
-        // On the keyboard's middle, as the middle slot's word, kept inside the strip.
+        // On the keyboard's middle, as the middle slot's word, kept inside the slots, which
+        // leave out the tray's chevron.
         let midX = barMidX ?? bounds.width / 2
-        var chipX = max(0, min(bounds.width - total, midX - total / 2))
+        let slots = currentSlotFrames
+        let minX = slots.first?.minX ?? 0
+        let maxX = slots.last?.maxX ?? bounds.width
+        var chipX = max(minX, min(maxX - total, midX - total / 2))
         let chipY = max(0, midY - chipH / 2)
         for (chip, width) in chips {
             chip.frame = CGRect(x: chipX, y: chipY, width: width, height: chipH)
@@ -418,7 +422,6 @@ final class KeyboardStripView: UIView {
         fullAccessHintView?.chipHeight = chipH
         noticeView?.frame = hintFrame
         noticeView?.chipHeight = chipH
-        let slots = currentSlotFrames
         for (idx, button) in slotButtons.enumerated() {
             button.inSystemPlatter = inSystemPlatter
             button.frame = slots[idx]
