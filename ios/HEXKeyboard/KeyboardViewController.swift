@@ -23,6 +23,8 @@ final class KeyboardViewController: UIInputViewController {
     private var barEmojiPanel: EmojiPanelView?
     private var barEmojiLibrary: EmojiLibrary?
     private var heightConstraint: NSLayoutConstraint?
+    /// This appearance already re-asserted the keyboard's height once (`checkHeightTaken`).
+    private var reassertedHeight = false
     /// The dictation bar's top edge, `barTopInset` below the keyboard's.
     private var barTopConstraint: NSLayoutConstraint?
     /// A thin material under the surface, mounted only when iOS kept an earlier Hex keyboard on
@@ -156,6 +158,7 @@ final class KeyboardViewController: UIInputViewController {
         handOffWaitsForPosture = false
         // The keyboard may come back for another field: settle on where the dictation was last seen.
         dictationEdits.finish(nil)
+        reassertedHeight = false
         mountSurface()
         fullKeyboard?.prepareForField()
         isShown = true
@@ -288,6 +291,29 @@ final class KeyboardViewController: UIInputViewController {
         EmojiLibrary.evictCached()
         localDictation.handleMemoryWarning()
         typingLog?.flush()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        checkHeightTaken()
+    }
+
+    /// iOS lays a keyboard out at 216 pt first and at its own height a pass later (iPhone 17
+    /// Pro, iOS 27: about 15 to 30 ms after viewWillAppear, measured on device). A host that
+    /// skips that pass (WhatsApp reopened) left the keyboard short until its next layout, so
+    /// it grew when a message was sent. Still short a moment later: ask again, by changing
+    /// the height and back, once per appearance (iOS may hold a keyboard shorter for good).
+    private func checkHeightTaken() {
+        guard isShown, !reassertedHeight, view.window != nil, let heightConstraint,
+              abs(view.bounds.height - heightConstraint.constant) > 1 else { return }
+        reassertedHeight = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            guard let self, self.isShown, let constraint = self.heightConstraint,
+                  abs(self.view.bounds.height - constraint.constant) > 1 else { return }
+            let height = constraint.constant
+            self.applyHeight(height + 1)
+            DispatchQueue.main.async { [weak self] in self?.applyHeight(height) }
+        }
     }
 
     override func viewWillLayoutSubviews() {
