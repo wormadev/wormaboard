@@ -199,6 +199,7 @@ nonisolated enum KeyboardLanguage: String, CaseIterable, Sendable {
         case .azerty where self == .french: ownLetterRows
         case .azerty: ["azertyuiop", "qsdfghjklm", "wxcvbn"]
         case .dvorak: ["pyfgcrl", "aoeuidhtns", "qjkxbmwvz"]
+        case .arabicPC: ArabicTyping.pcLetterRows
         }
         return rows.map { $0.map(String.init) }
     }
@@ -230,7 +231,11 @@ nonisolated enum KeyboardLanguage: String, CaseIterable, Sendable {
         // Apple lists QWERTY first for Serbian (Latin) and adds it as QWERTY; Hex keeps the
         // QWERTZ it always typed on as the default.
         case .serbianLatin: [.qwertz, .qwerty, .azerty]
-        case .norwegian, .russian, .ukrainian, .greek, .korean, .arabic: [.own]
+        // Apple's software Arabic layouts, Arabic and Arabic – PC (iOS 27.0 simulator,
+        // `TextInput_ar.bundle/InputMode_ar.plist` SWLayouts). Its third, Arabic-With-QWERTY,
+        // isn't offered: its shift shows QWERTY capitals, yet a tap after shift typed Arabic.
+        case .arabic: [.own, .arabicPC]
+        case .norwegian, .russian, .ukrainian, .greek, .korean: [.own]
         }
     }
 
@@ -252,6 +257,7 @@ nonisolated enum KeyboardLanguage: String, CaseIterable, Sendable {
         case .qwertz: "QWERTZ"
         case .azerty: "AZERTY"
         case .dvorak: "Dvorak"
+        case .arabicPC: "\(displayName) – PC"
         case .own:
             switch self {
             case .german, .czech, .hungarian: "QWERTZ – \(displayName)"
@@ -774,6 +780,7 @@ nonisolated enum KeyboardLanguage: String, CaseIterable, Sendable {
         case .own where self == .ukrainian || self == .greek || self == .czech: [0.0, 0.0, 1.0]
         // Arabic's three rows all start at the left edge (no shift before row 3).
         case .own where self == .arabic: [0.0, 0.0, 0.0]
+        case .arabicPC: [0.0, 0.0, 0.0]
         case .qwerty where self == .czech: [0.0, 0.0, 1.0]
         default: [0.0, 0.5, 1.5]
         }
@@ -880,6 +887,8 @@ nonisolated enum KeyboardLetterLayout: String, CaseIterable, Sendable {
     /// Apple's iPhone Dvorak (English): P Y F G C R L and delete, A O E U I D H T N S edge to
     /// edge, shift and Q J K X B M W V Z, on keys a little narrower so that row fits.
     case dvorak
+    /// Apple's "Arabic – PC" (`ArabicTyping.pcLetterRows`).
+    case arabicPC
 }
 
 /// Settings › Keyboard › Languages as the keys use it: the languages the space bar switches

@@ -737,7 +737,7 @@ final class KeyboardLayoutTests: XCTestCase {
             .czech: [.own, .qwerty],
             .hungarian: [.own, .qwerty],
             .korean: [.own],
-            .arabic: [.own],
+            .arabic: [.own, .arabicPC],
         ]
         for language in KeyboardLanguage.allCases {
             XCTAssertEqual(language.letterLayouts, offered[language], "\(language)")
@@ -766,7 +766,7 @@ final class KeyboardLayoutTests: XCTestCase {
         ]
         for language in KeyboardLanguage.allCases where language != .czech {
             // Each French keyboard's own layout is Apple's "– French" one, with the apostrophe key.
-            for letters in language.letterLayouts where letters != .own && letters != .dvorak && !(language.isFrench && letters == language.defaultLetterLayout) {
+            for letters in language.letterLayouts where letters != .own && letters != .dvorak && letters != .arabicPC && !(language.isFrench && letters == language.defaultLetterLayout) {
                 let layout = KeyboardLayout(width: 402, language: language, letters: letters)
                 for row in 0..<3 {
                     XCTAssertEqual(self.letters(layout, row: row).joined(), plain[letters]?[row], "\(language) \(letters) row \(row + 1)")

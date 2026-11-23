@@ -27,11 +27,17 @@ nonisolated enum ArabicKeyboardExperiment {
 nonisolated enum ArabicTyping {
     static let letterRows = ["ضصثقفغعهخحج", "شسيبلاتنمكة", "ءظطذدزروى"]
 
+    /// Apple's "Arabic – PC" (iOS 27.0 simulator, black box: its keys' labels and frames from the
+    /// accessibility tree): ten keys a column wide in rows 1 and 2, nine letters from the left
+    /// edge in row 3 and a delete key as wide as one. ء ى ئ ؤ have no key; the held keys of
+    /// `letterHolds` give them, as on the Arabic layout (Apple's own PC holds unmeasured).
+    static let pcLetterRows = ["ضصقفغعهخحج", "شسيبلاتنمك", "ظطذدزروةث"]
+
     /// The 123 and #+= pages: Arabic-Indic digits (the Western ones held under them), ؛ for ;,
     /// and the Arabic comma and question mark on 123's punctuation row; #+= keeps Western , and ?.
-    static func characterRows(_ layer: KeyboardLayer) -> [[String]] {
+    static func characterRows(_ layer: KeyboardLayer, letters: KeyboardLetterLayout = .own) -> [[String]] {
         switch layer {
-        case .letters: letterRows.map { $0.map(String.init) }
+        case .letters: (letters == .arabicPC ? pcLetterRows : letterRows).map { $0.map(String.init) }
         case .numbers: [
             "١٢٣٤٥٦٧٨٩٠".map(String.init),
             ["-", "/", ":", "؛", "(", ")", "$", "&", "@", "\""],

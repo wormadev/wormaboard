@@ -913,7 +913,7 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
         // Greek's pages, as the system Greek keyboard shows them: ; is its question mark, so it
         // takes ?'s key on both, the ano teleia · takes ;'s key on 123, and ? takes |'s on #+=.
         let greek = language == .greek
-        if language == .arabic { return ArabicTyping.characterRows(layer) }
+        if language == .arabic { return ArabicTyping.characterRows(layer, letters: language.offered(letters)) }
         // Ukrainian's apostrophe key on both pages is ʼ (U+02BC), as on the system Ukrainian
         // keyboard (iOS 26.2 to 27.2 simulators), holding ʼ's options (`letterHolds`).
         let punctuation = [".", ",", greek ? ";" : "?", "!", language == .ukrainian ? "\u{02BC}" : "'"]
@@ -1033,8 +1033,11 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
         // long for full-size shift and delete (Russian's nine) narrows them to fit instead, as
         // Apple's Russian keyboard does; every other layout keeps them at `modW`.
         let middle = rows[2]
+        // Arabic – PC's delete is one of its row's ten columns.
         let row3ModW = layer == .letters
-            ? min(modW, (innerWidth - 2 * m.side - CGFloat(middle.count) * lw - CGFloat(middle.count + 1) * m.gap) / 2)
+            ? language.offered(letters) == .arabicPC
+                ? lw
+                : min(modW, (innerWidth - 2 * m.side - CGFloat(middle.count) * lw - CGFloat(middle.count + 1) * m.gap) / 2)
             : modW
         if !dvorak {
             switch layer {

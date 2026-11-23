@@ -1093,6 +1093,9 @@ never at a launch by itself.
   ئ ى, ى holds ئ, و ؤ, ه هـ, ل لا, and ب ج ز ف ك their Persian letters پ چ ژ ڤ گ. The 123 page is
   Apple's: Arabic-Indic digits ١ to ٠ (each holds its Western digit), ؛ for ;, and . ، ؟ ! ' on
   its punctuation row (، holds ٫ and ,, ؟ holds ? and ¿); #+= has ٪ and Western , and ?.
+  Settings › Keyboard › Languages › Layout also offers Apple's Arabic – PC (iOS 27.0 simulator,
+  black box): ض ص ق ف غ ع ه خ ح ج, ش س ي ب ل ا ت ن م ك, and ظ ط ذ د ز ر و ة ث then a delete key
+  one column wide, with the same long presses. Apple's third, Arabic-With-QWERTY, isn't offered.
   Apple's tashkeel key (the harakat on a held key by the space bar) has no place on Hex's
   bottom row and isn't offered; the Duo's split keyboard keeps its shift key. Suggestions,
   autocorrect and Swipe typing read `HEXKeyboard/TypingModel/ar.hextm`, 150,000 words and

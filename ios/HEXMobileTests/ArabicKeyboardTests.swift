@@ -40,8 +40,22 @@ final class ArabicKeyboardTests: XCTestCase {
         XCTAssertEqual(rows[1].last?.frame.maxX ?? 0, rows[0].last?.frame.maxX ?? 0, accuracy: 0.5)
         let delete = try? XCTUnwrap(layout.key(.delete))
         XCTAssertGreaterThan(delete?.frame.minX ?? 0, rows[2].last?.frame.maxX ?? .infinity, "delete ends row 3")
-        XCTAssertEqual(KeyboardLanguage.arabic.letterLayouts, [.own])
+        XCTAssertEqual(KeyboardLanguage.arabic.letterLayouts, [.own, .arabicPC])
         XCTAssertFalse(KeyboardLanguage.arabic.isLatin, "never a bilingual partner of a Latin layout")
+    }
+
+    /// Apple's Arabic – PC (iOS 27.0 simulator): ten columns in every row, row 3's nine letters
+    /// from the edge and a delete key one column wide.
+    func testPCRowsAreApplesWithDeleteInTheTenthColumn() throws {
+        let layout = KeyboardLayout(width: 402, language: .arabic, letters: .arabicPC)
+        let rows = (0..<3).map { letters(layout, row: $0) }
+        XCTAssertEqual(rows.map { $0.compactMap(\.character).joined() }, ["ضصقفغعهخحج", "شسيبلاتنمك", "ظطذدزروةث"])
+        XCTAssertNil(layout.key(.shift))
+        let delete = try XCTUnwrap(layout.key(.delete))
+        XCTAssertEqual(rows[2][0].frame.minX, rows[0][0].frame.minX, accuracy: 0.5)
+        XCTAssertEqual(delete.frame.width, rows[0][0].frame.width, accuracy: 0.5)
+        XCTAssertEqual(delete.frame.maxX, rows[0].last?.frame.maxX ?? 0, accuracy: 0.5)
+        XCTAssertEqual(KeyboardLanguage.arabic.layoutName(.arabicPC), "العربية – PC")
     }
 
     /// The 123 page: Arabic-Indic digits with the Western ones held, ؛ for ;, and the Arabic
