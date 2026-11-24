@@ -391,6 +391,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.wormaDictationKey) }
     }
 
+
     /// The tray items the person shows, in `WormaTrayItem`'s fixed order; all of them by default.
     var wormaDictationTray: Set<WormaTrayItem> {
         get {

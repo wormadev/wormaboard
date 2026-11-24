@@ -198,7 +198,7 @@ final class KeyboardViewModel: ObservableObject {
     private var stoppedNoteWork: Task<Void, Never>?
     static let stoppedNoteDuration: Duration = .seconds(8)
 
-    // Non-published live telemetry read directly by `DotScopeHostView` / button tap handlers
+    // Non-published live telemetry read directly by `BraidScopeView` / button tap handlers
     // so 25–30 Hz polling never invalidates SwiftUI views mid-spring.
     var liveLoudnessDB: Float = -62.0
     var currentTimestamp: TimeInterval = Date().timeIntervalSince1970

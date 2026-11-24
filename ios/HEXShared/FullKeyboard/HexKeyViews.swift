@@ -1,3 +1,4 @@
+import SwiftUI
 import UIKit
 
 /// The Hex key right of space. Warm session: an orange core, and a hold records here.
@@ -246,8 +247,8 @@ enum StripMotion {
     }
 }
 
-/// While recording, this replaces the suggestion strip only, so the keys stay put: a Dot
-/// Scope well that takes the rest of the strip, then ✕ and Done, ✓ where the Hex key was.
+/// While recording, this replaces the suggestion strip only, so the keys stay put: a braid
+/// well that takes the rest of the strip, then ✕ and Done, ✓ where the Hex key was.
 /// With the Hex key on the left it mirrors: ✓, ✕, then the well.
 @MainActor
 final class HexKeyRecordingPanel: UIView {
@@ -256,7 +257,9 @@ final class HexKeyRecordingPanel: UIView {
     var onCancel: (() -> Void)?
     var onCycleStyle: (() -> Void)?
 
-    let scope: DotScopeHostView
+    private let braid: BraidPanelState
+    let scope: UIView
+    var scopePhase: DotScopePhase { braid.phase }
     private let styleButton = UIButton(type: .custom)
     private let well = UIView()
     private let cancelButton = PanelKeyButton()
@@ -272,18 +275,13 @@ final class HexKeyRecordingPanel: UIView {
     var hexOnLeading = false { didSet { if hexOnLeading != oldValue { setNeedsLayout() } } }
 
     init(loudness: @escaping () -> Float) {
-        var tuning = DotScopeTuning.bar(leadingInset: 0, trailingInset: 0, fade: 24, spacing: 2.7)
-        tuning.height = Float(KeyboardMetrics.portrait.stripPillHeight)
-        tuning.transition = Float(StripMotion.settle)
-        // Cap drawables at 2 inside the keyboard extension to save ~2.2 MB of IOSurface RAM.
-        scope = DotScopeHostView(tuning: tuning, maximumDrawableCount: 2)
+        braid = BraidPanelState(loudness: loudness)
+        let host = UIHostingController(rootView: BraidPanelScope(state: braid))
+        host.view.backgroundColor = .clear
+        host.safeAreaRegions = []
+        scope = host.view
         super.init(frame: .zero)
-        scope.drawPlate = false
-        scope.look = .strip
-        scope.loudnessProvider = loudness
-        scope.reduceMotion = StripMotion.reduced
-        scope.hostFades = true
-        scope.useDemoVoice = ProcessInfo.processInfo.arguments.contains("--snap-state")
+        scope.isUserInteractionEnabled = false
 
         styleButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
         styleButton.semanticContentAttribute = .forceRightToLeft
@@ -316,8 +314,7 @@ final class HexKeyRecordingPanel: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     func tearDown() {
-        scope.phase = .hidden
-        scope.tearDown()
+        braid.phase = .hidden
     }
 
     func update(phase: DotScopePhase, style: DictationStyle) {
@@ -325,7 +322,7 @@ final class HexKeyRecordingPanel: UIView {
         let firstUpdate = currentPhase == nil
         currentPhase = phase
         showsSpinner = phase == .starting || phase == .processing
-        scope.phase = phase
+        braid.phase = phase
         // The scope, then two round buttons, ✕ and ✓; while starting (waiting for the first
         // audio buffer) and while transcribing, ✓'s spot shows the spinner so there's one place
         // to look and no checkmark before the mic is live, while ✕ still cancels.
@@ -426,7 +423,7 @@ final class HexKeyRecordingPanel: UIView {
 
     private func applyPalette() {
         styleButton.setTitleColor(palette.textMuted, for: .normal)
-        scope.isDark = palette.isDark
+        braid.color = Color(palette.textBase)
         cancelButton.palette = palette
         doneButton.palette = palette
         doneSpinner.color = palette.textBase
@@ -472,7 +469,6 @@ final class HexKeyRecordingPanel: UIView {
 
     func debugMotionSample() -> [String: Double] {
         func layer(_ view: UIView) -> CALayer { view.layer.presentation() ?? view.layer }
-        let pose = scope.debugPose
         return [
             "cancel": view(cancelButton),
             "cancelX": layer(cancelButton).frame.midX,
@@ -481,16 +477,32 @@ final class HexKeyRecordingPanel: UIView {
             "doneScale": Double(layer(doneButton).transform.m11),
             "spinner": doneSpinner.isAnimating ? view(doneSpinner) : 0,
             "doneSymbol": showsSpinner ? 0 : 1,
-            "scopeOpacity": Double(pose.opacity),
-            "scopeLive": Double(pose.live),
-            "scopeCool": Double(pose.cool),
-            "scopeGrid": Double(pose.grid),
-            "scopeGlow": Double(pose.glow),
         ]
     }
 
     private func view(_ v: UIView) -> Double {
         v.isHidden ? 0 : Double((v.layer.presentation() ?? v.layer).opacity)
+    }
+}
+
+/// What the recording panel's braid shows, set from UIKit.
+@MainActor
+@Observable
+final class BraidPanelState {
+    var phase: DotScopePhase = .hidden
+    var color: Color = .white
+    let loudness: () -> Float
+
+    init(loudness: @escaping () -> Float) {
+        self.loudness = loudness
+    }
+}
+
+private struct BraidPanelScope: View {
+    let state: BraidPanelState
+
+    var body: some View {
+        BraidScopeView(phase: state.phase, color: state.color, loudnessProvider: state.loudness)
     }
 }
 

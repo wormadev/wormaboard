@@ -1283,10 +1283,10 @@ final class KeyboardBridgeTests: XCTestCase {
         // Recording panel keeps spinner in Done's spot while starting, then shows checkmark when live.
         let panel = HexKeyRecordingPanel(loudness: { -62 })
         panel.update(phase: .starting, style: .polished)
-        XCTAssertEqual(panel.scope.phase, .starting)
+        XCTAssertEqual(panel.scopePhase, .starting)
         XCTAssertEqual(panel.debugMotionSample()["doneSymbol"], 0)
         panel.update(phase: .recording, style: .polished)
-        XCTAssertEqual(panel.scope.phase, .recording)
+        XCTAssertEqual(panel.scopePhase, .recording)
         XCTAssertEqual(panel.debugMotionSample()["doneSymbol"], 1)
         panel.tearDown()
     }

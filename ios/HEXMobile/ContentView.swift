@@ -441,10 +441,10 @@ struct ContentView: View {
             HexRecessedWell(isDark: true)
 
             // Permanently mounted so phosphor trails and inset springs never reset mid-session.
-            DotScopeView(
+            BraidScopeView(
                 phase: stageScopePhase,
-                tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 28.0, spacing: 3.5),
-                drawPlate: false,
+                leadingInset: CGFloat(leadInset),
+                trailingInset: CGFloat(trailInset),
                 loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
             )
             .clipShape(Capsule())
@@ -675,10 +675,10 @@ struct ContentView: View {
                             ZStack {
                                 HexRecessedWell(isDark: true)
 
-                                DotScopeView(
+                                BraidScopeView(
                                     phase: handoffScopePhase,
-                                    tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 30.0, spacing: 3.5),
-                                    drawPlate: false,
+                                    leadingInset: CGFloat(leadInset),
+                                    trailingInset: CGFloat(trailInset),
                                     loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
                                 )
                                 .clipShape(Capsule())
@@ -781,8 +781,14 @@ struct ContentView: View {
                             .foregroundStyle(HexTheme.textFaint)
                             .opacity(showHomeSwipeCue ? 1 : 0)
 
-                        DotSwipeCueView(isActive: showHomeSwipeCue)
-                            .frame(width: geo.size.width, height: 21)
+                        // The braid's knot sweeps right along the home bar.
+                        BraidScopeView(
+                            phase: showHomeSwipeCue ? .processing : .hidden,
+                            leadingInset: 40,
+                            trailingInset: 40,
+                            loudnessProvider: { -120 }
+                        )
+                        .frame(width: geo.size.width, height: 21)
                     }
                     .allowsHitTesting(false)
                     .offset(y: bottomInset)

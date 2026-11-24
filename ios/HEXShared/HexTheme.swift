@@ -113,7 +113,7 @@ struct HexTrayReveal: ViewModifier {
     }
 }
 
-/// Soft recessed capsule well for `DotScopeView` that adapts naturally to both
+/// Soft recessed capsule well for `BraidScopeView` that adapts naturally to both
 /// dark and light host platters without opaque black holes or heavy box strokes.
 struct HexRecessedWell: View {
     var isDark: Bool
@@ -241,53 +241,83 @@ struct HexMarkView: View {
     }
 }
 
-/// Static braided dot-matrix glyph for WidgetKit / Live Activity surfaces
-/// where SpringBoard renders archived display lists rather than Metal drawables.
-struct HexDotMatrixBadge: View {
-    var columns: Int = 21
-    var rows: Int = 7
-    var pitch: CGFloat = 2.6
+/// The braid as one still frame, for WidgetKit / Live Activity surfaces, which render
+/// archived display lists rather than a running timeline.
+struct HexBraidBadge: View {
+    var width: CGFloat
+    var height: CGFloat = 16
     var cooling: Bool = false
 
     var body: some View {
         Canvas { context, size in
-            let midX = size.width * 0.5
-            let midY = size.height * 0.5
-            let halfRows = CGFloat(rows - 1) * 0.5
-            let halfCols = CGFloat(columns - 1) * 0.5
-            let tint = cooling
-                ? SIMD3<Double>(0.76, 0.85, 0.98)
-                : SIMD3<Double>(0.96, 0.93, 0.87)
-
-            for i in 0..<columns {
-                let xn = Double(i) / Double(max(1, columns - 1))
-                let edge = sin(.pi * xn)
-                let amp = (0.35 + 0.65 * sin(.pi * xn)) * Double(halfRows * 0.82)
-                let yA = Double(halfRows) + amp * sin(2.0 * .pi * 1.45 * xn - 0.5)
-                let yB = Double(halfRows) - amp * sin(2.0 * .pi * 1.45 * xn - 0.5)
-
-                for j in 0..<rows {
-                    let dA = abs(Double(j) - yA)
-                    let dB = abs(Double(j) - yB)
-                    let litA = exp(-(dA * dA) / 0.42)
-                    let litB = exp(-(dB * dB) / 0.42)
-                    let power = min(1.0, (1.0 - (1.0 - litA) * (1.0 - litB)) * (0.25 + 0.75 * edge))
-                    let alpha = 0.07 * edge + 0.89 * pow(power, 0.9)
-                    let r = (0.26 + 0.16 * pow(power, 0.6)) * Double(pitch)
-                    let cx = midX + (CGFloat(i) - halfCols) * pitch
-                    let cy = midY + (CGFloat(j) - halfRows) * pitch
-                    let rect = CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2)
-                    context.fill(
-                        Path(ellipseIn: rect),
-                        with: .color(Color(red: tint.x, green: tint.y, blue: tint.z, opacity: alpha))
-                    )
-                }
-            }
+            BraidStrokes.draw(
+                in: &context,
+                from: 1,
+                to: size.width - 1,
+                height: size.height,
+                open: cooling ? 0.35 : 0.9,
+                time: 0.55,
+                knot: cooling ? 0.5 : nil,
+                color: cooling ? HexTheme.agentBlue : HexTheme.warmPearl
+            )
         }
-        .frame(
-            width: CGFloat(columns - 1) * pitch + 8,
-            height: CGFloat(rows - 1) * pitch + 8
-        )
+        .frame(width: width, height: height)
         .accessibilityHidden(true)
+    }
+}
+
+/// Two tapered strands, after the wormadev mark's stroke (thin ends, full in the middle),
+/// shared by `BraidScopeView` and `HexBraidBadge`.
+enum BraidStrokes {
+    /// `open` 0...1 is how far the strands part; `knot` (0...1 along the run) gathers them
+    /// everywhere but there, for the travelling knot while transcribing.
+    static func draw(
+        in context: inout GraphicsContext,
+        from start: CGFloat,
+        to end: CGFloat,
+        height: CGFloat,
+        open: Double,
+        time: Double,
+        knot: Double?,
+        color: Color
+    ) {
+        guard end > start else { return }
+        let mid = height / 2
+        for (sign, opacity) in [(1.0, 1.0), (-1.0, 0.45)] {
+            let points = (0...64).map { i -> CGPoint in
+                let u = Double(i) / 64
+                var amplitude = sin(.pi * u) * height * 0.3 * open
+                if let knot {
+                    amplitude *= 0.35 + 0.65 * exp(-pow((u - knot) * 5, 2))
+                }
+                let y = mid + sign * amplitude * sin(u * .pi * 3.2 - time * 4)
+                return CGPoint(x: start + (end - start) * u, y: y)
+            }
+            context.fill(
+                tapered(points) { u in 1.5 + sin(.pi * u) * height * 0.11 },
+                with: .color(color.opacity(opacity))
+            )
+        }
+    }
+
+    /// A filled outline around `points`, `width(u)` wide at each point.
+    private static func tapered(_ points: [CGPoint], width: (Double) -> Double) -> Path {
+        let last = points.count - 1
+        var left: [CGPoint] = []
+        var right: [CGPoint] = []
+        for i in 0...last {
+            let a = points[max(i - 1, 0)]
+            let b = points[min(i + 1, last)]
+            let length = max(hypot(b.x - a.x, b.y - a.y), 0.001)
+            let half = width(Double(i) / Double(last)) / 2
+            let nx = -(b.y - a.y) / length * half
+            let ny = (b.x - a.x) / length * half
+            left.append(CGPoint(x: points[i].x + nx, y: points[i].y + ny))
+            right.append(CGPoint(x: points[i].x - nx, y: points[i].y - ny))
+        }
+        var path = Path()
+        path.addLines(left + right.reversed())
+        path.closeSubpath()
+        return path
     }
 }
