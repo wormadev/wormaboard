@@ -103,6 +103,7 @@ struct FullKeyboardSettings {
         static let dvorakPunctuation = "experiments.dvorakPunctuation"
         static let clipboardHistory = "experiments.clipboardHistory"
         static let wormaDictationKey = "experiments.wormaDictationKey"
+        static let braidIndicator = "experiments.braidIndicator"
         static let wormaDictationTray = "settings.wormaDictationTray"
         static let commaPeriodKeys = "experiments.commaPeriodKeys"
         static let quickAccents = "experiments.quickAccents"
@@ -389,6 +390,13 @@ struct FullKeyboardSettings {
     var wormaDictationKey: Bool {
         get { defaults?.bool(forKey: Key.wormaDictationKey) ?? false }
         nonmutating set { defaults?.set(newValue, forKey: Key.wormaDictationKey) }
+    }
+
+    /// WormaDev Experiments › Braid indicator: `BraidScopeView` in place of the dot scope
+    /// while dictating, in the keyboard and in WormaBoard.
+    var braidIndicator: Bool {
+        get { defaults?.bool(forKey: Key.braidIndicator) ?? false }
+        nonmutating set { defaults?.set(newValue, forKey: Key.braidIndicator) }
     }
 
     /// The tray items the person shows, in `WormaTrayItem`'s fixed order; all of them by default.

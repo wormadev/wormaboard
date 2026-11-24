@@ -441,12 +441,23 @@ struct ContentView: View {
             HexRecessedWell(isDark: true)
 
             // Permanently mounted so phosphor trails and inset springs never reset mid-session.
-            DotScopeView(
-                phase: stageScopePhase,
-                tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 28.0, spacing: 3.5),
-                drawPlate: false,
-                loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
-            )
+            Group {
+                if FullKeyboardSettings().braidIndicator {
+                    BraidScopeView(
+                        phase: stageScopePhase,
+                        leadingInset: CGFloat(leadInset),
+                        trailingInset: CGFloat(trailInset),
+                        loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
+                    )
+                } else {
+                    DotScopeView(
+                        phase: stageScopePhase,
+                        tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 28.0, spacing: 3.5),
+                        drawPlate: false,
+                        loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
+                    )
+                }
+            }
             .clipShape(Capsule())
             .opacity(showScope ? 1.0 : 0.0)
             .allowsHitTesting(false)
@@ -675,12 +686,23 @@ struct ContentView: View {
                             ZStack {
                                 HexRecessedWell(isDark: true)
 
-                                DotScopeView(
-                                    phase: handoffScopePhase,
-                                    tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 30.0, spacing: 3.5),
-                                    drawPlate: false,
-                                    loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
-                                )
+                                Group {
+                                    if FullKeyboardSettings().braidIndicator {
+                                        BraidScopeView(
+                                            phase: handoffScopePhase,
+                                            leadingInset: CGFloat(leadInset),
+                                            trailingInset: CGFloat(trailInset),
+                                            loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
+                                        )
+                                    } else {
+                                        DotScopeView(
+                                            phase: handoffScopePhase,
+                                            tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 30.0, spacing: 3.5),
+                                            drawPlate: false,
+                                            loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
+                                        )
+                                    }
+                                }
                                 .clipShape(Capsule())
                                 .allowsHitTesting(false)
 
