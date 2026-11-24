@@ -27,7 +27,7 @@ targets:
       - HEXMobile
       - HEXShared
       - HEXActivity
-      - path: ../app/AppIcon.icon
+      - path: HEXMobile/AppIcon.icon
         buildPhase: resources
       # Typing configs' Export for your agent: the agent package, copied in as one folder.
       - path: TypingConfig/package

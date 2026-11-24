@@ -106,43 +106,16 @@ struct FullKeyboardPalette: Equatable {
     static let cornerRadius: CGFloat = 8.5
 }
 
-/// The Hex mark (two hexagon outlines and a filled core) as UIKit paths.
+/// The brand mark (`WormaMark`) drawn with UIKit; `coreColor` tints the cursor.
 enum HexMarkPath {
-    private static let outer: [CGPoint] = [
-        CGPoint(x: 32, y: 4), CGPoint(x: 57, y: 18.5), CGPoint(x: 57, y: 45.5),
-        CGPoint(x: 32, y: 60), CGPoint(x: 7, y: 45.5), CGPoint(x: 7, y: 18.5),
-    ]
-    private static let middle: [CGPoint] = [
-        CGPoint(x: 32, y: 15), CGPoint(x: 48, y: 24.25), CGPoint(x: 48, y: 39.75),
-        CGPoint(x: 32, y: 49), CGPoint(x: 16, y: 39.75), CGPoint(x: 16, y: 24.25),
-    ]
-    private static let core: [CGPoint] = [
-        CGPoint(x: 32, y: 24), CGPoint(x: 39.5, y: 28.25), CGPoint(x: 39.5, y: 36.75),
-        CGPoint(x: 32, y: 41), CGPoint(x: 24.5, y: 36.75), CGPoint(x: 24.5, y: 28.25),
-    ]
-
     static func draw(in context: CGContext, rect: CGRect, color: UIColor, coreColor: UIColor?) {
-        let side = min(rect.width, rect.height)
-        let s = side / 64
-        let origin = CGPoint(x: rect.midX - side / 2, y: rect.midY - side / 2)
-
-        func path(_ points: [CGPoint]) -> CGPath {
-            let p = CGMutablePath()
-            p.addLines(between: points.map { CGPoint(x: origin.x + $0.x * s, y: origin.y + $0.y * s) })
-            p.closeSubpath()
-            return p
-        }
-
+        let mark = WormaMark.paths(in: rect)
         context.saveGState()
-        context.setLineWidth(max(1.15, 4.5 * s))
-        context.setLineCap(.round)
-        context.setLineJoin(.round)
-        context.setStrokeColor(color.cgColor)
-        context.addPath(path(outer))
-        context.addPath(path(middle))
-        context.strokePath()
+        context.setFillColor(color.cgColor)
+        context.addPath(mark.worm)
+        context.fillPath()
         context.setFillColor((coreColor ?? color).cgColor)
-        context.addPath(path(core))
+        context.addPath(mark.cursor)
         context.fillPath()
         context.restoreGState()
     }
