@@ -46,11 +46,11 @@ struct TypingConfigSheet: View {
         case .tooLarge(let bytes):
             message(
                 title: String(localized: "This file is too large"),
-                body: String(localized: "A typing config is at most \(Self.size(TypingConfigLimits.maxBytes)), and “\(arrival.name)” is \(Self.size(bytes)). Hex didn't open it, and nothing has changed.")
+                body: String(localized: "A typing config is at most \(Self.size(TypingConfigLimits.maxBytes)), and “\(arrival.name)” is \(Self.size(bytes)). WormaBoard didn't open it, and nothing has changed.")
             )
         case .unreadable:
             message(
-                title: String(localized: "Hex couldn't read this file"),
+                title: String(localized: "WormaBoard couldn't read this file"),
                 body: String(localized: "“\(arrival.name)” is empty or couldn't be opened. Nothing has changed.")
             )
         case .file(let data):
@@ -71,7 +71,7 @@ struct TypingConfigSheet: View {
     private func experimentOff(_ arrival: TypingConfigArrival) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             header(String(localized: "Typing configs are off"), close: inbox.closeAll)
-            Text("“\(arrival.name)” is a typing config: words and key positions made for how you type. Hex opens typing configs only while Settings › Experiments › Typing configs is on. Nothing has changed.")
+            Text("“\(arrival.name)” is a typing config: words and key positions made for how you type. WormaBoard opens typing configs only while Settings › Experiments › Typing configs is on. Nothing has changed.")
                 .font(.system(size: 15))
                 .foregroundStyle(HexTheme.textMuted)
                 .fixedSize(horizontal: false, vertical: true)

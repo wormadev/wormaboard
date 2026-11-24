@@ -15,7 +15,7 @@ struct TypingConfigParts: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if groups.isEmpty {
-                Self.plainCard(String(localized: "Nothing in this file applies to your keyboard. What Hex skipped is listed below."))
+                Self.plainCard(String(localized: "Nothing in this file applies to your keyboard. What WormaBoard skipped is listed below."))
             }
 
             ForEach(groups, id: \.0) { group, items in
@@ -30,8 +30,8 @@ struct TypingConfigParts: View {
                     // the experiment on and Full Access (TypingConfigSettings.keyboards).
                     if noKeyboardYet {
                         Self.textRow(
-                            title: String(localized: "Hex hasn't seen your keyboard yet"),
-                            lines: [String(localized: "Key positions are for one keyboard. Type with the Hex keyboard for a moment, then open Hex again: those made for it apply then.")]
+                            title: String(localized: "WormaBoard hasn't seen your keyboard yet"),
+                            lines: [String(localized: "Key positions are for one keyboard. Type with the WormaBoard keyboard for a moment, then open WormaBoard again: those made for it apply then.")]
                         )
                         SettingsDivider()
                     }
@@ -226,7 +226,7 @@ struct TypingConfigFullAccessCard: View {
                 Text("Needs Full Access")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(HexTheme.textBase)
-                Text("The keyboard can only use a typing config with Full Access. Turn on Allow Full Access in Settings › Apps › Hex › Keyboards, then apply.")
+                Text("The keyboard can only use a typing config with Full Access. Turn on Allow Full Access in Settings › Apps › WormaBoard › Keyboards, then apply.")
                     .font(.system(size: 12))
                     .foregroundStyle(HexTheme.textMuted)
                     .fixedSize(horizontal: false, vertical: true)

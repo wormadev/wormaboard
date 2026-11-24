@@ -131,8 +131,8 @@ struct TypingConfigHomeCards: View {
         if TypingConfigSettings().isEnabled {
             if let fallback = TypingConfigStartupGuard().fallback, fallback.handled {
                 card(
-                    title: String(localized: "Hex went back to your last config"),
-                    detail: String(localized: "The keyboard couldn't start with your new config, so Hex went back to the one before."),
+                    title: String(localized: "WormaBoard went back to your last config"),
+                    detail: String(localized: "The keyboard couldn't start with your new config, so WormaBoard went back to the one before."),
                     button: nil,
                     dismiss: { watch.dismissFallbackCard() }
                 )
@@ -207,7 +207,7 @@ struct TypingConfigCompareSheet: View {
                     content(comparison)
                 } else {
                     TypingConfigSheetHeader(title: String(localized: "Nothing to compare yet"), close: { dismiss() })
-                    Text("Hex compares a typing config with the one before it once you've typed with it for a while.")
+                    Text("WormaBoard compares a typing config with the one before it once you've typed with it for a while.")
                         .font(.system(size: 15))
                         .foregroundStyle(HexTheme.textMuted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -226,7 +226,7 @@ struct TypingConfigCompareSheet: View {
     }
 
     private func name(_ key: String) -> String {
-        key == TypingConfigHealth.defaultsKey ? String(localized: "Hex defaults") : (TypingConfigHistory().entry(key)?.name ?? key)
+        key == TypingConfigHealth.defaultsKey ? String(localized: "WormaBoard defaults") : (TypingConfigHistory().entry(key)?.name ?? key)
     }
 
     @ViewBuilder
@@ -237,7 +237,7 @@ struct TypingConfigCompareSheet: View {
         )
         Text(c.isReady
             ? String(localized: "Words you undid, kept as typed or fixed by hand, per 100 words you typed. Counts only: no words are kept.")
-            : String(localized: "Hex compares once you've typed \(TypingConfigHealth.minimumWords) words with each. Counts only: no words are kept."))
+            : String(localized: "WormaBoard compares once you've typed \(TypingConfigHealth.minimumWords) words with each. Counts only: no words are kept."))
             .font(.system(size: 13))
             .foregroundStyle(HexTheme.textMuted)
             .fixedSize(horizontal: false, vertical: true)
@@ -302,7 +302,7 @@ struct TypingConfigNotificationAsk: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Hex can tell you if a typing config seems to make your typing worse. Allow notifications for that?")
+            Text("WormaBoard can tell you if a typing config seems to make your typing worse. Allow notifications for that?")
                 .font(.system(size: 14))
                 .foregroundStyle(HexTheme.textBase)
                 .fixedSize(horizontal: false, vertical: true)

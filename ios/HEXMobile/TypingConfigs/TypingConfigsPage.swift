@@ -14,7 +14,7 @@ struct KeyboardTypingConfigsRow: View {
             HStack(spacing: 12) {
                 SettingsRowLabel(
                     title: String(localized: "Typing configs"),
-                    detail: activeName.map { String(localized: "Using “\($0)”") } ?? String(localized: "Hex defaults")
+                    detail: activeName.map { String(localized: "Using “\($0)”") } ?? String(localized: "WormaBoard defaults")
                 )
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")
@@ -60,7 +60,7 @@ struct TypingConfigsPage: View {
             }
 
             SettingsCard {
-                row(title: String(localized: "Hex defaults"), detail: String(localized: "No typing config"), isActive: activeID == nil) {
+                row(title: String(localized: "WormaBoard defaults"), detail: String(localized: "No typing config"), isActive: activeID == nil) {
                     TypingConfigActivation.useDefaults(history: TypingConfigHistory())
                     reload()
                 }
@@ -72,7 +72,7 @@ struct TypingConfigsPage: View {
 
             Text(entries.isEmpty
                 ? String(localized: "No typing configs yet. Export your typing logs for your agent from Settings › Privacy › Typing logs, then open the file it makes.")
-                : String(localized: "Going back deletes nothing. Hex keeps your last \(TypingConfigHistory.limit) typing configs."))
+                : String(localized: "Going back deletes nothing. WormaBoard keeps your last \(TypingConfigHistory.limit) typing configs."))
                 .font(.system(size: 12))
                 .foregroundStyle(HexTheme.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -127,7 +127,7 @@ struct TypingConfigsPage: View {
                             reload()
                         }
                     } message: {
-                        Text("The keyboard goes back to Hex defaults, and every typing config is deleted from this iPhone.")
+                        Text("The keyboard goes back to WormaBoard defaults, and every typing config is deleted from this iPhone.")
                     }
                 }
                 .padding(.top, 8)
@@ -183,7 +183,7 @@ struct TypingConfigsPage: View {
                 try TypingConfigActivation.goBack(to: entry, history: TypingConfigHistory())
                 failure = nil
             } catch {
-                failure = String(localized: "Hex couldn't use “\(entry.name)”. Nothing has changed.")
+                failure = String(localized: "WormaBoard couldn't use “\(entry.name)”. Nothing has changed.")
             }
             reload()
         } label: {
@@ -274,7 +274,7 @@ struct TypingConfigDetailPage: View {
 
                 SettingsCard {
                     if isActive {
-                        actionRow(String(localized: "Use Hex defaults instead"), icon: "arrow.uturn.backward") {
+                        actionRow(String(localized: "Use WormaBoard defaults instead"), icon: "arrow.uturn.backward") {
                             TypingConfigActivation.useDefaults(history: TypingConfigHistory())
                             load()
                         }
@@ -333,7 +333,7 @@ struct TypingConfigDetailPage: View {
                         }
                     } message: {
                         Text(isActive
-                            ? String(localized: "The keyboard goes back to Hex defaults, and this config is deleted from this iPhone.")
+                            ? String(localized: "The keyboard goes back to WormaBoard defaults, and this config is deleted from this iPhone.")
                             : String(localized: "This config is deleted from this iPhone."))
                     }
                 }
@@ -391,7 +391,7 @@ struct TypingConfigDetailPage: View {
             try TypingConfigActivation.goBack(to: entry, history: TypingConfigHistory())
             failure = nil
         } catch {
-            failure = String(localized: "Hex couldn't use “\(entry.name)”. Nothing has changed.")
+            failure = String(localized: "WormaBoard couldn't use “\(entry.name)”. Nothing has changed.")
         }
         load()
     }

@@ -4851,22 +4851,22 @@
         }
       }
     },
-    "Nothing in this file applies to your keyboard. What Hex skipped is listed below." : {
+    "Nothing in this file applies to your keyboard. What WormaBoard skipped is listed below." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这个文件里没有适用于你键盘的内容。Hex 跳过的部分列在下面。"
+            "value" : "这个文件里没有适用于你键盘的内容。WormaBoard 跳过的部分列在下面。"
           }
         }
       }
     },
-    "Hex can't check this config on your typing yet. Once it's on, Hex watches how your typing goes and tells you if it seems worse. You can go back in Settings › Keyboard › Typing configs." : {
+    "WormaBoard can't check this config on your typing yet. Once it's on, WormaBoard watches how your typing goes and tells you if it seems worse. You can go back in Settings › Keyboard › Typing configs." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 还无法用你的打字记录检查这个配置。启用后，Hex 会留意你的打字情况，如果似乎变差会告诉你。你可以在“设置 › 键盘 › 输入配置”中退回。"
+            "value" : "WormaBoard 还无法用你的打字记录检查这个配置。启用后，WormaBoard 会留意你的打字情况，如果似乎变差会告诉你。你可以在“设置 › 键盘 › 输入配置”中退回。"
           }
         }
       }
@@ -5011,12 +5011,12 @@
         }
       }
     },
-    "Hex couldn't save this config. Nothing has changed." : {
+    "WormaBoard couldn't save this config. Nothing has changed." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法保存这个配置。没有任何更改。"
+            "value" : "WormaBoard 无法保存这个配置。没有任何更改。"
           }
         }
       }
@@ -5031,12 +5031,12 @@
         }
       }
     },
-    "Hex limited this. The file asked for %@." : {
+    "WormaBoard limited this. The file asked for %@." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 限制了这个值。文件要求的是 %@。"
+            "value" : "WormaBoard 限制了这个值。文件要求的是 %@。"
           }
         }
       }
@@ -5051,12 +5051,12 @@
         }
       }
     },
-    "The keyboard can only use a typing config with Full Access. Turn on Allow Full Access in Settings › Apps › Hex › Keyboards, then apply." : {
+    "The keyboard can only use a typing config with Full Access. Turn on Allow Full Access in Settings › Apps › WormaBoard › Keyboards, then apply." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "键盘只有在开启完全访问后才能使用输入配置。请在“设置 › App › Hex › 键盘”中打开“允许完全访问”，然后再启用。"
+            "value" : "键盘只有在开启完全访问后才能使用输入配置。请在“设置 › App › WormaBoard › 键盘”中打开“允许完全访问”，然后再启用。"
           }
         }
       }
@@ -5131,22 +5131,22 @@
         }
       }
     },
-    "A typing config is at most %@, and “%@” is %@. Hex didn't open it, and nothing has changed." : {
+    "A typing config is at most %@, and “%@” is %@. WormaBoard didn't open it, and nothing has changed." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "输入配置最大为 %1$@，而“%2$@”有 %3$@。Hex 没有打开它，也没有任何更改。"
+            "value" : "输入配置最大为 %1$@，而“%2$@”有 %3$@。WormaBoard 没有打开它，也没有任何更改。"
           }
         }
       }
     },
-    "Hex couldn't read this file" : {
+    "WormaBoard couldn't read this file" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法读取这个文件"
+            "value" : "WormaBoard 无法读取这个文件"
           }
         }
       }
@@ -5171,12 +5171,12 @@
         }
       }
     },
-    "“%@” is a typing config: words and key positions made for how you type. Hex opens typing configs only while Settings › Experiments › Typing configs is on. Nothing has changed." : {
+    "“%@” is a typing config: words and key positions made for how you type. WormaBoard opens typing configs only while Settings › Experiments › Typing configs is on. Nothing has changed." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "“%@”是一个输入配置：根据你的打字习惯制作的词语和按键位置。只有打开“设置 › 实验 › 输入配置”后，Hex 才会打开输入配置。没有任何更改。"
+            "value" : "“%@”是一个输入配置：根据你的打字习惯制作的词语和按键位置。只有打开“设置 › 实验 › 输入配置”后，WormaBoard 才会打开输入配置。没有任何更改。"
           }
         }
       }
@@ -5191,12 +5191,12 @@
         }
       }
     },
-    "This file isn't a typing config Hex can read." : {
+    "This file isn't a typing config WormaBoard can read." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这个文件不是 Hex 能读取的输入配置。"
+            "value" : "这个文件不是 WormaBoard 能读取的输入配置。"
           }
         }
       }
@@ -5211,32 +5211,32 @@
         }
       }
     },
-    "Made for a newer Hex. Update Hex to use it." : {
+    "Made for a newer WormaBoard. Update WormaBoard to use it." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "需要更新版本的 Hex。更新 Hex 后才能使用。"
+            "value" : "需要更新版本的 WormaBoard。更新 WormaBoard 后才能使用。"
           }
         }
       }
     },
-    "Hex doesn't know this part of the file." : {
+    "WormaBoard doesn't know this part of the file." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 不认识文件里的这一部分。"
+            "value" : "WormaBoard 不认识文件里的这一部分。"
           }
         }
       }
     },
-    "Incomplete, or holds a value Hex can't use." : {
+    "Incomplete, or holds a value WormaBoard can't use." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "不完整，或包含 Hex 无法使用的值。"
+            "value" : "不完整，或包含 WormaBoard 无法使用的值。"
           }
         }
       }
@@ -5281,12 +5281,12 @@
         }
       }
     },
-    "Measured on an older version of Hex's touch areas, so it needs checking again." : {
+    "Measured on an older version of WormaBoard's touch areas, so it needs checking again." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "是在旧版 Hex 的触控区域上测量的，需要重新检查。"
+            "value" : "是在旧版 WormaBoard 的触控区域上测量的，需要重新检查。"
           }
         }
       }
@@ -5851,12 +5851,12 @@
         }
       }
     },
-    "Hex keeps %lld typing configs. Keeping this one removes “%@”, the oldest one you're not using." : {
+    "WormaBoard keeps %lld typing configs. Keeping this one removes “%@”, the oldest one you're not using." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 最多保留 %1$lld 个输入配置。保留这个会移除“%2$@”，即你没在使用的最早的一个。"
+            "value" : "WormaBoard 最多保留 %1$lld 个输入配置。保留这个会移除“%2$@”，即你没在使用的最早的一个。"
           }
         }
       }
@@ -5881,12 +5881,12 @@
         }
       }
     },
-    "Hex defaults" : {
+    "WormaBoard defaults" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 默认设置"
+            "value" : "WormaBoard 默认设置"
           }
         }
       }
@@ -5901,12 +5901,12 @@
         }
       }
     },
-    "Going back deletes nothing. Hex keeps your last %lld typing configs." : {
+    "Going back deletes nothing. WormaBoard keeps your last %lld typing configs." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "退回不会删除任何内容。Hex 会保留你最近的 %lld 个输入配置。"
+            "value" : "退回不会删除任何内容。WormaBoard 会保留你最近的 %lld 个输入配置。"
           }
         }
       }
@@ -5941,12 +5941,12 @@
         }
       }
     },
-    "The keyboard goes back to Hex defaults, and every typing config is deleted from this iPhone." : {
+    "The keyboard goes back to WormaBoard defaults, and every typing config is deleted from this iPhone." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "键盘会恢复为 Hex 默认设置，所有输入配置都会从这台 iPhone 上删除。"
+            "value" : "键盘会恢复为 WormaBoard 默认设置，所有输入配置都会从这台 iPhone 上删除。"
           }
         }
       }
@@ -6011,12 +6011,12 @@
         }
       }
     },
-    "Hex couldn't use “%@”. Nothing has changed." : {
+    "WormaBoard couldn't use “%@”. Nothing has changed." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法使用“%@”。没有任何更改。"
+            "value" : "WormaBoard 无法使用“%@”。没有任何更改。"
           }
         }
       }
@@ -6091,12 +6091,12 @@
         }
       }
     },
-    "Use Hex defaults instead" : {
+    "Use WormaBoard defaults instead" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "改用 Hex 默认设置"
+            "value" : "改用 WormaBoard 默认设置"
           }
         }
       }
@@ -6151,12 +6151,12 @@
         }
       }
     },
-    "The keyboard goes back to Hex defaults, and this config is deleted from this iPhone." : {
+    "The keyboard goes back to WormaBoard defaults, and this config is deleted from this iPhone." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "键盘会恢复为 Hex 默认设置，这个配置会从这台 iPhone 上删除。"
+            "value" : "键盘会恢复为 WormaBoard 默认设置，这个配置会从这台 iPhone 上删除。"
           }
         }
       }
@@ -6211,22 +6211,22 @@
         }
       }
     },
-    "This holds everything you typed and dictated with Hex in the last 14 days, including any password you typed outside a password field. Give it only to an agent you trust, and don't upload it anywhere you wouldn't share your messages." : {
+    "This holds everything you typed and dictated with WormaBoard in the last 14 days, including any password you typed outside a password field. Give it only to an agent you trust, and don't upload it anywhere you wouldn't share your messages." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这里包含你过去 14 天用 Hex 输入和听写的所有内容，包括你在密码栏以外输入的密码。只把它交给你信任的 AI 助手，也不要上传到你不愿分享自己消息的地方。"
+            "value" : "这里包含你过去 14 天用 WormaBoard 输入和听写的所有内容，包括你在密码栏以外输入的密码。只把它交给你信任的 AI 助手，也不要上传到你不愿分享自己消息的地方。"
           }
         }
       }
     },
-    "This holds everything you typed and dictated with Hex on the days you chose, including any password you typed outside a password field. Give it only to an agent you trust, and don't upload it anywhere you wouldn't share your messages." : {
+    "This holds everything you typed and dictated with WormaBoard on the days you chose, including any password you typed outside a password field. Give it only to an agent you trust, and don't upload it anywhere you wouldn't share your messages." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这里包含你在所选日期用 Hex 输入和听写的所有内容，包括你在密码栏以外输入的密码。只把它交给你信任的 AI 助手，也不要上传到你不愿分享自己消息的地方。"
+            "value" : "这里包含你在所选日期用 WormaBoard 输入和听写的所有内容，包括你在密码栏以外输入的密码。只把它交给你信任的 AI 助手，也不要上传到你不愿分享自己消息的地方。"
           }
         }
       }
@@ -6241,12 +6241,12 @@
         }
       }
     },
-    "Hex couldn't prepare the export. Nothing was shared." : {
+    "WormaBoard couldn't prepare the export. Nothing was shared." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法准备导出内容。没有共享任何内容。"
+            "value" : "WormaBoard 无法准备导出内容。没有共享任何内容。"
           }
         }
       }
@@ -6261,12 +6261,12 @@
         }
       }
     },
-    "This also deletes your typing configs, which hold your words, and the keyboard goes back to Hex defaults." : {
+    "This also deletes your typing configs, which hold your words, and the keyboard goes back to WormaBoard defaults." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这也会删除你的输入配置（其中包含你的词语），键盘会恢复为 Hex 默认设置。"
+            "value" : "这也会删除你的输入配置（其中包含你的词语），键盘会恢复为 WormaBoard 默认设置。"
           }
         }
       }
@@ -6291,12 +6291,12 @@
         }
       }
     },
-    "A tap near these edges counts for the key more often. Hex's guess at the next letter can still pick its neighbour. The keys stay where they are." : {
+    "A tap near these edges counts for the key more often. WormaBoard's guess at the next letter can still pick its neighbour. The keys stay where they are." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "点按这些边缘附近时，会更常算作这个键。Hex 对下一个字母的预测仍可能选择旁边的键。按键位置不变。"
+            "value" : "点按这些边缘附近时，会更常算作这个键。WormaBoard 对下一个字母的预测仍可能选择旁边的键。按键位置不变。"
           }
         }
       }
@@ -6401,22 +6401,22 @@
         }
       }
     },
-    "Hex hasn't seen your keyboard yet" : {
+    "WormaBoard hasn't seen your keyboard yet" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 还没见过你的键盘"
+            "value" : "WormaBoard 还没见过你的键盘"
           }
         }
       }
     },
-    "Key positions are for one keyboard. Type with the Hex keyboard for a moment, then open Hex again: those made for it apply then." : {
+    "Key positions are for one keyboard. Type with the WormaBoard keyboard for a moment, then open WormaBoard again: those made for it apply then." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按键位置只适用于某一个键盘。先用 Hex 键盘打一会儿字，再打开 Hex：为它制作的按键位置就会生效。"
+            "value" : "按键位置只适用于某一个键盘。先用 WormaBoard 键盘打一会儿字，再打开 WormaBoard：为它制作的按键位置就会生效。"
           }
         }
       }
@@ -6451,22 +6451,22 @@
         }
       }
     },
-    "Hex went back to your last config" : {
+    "WormaBoard went back to your last config" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 换回了上一个配置"
+            "value" : "WormaBoard 换回了上一个配置"
           }
         }
       }
     },
-    "The keyboard couldn't start with your new config, so Hex went back to the one before." : {
+    "The keyboard couldn't start with your new config, so WormaBoard went back to the one before." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "键盘无法用新配置启动，所以 Hex 换回了上一个配置。"
+            "value" : "键盘无法用新配置启动，所以 WormaBoard 换回了上一个配置。"
           }
         }
       }
@@ -6511,12 +6511,12 @@
         }
       }
     },
-    "Hex compares a typing config with the one before it once you've typed with it for a while." : {
+    "WormaBoard compares a typing config with the one before it once you've typed with it for a while." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你用一个输入配置打一段时间字后，Hex 会把它和上一个配置比较。"
+            "value" : "你用一个输入配置打一段时间字后，WormaBoard 会把它和上一个配置比较。"
           }
         }
       }
@@ -6551,12 +6551,12 @@
         }
       }
     },
-    "Hex compares once you've typed %lld words with each. Counts only: no words are kept." : {
+    "WormaBoard compares once you've typed %lld words with each. Counts only: no words are kept." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "两边各输入 %lld 个词后，Hex 才会比较。只记录次数，不保存任何词语。"
+            "value" : "两边各输入 %lld 个词后，WormaBoard 才会比较。只记录次数，不保存任何词语。"
           }
         }
       }
@@ -6671,12 +6671,12 @@
         }
       }
     },
-    "Hex can tell you if a typing config seems to make your typing worse. Allow notifications for that?" : {
+    "WormaBoard can tell you if a typing config seems to make your typing worse. Allow notifications for that?" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "如果某个输入配置似乎让你打字变差，Hex 可以提醒你。要为此允许通知吗？"
+            "value" : "如果某个输入配置似乎让你打字变差，WormaBoard 可以提醒你。要为此允许通知吗？"
           }
         }
       }

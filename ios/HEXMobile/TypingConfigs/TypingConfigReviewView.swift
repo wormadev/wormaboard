@@ -66,11 +66,11 @@ struct TypingConfigReviewView: View {
 
             TypingConfigParts(review: review, partsOff: $partsOff)
 
-            TypingConfigParts.plainCard(String(localized: "Hex can't check this config on your typing yet. Once it's on, Hex watches how your typing goes and tells you if it seems worse. You can go back in Settings › Keyboard › Typing configs."))
+            TypingConfigParts.plainCard(String(localized: "WormaBoard can't check this config on your typing yet. Once it's on, WormaBoard watches how your typing goes and tells you if it seems worse. You can go back in Settings › Keyboard › Typing configs."))
                 .padding(.top, 4)
 
             if let replaces {
-                Text("Hex keeps \(TypingConfigHistory.limit) typing configs. Keeping this one removes “\(replaces.name)”, the oldest one you're not using.")
+                Text("WormaBoard keeps \(TypingConfigHistory.limit) typing configs. Keeping this one removes “\(replaces.name)”, the oldest one you're not using.")
                     .font(.system(size: 13))
                     .foregroundStyle(HexTheme.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -125,14 +125,14 @@ struct TypingConfigReviewView: View {
         case .added(let added): entry = added
         case .existing(let kept): entry = kept
         case .failed:
-            failure = String(localized: "Hex couldn't save this config. Nothing has changed.")
+            failure = String(localized: "WormaBoard couldn't save this config. Nothing has changed.")
             return
         }
         do {
             try TypingConfigActivation.apply(entry, review: review, partsOff: partsOff, history: history)
             appliedNow = true
         } catch {
-            failure = String(localized: "Hex couldn't save this config. Nothing has changed.")
+            failure = String(localized: "WormaBoard couldn't save this config. Nothing has changed.")
         }
     }
 

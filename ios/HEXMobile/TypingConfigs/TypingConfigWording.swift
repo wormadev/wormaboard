@@ -6,16 +6,16 @@ extension TypingConfigReview.Reason {
     /// One sentence a person can read.
     var sentence: String {
         switch self {
-        case .notAConfig: String(localized: "This file isn't a typing config Hex can read.")
+        case .notAConfig: String(localized: "This file isn't a typing config WormaBoard can read.")
         case .tooLarge: String(localized: "This file is larger than a typing config can be.")
-        case .newerFormat: String(localized: "Made for a newer Hex. Update Hex to use it.")
-        case .unknownField: String(localized: "Hex doesn't know this part of the file.")
-        case .invalidValue: String(localized: "Incomplete, or holds a value Hex can't use.")
+        case .newerFormat: String(localized: "Made for a newer WormaBoard. Update WormaBoard to use it.")
+        case .unknownField: String(localized: "WormaBoard doesn't know this part of the file.")
+        case .invalidValue: String(localized: "Incomplete, or holds a value WormaBoard can't use.")
         case .tooMany: String(localized: "More than a typing config can hold.")
         case .duplicate: String(localized: "Already in the file once.")
         case .notEnoughEvidence: String(localized: "The file doesn't show this often enough to be sure.")
         case .forAnotherKeyboard: String(localized: "Made for another keyboard.")
-        case .needsCheckingAgain: String(localized: "Measured on an older version of Hex's touch areas, so it needs checking again.")
+        case .needsCheckingAgain: String(localized: "Measured on an older version of WormaBoard's touch areas, so it needs checking again.")
         case .keyNotOnKeyboard: String(localized: "That key isn't on this keyboard.")
         case .edgeNotAllowed: String(localized: "That edge of the key can't move.")
         case .twoZonesClaimPoint: String(localized: "Two changes claim the same spot, so neither applies.")
@@ -65,7 +65,7 @@ enum TypingConfigGroup: Int, CaseIterable, Comparable {
         case .dictation: String(localized: "Words dictation mishears, fixed after you dictate.")
         case .aim: String(localized: "Autocorrect and the next-letter guess read taps on these letters from where you really aim. The keys stay where they are.")
         // The next-letter odds still decide a tap near an edge, so this says "more often".
-        case .zones: String(localized: "A tap near these edges counts for the key more often. Hex's guess at the next letter can still pick its neighbour. The keys stay where they are.")
+        case .zones: String(localized: "A tap near these edges counts for the key more often. WormaBoard's guess at the next letter can still pick its neighbour. The keys stay where they are.")
         }
     }
 
@@ -188,7 +188,7 @@ struct TypingConfigItemWords {
         case .zone: from.first.map { String(localized: "\(number($0)) key") }
         default: from.map(number).joined(separator: ", ")
         }
-        return value.map { String(localized: "Hex limited this. The file asked for \($0).") }
+        return value.map { String(localized: "WormaBoard limited this. The file asked for \($0).") }
     }
 
     /// "0.28 key lower", or nil at the centre.
@@ -268,7 +268,7 @@ enum TypingConfigContextWords {
         case "language": String(localized: "Language")
         case "letters": String(localized: "Layout")
         case "split": String(localized: "Split keyboard")
-        case "hexPlacement": String(localized: "Hex key")
+        case "hexPlacement": String(localized: "WormaBoard key")
         case "numberRow": String(localized: "Number row")
         case "keyHeight": String(localized: "Key height")
         case "rowPitch": String(localized: "Row spacing")

@@ -77,7 +77,7 @@ struct TypingInsightsView: View {
                 }
             } message: {
                 if hasTypingConfigs {
-                    Text("This also deletes your typing configs, which hold your words, and the keyboard goes back to Hex defaults.")
+                    Text("This also deletes your typing configs, which hold your words, and the keyboard goes back to WormaBoard defaults.")
                 }
             }
         }

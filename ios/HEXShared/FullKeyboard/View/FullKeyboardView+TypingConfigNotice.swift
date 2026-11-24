@@ -10,7 +10,7 @@ extension FullKeyboardView {
             // The bar fits about 30 characters a line: design §7's words over two.
             title: String(localized: "Typing may be worse"),
             detail: String(localized: "with this config · Compare with your last one"),
-            button: String(localized: "Open Hex"),
+            button: String(localized: "Open WormaBoard"),
             dismissible: true
         )
     }

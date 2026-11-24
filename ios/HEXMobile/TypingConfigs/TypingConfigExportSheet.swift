@@ -34,8 +34,8 @@ struct TypingConfigExportSheet: View {
                         .foregroundStyle(HexTheme.textBase)
                         .padding(.top, 1)
                     Text(allChosen
-                        ? String(localized: "This holds everything you typed and dictated with Hex in the last 14 days, including any password you typed outside a password field. Give it only to an agent you trust, and don't upload it anywhere you wouldn't share your messages.")
-                        : String(localized: "This holds everything you typed and dictated with Hex on the days you chose, including any password you typed outside a password field. Give it only to an agent you trust, and don't upload it anywhere you wouldn't share your messages."))
+                        ? String(localized: "This holds everything you typed and dictated with WormaBoard in the last 14 days, including any password you typed outside a password field. Give it only to an agent you trust, and don't upload it anywhere you wouldn't share your messages.")
+                        : String(localized: "This holds everything you typed and dictated with WormaBoard on the days you chose, including any password you typed outside a password field. Give it only to an agent you trust, and don't upload it anywhere you wouldn't share your messages."))
                         .font(.system(size: 14))
                         .foregroundStyle(HexTheme.textBase)
                         .fixedSize(horizontal: false, vertical: true)
@@ -109,7 +109,7 @@ struct TypingConfigExportSheet: View {
                 }
             } catch {
                 building = false
-                failure = String(localized: "Hex couldn't prepare the export. Nothing was shared.")
+                failure = String(localized: "WormaBoard couldn't prepare the export. Nothing was shared.")
             }
         }
     }
