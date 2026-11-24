@@ -723,8 +723,11 @@ final class KeyboardStripView: UIView {
             let target = suggestion.map(layout)
             let current = glyphs.filter { !$0.leaving }
             // Letters both words start with stay, unless a bubble came or went (its ink changes).
+            // A joined word (Arabic) is one glyph, so it never shares letters: keeping its old
+            // glyph beside the new whole word drew both, unjoined.
             var shared = 0
-            if !reduced, let target, target.box == nil, current.allSatisfy({ $0.box == nil }), current.first?.font == target.font {
+            if !reduced, let target, target.box == nil, target.glyphs.count == target.text.count,
+               current.allSatisfy({ $0.box == nil && $0.text.count == 1 }), current.first?.font == target.font {
                 let new = Array(target.text).map(String.init)
                 while shared < min(current.count, new.count), current[shared].text == new[shared] { shared += 1 }
             }
