@@ -316,7 +316,7 @@ extension FullKeyboardEngineTests {
         XCTAssertFalse(engine.takesStripTouch(at: overP), "after a pause a pick is a pick")
     }
 
-    /// Left: ✓ where the Hex key was, ✕ after it, then the Dot Scope well; Right mirrors it.
+    /// Left: ✓ where the Hex key was, ✕ after it, then the braid well; Right mirrors it.
     func testTheRecordingBarMirrorsWithTheHexKey() throws {
         for onLeft in [false, true] {
             let panel = HexKeyRecordingPanel(loudness: { -62 })

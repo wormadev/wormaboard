@@ -258,7 +258,8 @@ final class HexKeyRecordingPanel: UIView {
     var onCycleStyle: (() -> Void)?
 
     private let braid: BraidPanelState
-    private let scope: UIView
+    let scope: UIView
+    var scopePhase: DotScopePhase { braid.phase }
     private let styleButton = UIButton(type: .custom)
     private let well = UIView()
     private let cancelButton = PanelKeyButton()

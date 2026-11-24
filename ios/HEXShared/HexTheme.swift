@@ -113,7 +113,7 @@ struct HexTrayReveal: ViewModifier {
     }
 }
 
-/// Soft recessed capsule well for `DotScopeView` that adapts naturally to both
+/// Soft recessed capsule well for `BraidScopeView` that adapts naturally to both
 /// dark and light host platters without opaque black holes or heavy box strokes.
 struct HexRecessedWell: View {
     var isDark: Bool
