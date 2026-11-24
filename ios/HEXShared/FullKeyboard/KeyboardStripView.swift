@@ -849,6 +849,10 @@ final class KeyboardStripView: UIView {
             let size = (text as NSString).size(withAttributes: [.font: font])
             guard size.width > maxTextW else {
                 let origin = CGPoint(x: textMidX - size.width / 2, y: midY - size.height / 2)
+                if Self.shapesAcrossLetters(text) {
+                    let glyph = Glyph(text: text, font: font, offset: 0, y: origin.y, box: nil)
+                    return Word(text: text, font: font, origin: origin, width: size.width, box: nil, glyphs: [glyph])
+                }
                 var glyphs: [Glyph] = []
                 var prefix = ""
                 for character in text {
@@ -865,6 +869,17 @@ final class KeyboardStripView: UIView {
             let box = CGSize(width: width, height: smallSize.height)
             let glyph = Glyph(text: text, font: small, offset: 0, y: origin.y, box: box)
             return Word(text: text, font: small, origin: origin, width: width, box: box, glyphs: [glyph])
+        }
+
+        /// Arabic letters join and right-to-left words run backwards, so drawing letters one at a
+        /// time at left-to-right offsets scrambles them: such words roll in whole.
+        private static func shapesAcrossLetters(_ text: String) -> Bool {
+            text.unicodeScalars.contains { scalar in
+                switch scalar.value {
+                case 0x0590...0x08FF, 0x0900...0x0DFF, 0x0E00...0x0EFF, 0x1000...0x109F, 0xFB1D...0xFDFF, 0xFE70...0xFEFF: true
+                default: false
+                }
+            }
         }
 
         static let chipPadding: CGFloat = 12
