@@ -1236,6 +1236,10 @@ it.
 
 ## Emoji (Settings › Keyboard › Emoji, for the full keyboard)
 
+The key and the strip's emoji have separate switches: **Emoji** is the key and its panel,
+**Emoji suggestions** (`settings.keyboardEmojiSuggestions`, on by default) the strip's
+emoji for a typed or finished word and emoji shortcodes. Either works without the other.
+
 On by default (stored as
 `experiments.emoji` from when it was an experiment off by default: unset or true is on,
 false off, so testers who turned it off keep it off). An emoji key
