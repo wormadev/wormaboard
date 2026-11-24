@@ -291,7 +291,12 @@ Launch Hex, setup incomplete              // setup.tour; every build and OS, ful
 │   │   │   ├── Returned from System Settings still untrusted (2 s, or 6 s side-by-side) ->
 │   │   │   │   "An older Hex entry can keep this off" + "Still grey? Fix it"
 │   │   │   │   -> resets the running bundle ID + retired IDs, prompts, and reopens the guide
-│   │   │   └── macOS 27 names the list "Device Control and Data Access"; the row follows
+│   │   │   ├── macOS 27 names the list "Device Control and Data Access"; the row follows
+│   │   │   └── macOS 27.3 renames it "System & App Protection Override" and takes no
+│   │   │       dragged tile: a compact bar sits below System Settings (above it when there
+│   │   │       is no room) out of the pane's + controls, and says to click the Privacy &
+│   │   │       Security notification or add Hex with +; the row and the pane's name follow.
+│   │   │       Check: `macos_27_3_names_accessibility_without_a_dragged_tile`
 │   │   ├── On in System Settings, unusable until relaunch -> "Needs a restart"
 │   │   │   └── Every permission on -> "Restart Hex" -> relaunch at setup  // setup.restart
 │   │   └── Each grant -> a beat with its check -> the card floats off -> on
@@ -1106,7 +1111,7 @@ General                                  // settings
 │       ├── Turning it on without System Audio Recording -> ask now, never while dictating
 │       ├── On -> Screen & System Audio Recording row: Allow / waiting / Allowed
 │       └── Dictation -> browser_media sequence below
-├── Sounds -> one row ("Classic · 50%" or Off) opening a sheet: Sound volume slider in 5% steps, then each set to hear and pick
+├── Sounds -> one row ("Classic keys · 50%" or Off) opening a sheet: Sound volume slider in 5% steps, then each set to hear and pick
 │   ├── Slider release saves and previews start unless Off; only the sheet's previews play while Off
 │   ├── A saved zero displays Off; enabling sounds through the CLI restores the default level
 │   └── Default output changes or disappears (macOS) -> next tone reopens on the current default
@@ -1908,8 +1913,8 @@ Hex checks the release service            // maintain.updates
 │       │   └── A release published after the relaunch -> the next launch's check
 │       ├── macOS -> renamex_np swap (also at quit) -> relaunch -> old bundle removed at launch
 │       │   // one .Hex-update-<version> folder at a time: staging a newer build removes the one it replaces
-│       └── Labs › Release notes link -> a release build's footer carries this build's notes:
-│           anoma.ly/hex/dev#<version> for a dev build, github.com/anomalyco/hex/releases/tag/v<version> for a stable one;
+│       └── Labs › Release notes link -> a release build's footer links to what changed since this build:
+│           anoma.ly/hex/dev?since=<version> for a dev build, github.com/anomalyco/hex/releases/tag/v<version> for a stable one;
 │           local and test builds show no link (by build kind, not version string)
 ├── macOS location not replaceable (read-only, translocated, root-owned) -> Download update (DMG)
 ├── Package manager (pacman, Nix) -> its command, once it serves another version
@@ -2490,7 +2495,14 @@ Windows beta                             // x64 (Vulkan GPU) and ARM64 (CPU)
 │       swallowed a key of that chord (Paste Last's V re-arms the mask)
 ├── Microphone switched off in Settings › Privacy -> Onboarding Microphone row -> Allow opens it
 ├── Microphone -> System default or a saved device
-│   ├── Windows default input changes -> Switch once capture is idle // cpal's default-device report
+│   ├── Windows System default -> The default endpoint's listed cpal device, never
+│   │   cpal's default handle: its monitor leaves thread-pool threads STA, which
+│   │   then fails ActivateAudioInterfaceAsync (RPC_E_CHANGED_MODE)
+│   │   └── No default endpoint resolves -> a listed stand-in microphone (built-in
+│   │       first); the next route change resolves the default; nothing usable -> error
+│   ├── Windows default input changes -> Switch once capture is idle // endpoint
+│   │   notification client bumps the input route; Windows never opens a default
+│   │   handle, so cpal's default-change report never applies
 │   └── Windows default input reports no default format -> Hex's own WASAPI paths
 │       (the endpoint by id, as when picked by name), then other formats it lists;
 │       the read error keeps its cause (#1845, unverified on real Windows)
@@ -2532,7 +2544,8 @@ smoke tests on Windows 10 and on ARM64 hardware have not been run.
 Linux updates                            // maintain.linux-updates
 ├── Direct install (versions/ + install.json receipt) -> release service -> staged -> sidebar footer: Restart to update
 ├── Source install (source-build marker) -> Sidebar footer: Updated from your source checkout
-├── Local build (HEX_LOCAL_BUILD=1) -> Sidebar footer: Local build · updates off; Version 2.3.1 (local <commit>); no checks, no channel row
+├── Local build (HEX_LOCAL_BUILD=1, every OS) -> Sidebar footer: 3.4.0 · Local build
+│   └── Hover or read its accessible description, or run `hex --version` -> full commit and updates off; no checks or channel row
 ├── pacman (AUR hex-bin: /usr/bin, root-owned) or Nix store -> Sidebar footer: Updated by your package manager
 └── Anything else (a downloaded executable) -> Sidebar footer: Download update
 ```
@@ -2704,7 +2717,7 @@ Linux General > Sounds > Sound volume     // dictate.feedback.linux; X11 + Wayla
 ├── Slider at 0 -> No recording tones; the last level is kept
 └── Release above 0 -> Save and apply live; preview the start sound
 Linux General > Sounds > a set            // dictate.sound-theme
-└── Press it -> Save and apply live; play its dictation
+└── Classic keys (default), Kalimba, and five more sets -> Press to save and play; Play only previews
 
 Capture                                  // hex app and hex dictate
 ├── Shortcut starts capture -> Queue start sound immediately, before audio arrives
@@ -3153,8 +3166,79 @@ iOS prototype (`HEXMobile`) -> Record/transcribe/copy and keyboard handoff
 │   path receives none
 └── Proof limits: unit tests only; no CI compiles the iOS targets
 Android keyboard -> English, Spanish, German and Bokmål typing assistance
+├── Português, Nederlands, Polski or Русский with no pinned layout -> English's keys and
+│   accents (DictationLanguage.layout is null), with English's word list only standing in for
+│   the keys' geometry: the strip keeps what was typed and your own dictionary words as
+│   completions, and text shortcuts, double-space period, capitals and the literal chip stay.
+│   No English completions, next words, autocorrection, tap correction, swipe typing or emoji
+│   keywords. A layout pinned in Keyboard > Keyboard layout brings that layout's model.
+│   Checks: `aDictationLanguageWithoutItsOwnLayoutHasNoTypingModel` in InsertionTest.kt and
+│   `standInOffersYourWordsAndShortcutsButNoEnglishCompletionsOrNextWords` /
+│   `standInTurnsOffAutocorrectButKeepsYourTextReplacements` in StandInTypingTest.kt; not
+│   tried on a device.
 ├── Keyboard > Suggest swear words (off) -> opt in to profanity; listed slurs never offered
-└── Type a listed word in full -> keep its spelling on space or tap its literal chip
+├── Type a listed word in full -> keep its spelling on space or tap its literal chip
+├── Labs > Keyboard > Symbols on letter keys (off) -> hold a letter from QWERTY's home and
+│   bottom rows (a–l, z–m) for its symbol first, SwiftKey-style (m for /, a for @), with the
+│   letter's accents after it; symbols follow the letter, so AZERTY q/w and QWERTZ y get none,
+│   and row 1 (including AZERTY a/z) keeps its digits; off, the keys are unchanged. With
+│   Number row on, row 1's AZERTY a/z and QWERTZ z show their symbols (@, _) as hint and hold
+│   instead of digits.
+│   `heldLettersOfferSymbolsWhenTheLabIsOn` in InsertionTest.kt passed in
+│   https://github.com/anomalyco/hex/actions/runs/45273240353 (testDebugUnitTest + compileDebugKotlin,
+│   GitHub-hosted); not tried on a device or emulator.
+├── Labs > Output > Signature (off) -> one editable line (up to 200 characters; empty adds
+│   nothing, default "Sent from Hex") on its own line at the end of each keyboard dictation,
+│   added once; the next dictation starts on a new line below it, and a signed dictation
+│   never continues the signature line. Home's preview and Copy stay unsigned, and Hex's
+│   own fields are never signed.
+│   Unit tests plus a passing `./gradlew :app:testDebugUnitTest :app:compileDebugKotlin`
+│   on a GitHub-hosted runner (https://github.com/anomalyco/hex/actions/runs/45268305325, the
+│   latest observed verification); the repo has no Android CI.
+├── Labs > Keyboard > Number row (off) -> 1 2 3 4 5 6 7 8 9 0 above the letter rows on
+│   every layout (en, es, nb, de, fr, it), typed like normal keys. The first letter row's
+│   corner digits and digit-first hold are hidden while it shows; accents on hold stay, and
+│   the Symbols on letter keys hints and holds still work, with row 1 letters that have a
+│   symbol (AZERTY a/z, QWERTZ z) showing it instead of the digit. The keyboard is one row
+│   taller and the Hex menu matches that height; ?123, the symbols pages and the pads keep
+│   their keys and are a row shorter than the letters while it is on. Off, the page is
+│   unchanged.
+│   KeyboardPageTest plus a passing `./gradlew :app:testDebugUnitTest :app:compileDebugKotlin`
+│   on a GitHub-hosted runner (https://github.com/anomalyco/hex/actions/runs/45275591325, the
+│   latest observed verification); not tried on a device. The repo has no Android CI.
+├── Labs > Keyboard > Emoji suggestions (off) -> on the English layout, while a word
+│   that names an emoji is being typed (smile -> 😊, joy/haha -> 😂, heart -> ❤️), the
+│   strip's last slot offers it beside the word suggestions, padded to that slot even when
+│   it is the only one. Another layout's model never offers one. A tap replaces the word
+│   and commits it with the same space rules as a word suggestion; continuing to type
+│   keeps the word. Nothing matching leaves the strip unchanged. The list keeps the same
+│   0.85 strong cut-off as the iPhone strip, plus a reviewed joy -> 😂 and a reviewed
+│   exclusion list (number words that name clock faces, and ordinary words that name an
+│   emoji's object in another sense), generated from the iOS keyboard's
+│   emoji-index-en.txt (Unicode emoji-test.txt 18.0 and CLDR 49 annotations, Unicode
+│   License v3, plus Hex's chat words). It is a compact word-to-emoji asset read lazily
+│   only while the toggle is on; the loader keeps only emoji the device's `Paint.hasGlyph`
+│   can draw (minSdk 31 draws up to Emoji 13.1), so the strip never shows tofu. Matching is
+│   case-insensitive and whole-word.
+│   Checks: `./gradlew :app:testDebugUnitTest :app:compileDebugKotlin` (includes
+│   `EmojiKeywordsTest`) and `python3 scripts/code-shape.py --check`; the repo has no
+│   Android CI.
+└── Labs > Keyboard > Keyboard tools (off) -> while the strip has nothing else to show (no
+    suggestion chips, Undo dictation, notice or dictation) and the field is not a password,
+    PIN or other secure field, the "Hold Hex to talk" hint becomes up to four icon buttons
+    without making the keyboard taller: Emoji (the bottom row's emoji key, so only on the
+    letters, never on a symbol page or a pad), Paste (the editor's own
+    `performContextMenuAction(android.R.id.paste)`, so Hex never reads the clipboard; shown
+    only while `clipboard.hasPrimaryClip()`), Settings (reopens Hex on its Keyboard page
+    through an intent extra MainActivity reads, NEW_TASK | CLEAR_TOP, replacing whatever Hex
+    screen was open) and Undo (the last autocorrection reverted exactly as the Delete right
+    after it does, shared through `KeyboardEngine.revert`; shown only while that correction is
+    still right before the cursor, and only when no next-word suggestions fill the strip, though
+    the Delete right after an autocorrection still undoes it when they do). Changing the toggle
+    redraws a visible strip at once; off, the strip is unchanged.
+    Checks: `./gradlew :app:testDebugUnitTest :app:compileDebugKotlin` (includes
+    `KeyboardToolsTest`) and `python3 scripts/code-shape.py --check`; the repo has no
+    Android CI. Not tried on a device or emulator.
 Unmerged Windows / deferred features -> Not part of this map
 ```
 

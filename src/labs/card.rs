@@ -65,6 +65,7 @@ impl Feature {
             Self::Screenshots => "Screenshots",
             Self::AnnotateReplay => "Annotate last 15 seconds",
             Self::MeetingImport => "Import audio",
+            Self::TranscriptEdits => "Delete transcript lines",
             Self::CapsLockDictation => "Caps Lock dictation",
             Self::OpenCodeInWsl => "OpenCode in WSL",
             Self::ApiProcessing => "Process API transcripts",
@@ -93,6 +94,7 @@ impl Feature {
             Self::HudHeight => "HUD height",
             Self::VoiceIsolation => "Voice isolation",
             Self::DictateWhileAnnotating => "Dictate while annotating",
+            Self::StopAnyCallRecording => "Stop every call recording when the call ends",
         }
     }
 
@@ -255,6 +257,9 @@ impl Feature {
             Self::MeetingImport => {
                 "Add an audio file to Meetings and turn it into text on this Mac"
             }
+            Self::TranscriptEdits => {
+                "Select lines in a saved meeting transcript and delete them. Summaries, copies, and the Markdown file use what's left"
+            }
             Self::CapsLockDictation => {
                 "Press Caps Lock to start dictating and again to finish. Hex keeps Caps Lock off and uses its light while it records and writes the text"
             }
@@ -339,6 +344,12 @@ impl Feature {
             }
             Self::DictateWhileAnnotating => {
                 "Dictate while a capture records: the text pastes as usual, and the capture keeps going"
+            }
+            Self::StopAnyCallRecording if !cfg!(target_os = "macos") => {
+                "Also stop an offered or by-hand call recording 30 s after its call app leaves the microphone, even with Stop when the call ends off"
+            }
+            Self::StopAnyCallRecording => {
+                "Also stop an offered, calendar, or by-hand call recording 30 s after its call app leaves the microphone, even with Stop when the call ends off"
             }
         }
     }

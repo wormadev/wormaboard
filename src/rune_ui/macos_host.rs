@@ -622,6 +622,9 @@ impl MacHost {
             MeetingRequest::Import(path) => self
                 .runtime()?
                 .meeting(crate::meeting::MeetingRequest::Import(path)),
+            MeetingRequest::DeleteTranscript { id, entries } => self
+                .runtime()?
+                .meeting(crate::meeting::MeetingRequest::DeleteTranscript { id, entries }),
             MeetingRequest::Summarize(id) => self
                 .runtime()?
                 .meeting(crate::meeting::MeetingRequest::Summarize(id)),
@@ -829,6 +832,10 @@ impl NativeHost for MacHost {
             &mut state.accessibility_renamed,
             crate::desktop::permission_guide::list_name(PermissionKind::Accessibility)
                 != "Accessibility",
+        );
+        changed |= update(
+            &mut state.accessibility_drag_supported,
+            crate::desktop::permission_guide::drag_supported(PermissionKind::Accessibility),
         );
         changed |= update(
             &mut state.activity_log,

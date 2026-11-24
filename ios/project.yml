@@ -35,10 +35,15 @@ targets:
         embed: true
       - target: HEXWidgets
         embed: true
+    configFiles:
+      Debug: HEXMobile/Feedback.xcconfig
+      Release: HEXMobile/Feedback.xcconfig
     info:
       path: HEXMobile/Info.plist
       properties:
         CFBundleDisplayName: WormaBoard
+        # Send feedback's report key, from the build setting (HEXMobile/Feedback.xcconfig).
+        BellhopReportKey: $(BELLHOP_REPORT_KEY)
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CADisableMinimumFrameDurationOnPhone: true

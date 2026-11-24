@@ -107,6 +107,16 @@ impl Feature {
     pub fn managed(self) -> Option<crate::policy::Lock> {
         crate::policy::Policy::current().labs_lock(self)
     }
+
+    /// Whether `settings` turn this feature on in this build and OS under
+    /// `policy`, without reading the process's runtime switch bank.
+    pub(crate) fn enabled_under(
+        self,
+        settings: &AppSettings,
+        policy: crate::policy::Policy,
+    ) -> bool {
+        self.on(settings) && self.shipped() && self.on_this_os() && policy.labs_lock(self).is_none()
+    }
 }
 
 /// Number of 64-bit words needed to hold one bit per [`Feature`].
@@ -550,6 +560,18 @@ mod tests {
         assert!(!feature.on(&AppSettings::default()));
         assert_eq!(feature.on_this_os(), cfg!(target_os = "macos"));
         assert_eq!(Feature::from_name("vocabulary-menu"), Some(feature));
+    }
+
+    #[test]
+    fn the_stop_any_call_recording_lab_ships_on_every_os_and_is_off_by_default() {
+        let feature = Feature::StopAnyCallRecording;
+        assert_eq!(feature.name(), "stop-any-call-recording");
+        assert_eq!(feature.group(), Group::Meetings);
+        assert_eq!(feature.audience(), Audience::Everyone);
+        assert_eq!(feature.oses(), &[Os::Macos, Os::Windows, Os::Linux]);
+        assert!(!feature.on(&AppSettings::default()));
+        assert!(feature.on_this_os());
+        assert_eq!(Feature::from_name("stop-any-call-recording"), Some(feature));
     }
 
     #[test]

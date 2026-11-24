@@ -609,6 +609,50 @@ fn meeting_export_and_stop_when_call_ends_save_their_settings() {
     );
 }
 
+/// Stop when the call ends shows next to Record automatically on Windows
+/// and Linux too: the call app's audio output keeps a muted call's recording
+/// alive there as Core Audio does on a Mac (#835).
+#[test]
+fn stop_when_the_call_ends_shows_on_every_os() {
+    use crate::app_settings::MeetingPolicy;
+    for scene in ["portal", "windows-settings"] {
+        let mut rt = runtime(scene, true, (980.0, 2400.0));
+        rt.state.settings.meetings.enabled = true;
+        rt.state.settings.meetings.default_policy = MeetingPolicy::AlwaysRecord;
+        rt.state.pane = Pane::Meetings;
+        rt.state.meetings.view = super::super::meetings::View::Settings;
+        refresh(&mut rt);
+        tap(&mut rt, "calls");
+        assert!(
+            rt.find("meeting-stop-when-call-ends").is_some(),
+            "no Stop row on {scene}"
+        );
+        tap(&mut rt, "meeting-stop-when-call-ends");
+        assert!(rt.state.settings.meetings.stop_when_call_ends, "{scene}");
+    }
+}
+
+/// Labs' Stop every call recording lab shows wherever Meetings is on, and
+/// its switch saves: Windows and Linux record offered and by-hand calls too,
+/// even though a calendar reminder is macOS only.
+#[test]
+fn the_stop_every_call_recording_lab_shows_on_every_os() {
+    for scene in ["portal", "windows-settings"] {
+        let mut rt = runtime(scene, true, (980.0, 2600.0));
+        rt.state.settings.meetings.enabled = true;
+        refresh(&mut rt);
+        open_labs(&mut rt);
+        assert!(
+            rt.find("lab-stop-any-call-recording").is_some(),
+            "no Stop every call recording lab on {scene}"
+        );
+        scroll_into_view(&mut rt, "lab-stop-any-call-recording", "scroll");
+        assert!(!rt.state.settings.labs.stop_any_call_recording, "{scene}");
+        tap(&mut rt, "lab-stop-any-call-recording");
+        assert!(rt.state.settings.labs.stop_any_call_recording, "{scene}");
+    }
+}
+
 /// Off a Mac, Summaries is a switch that turns OpenCode on.
 #[test]
 fn summaries_are_a_switch_off_a_mac() {
@@ -1254,6 +1298,14 @@ fn the_explainer_picker_and_shortcut_recording_never_share_the_window() {
         rt.state.is_modal(Modal::Picker),
         "the picker replaces the explainer"
     );
+    picker::close(&mut rt.state);
+    tap(&mut rt, "dictation-hotkey");
+    assert!(matches!(
+        rt.state.capture,
+        settings::Capture::Listening { .. }
+    ));
+    picker::open(&mut rt.state);
+    assert!(matches!(rt.state.capture, settings::Capture::Idle));
     explainer::open(&mut rt.state);
     assert!(
         rt.state.is_modal(Modal::Explainer),
@@ -1342,7 +1394,16 @@ fn release_notes_link_shows_only_for_a_published_build() {
     assert!(rt.find("release-notes").is_some());
     assert!(rt.find("nav-whats-new").is_some());
 
-    for (kind, name) in [(BuildKind::Local, "local"), (BuildKind::Test, "test")] {
+    for (kind, name) in [
+        (
+            BuildKind::Local {
+                version: "3.4.0",
+                commit: None,
+            },
+            "local",
+        ),
+        (BuildKind::Test, "test"),
+    ] {
         rt.state.build_preview = Some(kind);
         refresh(&mut rt);
         assert!(
@@ -1602,7 +1663,7 @@ fn recording_starts_and_stops_from_the_header() {
     assert!(rt.find("stop-meeting").is_none(), "finalizing");
 
     let mut rt = runtime("meetings-empty", true, PANE_SIZE);
-    assert!(texts(&rt).iter().any(|text| text == "No meetings yet."));
+    assert!(texts(&rt).iter().any(|text| text == "No meetings yet"));
     tap(&mut rt, "start-meeting");
     assert_eq!(
         asked(&rt),
@@ -1679,6 +1740,87 @@ fn deleting_a_meeting_takes_the_menu_then_a_confirmation() {
 }
 
 #[test]
+fn deleting_transcript_lines_needs_the_lab_a_selection_and_a_confirmation() {
+    let mut rt = runtime("meetings", true, PANE_SIZE);
+    assert!(
+        rt.find("meeting-select-lines").is_none(),
+        "the lab is off: no selection UI"
+    );
+
+    rt.state.settings.labs.transcript_edits = true;
+    refresh(&mut rt);
+    tap(&mut rt, "meeting-select-lines");
+    assert!(rt.state.meetings.selection.active());
+    assert!(texts(&rt).iter().any(|text| text == "0 lines selected"));
+
+    // One turn reads in the singular, however many lines it covers.
+    tap(&mut rt, "select-turn0");
+    assert_eq!(rt.state.meetings.selection.len(), 1);
+    assert!(texts(&rt).iter().any(|text| text == "1 line selected"));
+    tap(&mut rt, "meeting-delete-lines");
+    assert!(texts(&rt).iter().any(|text| text == "Delete 1 line"));
+    tap(&mut rt, "meeting-cancel-delete-lines");
+
+    // A mixed pair: one Them turn and one You turn, each one published line.
+    tap(&mut rt, "select-turn2");
+    assert_eq!(rt.state.meetings.selection.len(), 2);
+    assert!(texts(&rt).iter().any(|text| text == "2 lines selected"));
+
+    tap(&mut rt, "meeting-delete-lines");
+    assert!(asked(&rt).is_empty(), "the first press only arms");
+    tap(&mut rt, "meeting-confirm-delete-lines");
+    assert_eq!(
+        asked(&rt),
+        [PlatformRequest::Meeting(MeetingRequest::DeleteTranscript {
+            id: "preview-notes".into(),
+            entries: vec![
+                crate::meeting::TranscriptEntryKey {
+                    source: crate::meeting::MeetingSource::System,
+                    start_ms: 1_000,
+                    end_ms: 2_000,
+                },
+                crate::meeting::TranscriptEntryKey {
+                    source: crate::meeting::MeetingSource::Microphone,
+                    start_ms: 9_000,
+                    end_ms: 10_000,
+                },
+            ],
+        })],
+        "exactly one request, for the lines under the two turns"
+    );
+    assert!(!rt.state.meetings.selection.active());
+}
+
+/// The bar only promises to remove notes that exist, and a selection the pane
+/// no longer offers goes away with it.
+#[test]
+fn the_selection_bar_only_warns_about_notes_that_exist() {
+    let mut rt = runtime("meetings", true, PANE_SIZE);
+    rt.state.settings.labs.transcript_edits = true;
+    refresh(&mut rt);
+    let warns = |rt: &Runtime<Ui>| {
+        texts(rt)
+            .iter()
+            .any(|text| text.starts_with("Its summary and chapters will be removed"))
+    };
+
+    // The notes meeting has a summary.
+    tap(&mut rt, "meeting-select-lines");
+    assert!(warns(&rt));
+    tap(&mut rt, "meeting-cancel-selection");
+
+    // The design review is Complete with a transcript but no summary or chapters.
+    tap(&mut rt, "meeting-preview-design");
+    tap(&mut rt, "meeting-select-lines");
+    assert!(!warns(&rt));
+
+    // Turning the lab off takes the selection away with it.
+    rt.state.settings.labs.transcript_edits = false;
+    refresh(&mut rt);
+    assert!(!rt.state.meetings.selection.active());
+}
+
+#[test]
 fn the_overflow_menu_copies_the_summary_and_asks_for_new_notes() {
     let mut rt = runtime("meetings-actions", true, PANE_SIZE);
     let copy = menu_item(&rt, "meeting-actions", "Copy summary");
@@ -1696,6 +1838,50 @@ fn the_overflow_menu_copies_the_summary_and_asks_for_new_notes() {
         [PlatformRequest::Meeting(MeetingRequest::Summarize(
             "preview-notes".into()
         ))]
+    );
+}
+
+/// Regenerating a summary keeps the old one visible under a spinner and the
+/// writer's line, while the row and the menu say "Summarizing…" (#2556).
+#[test]
+fn regenerating_a_summary_shows_progress_above_the_old_summary() {
+    let mut rt = runtime("meetings-actions", true, PANE_SIZE);
+    let meeting = rt
+        .state
+        .meetings
+        .meetings
+        .iter_mut()
+        .find(|meeting| meeting.id == "preview-notes")
+        .unwrap();
+    meeting.notes_running = true;
+    refresh(&mut rt);
+    assert!(rt.find("notes-running").is_some(), "the spinner row");
+    let shown = texts(&rt);
+    assert!(
+        shown
+            .iter()
+            .any(|text| text.starts_with("Writing a title and summary with")),
+        "{shown:?}"
+    );
+    assert!(
+        shown
+            .iter()
+            .any(|text| text.starts_with("One login for every Anomaly Arcade game")),
+        "the old summary stays visible: {shown:?}"
+    );
+    assert!(
+        texts_under(&rt, "meeting-preview-notes")
+            .iter()
+            .any(|text| text.starts_with("Summarizing…")),
+        "the list row says so"
+    );
+    assert!(
+        shown.iter().any(|text| text == "Summarizing…"),
+        "the menu's disabled item: {shown:?}"
+    );
+    assert!(
+        !shown.iter().any(|text| text == "Regenerate summary"),
+        "nothing to ask for twice: {shown:?}"
     );
 }
 
@@ -3337,6 +3523,24 @@ fn macos_27_names_accessibility_as_system_settings_does() {
         texts(&rt)
             .iter()
             .any(|t| t == "Device Control and Data Access")
+    );
+}
+
+/// macOS 27.3 renamed the Accessibility list and stopped taking a dragged
+/// tile; the name follows the list, and only that version says so.
+#[test]
+fn macos_27_3_names_accessibility_without_a_dragged_tile() {
+    assert_eq!(
+        platform_settings::accessibility_name(true, false),
+        "System & App Protection Override"
+    );
+    assert_eq!(
+        platform_settings::accessibility_name(true, true),
+        "Device Control and Data Access"
+    );
+    assert_eq!(
+        platform_settings::accessibility_name(false, true),
+        "Accessibility"
     );
 }
 

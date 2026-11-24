@@ -116,15 +116,15 @@ pub(super) const KEYS: &[Key] = &[
     key(
         "sound_theme",
         Kind::Choice(&[
-            "signature",
             "classic",
+            "signature",
             "click",
             "soft",
             "wood",
             "analog",
             "thock",
         ]),
-        "Which sounds play; classic, Hex's original tones, is the default",
+        "Which sounds play; classic (Classic keys) is the default, signature selects Kalimba",
     ),
     optional(
         "microphone",
@@ -358,6 +358,14 @@ pub(super) const KEYS: &[Key] = &[
         "labs.live_chapters",
         Kind::Bool,
         "Labs: chapter meeting transcripts while recording",
+    ),
+    key(
+        "labs.stop_any_call_recording",
+        Kind::Bool,
+        "Labs: an offered or by-hand call recording stops 30 s after its call app leaves the \
+         microphone and goes quiet, without Stop when the call ends, which keeps governing \
+         Always record; on macOS a calendar reminder's recording stops too; a recording \
+         started by hand watches the one call app on the microphone when it starts",
     ),
     key(
         "labs.playground",
@@ -684,6 +692,11 @@ pub(super) const KEYS: &[Key] = &[
         "Labs: Meetings offers Import audio…, so a local audio file is transcribed and kept as a meeting (macOS)",
     ),
     key(
+        "labs.transcript_edits",
+        Kind::Bool,
+        "Labs: a saved meeting's transcript offers selecting lines and deleting them, and later summaries, copies, search, and the Markdown file use what's left",
+    ),
+    key(
         "labs.output_fixes",
         Kind::Bool,
         "Labs: Output's Try card offers Vocabulary and Fix this, which copies an agent prompt naming the wrong result",
@@ -856,7 +869,7 @@ pub(super) const KEYS: &[Key] = &[
     key(
         "meetings.stop_when_call_ends",
         Kind::Bool,
-        "A meeting recording Hex started on its own stops 30 s after its call app leaves the microphone and goes quiet, unless you keep recording (macOS)",
+        "A meeting recording Hex started on its own stops 30 s after its call app leaves the microphone and goes quiet, unless you keep recording",
     ),
     key(
         "meetings.export.descriptive_filenames",
@@ -1068,6 +1081,7 @@ pub(super) const NEEDS: &[(&str, &str)] = &[
     ("meetings.calendar.", "calendar"),
     ("meetings.", "meetings"),
     ("labs.live_chapters", "meetings"),
+    ("labs.stop_any_call_recording", "meetings"),
     ("experimental.hex_microphone", "fun"),
     ("typed_text_hotkey", "typed_text"),
     ("show_dock_icon", "dock_icon"),

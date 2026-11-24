@@ -595,9 +595,9 @@ substitute for source inspection or a second roadmap.
 - `apple_intelligence`: the weak-linked FoundationModels Swift bridge:
   availability, context size, and guided-generation notes at utility priority.
 - `microphone_activity`: permission-light observation of which apps use the
-  microphone: CoreAudio processes (macOS), a `pw-dump --monitor` of PipeWire
-  capture streams (Linux), audio sessions on capture devices (Windows). No
-  samples are read.
+  microphone and which call apps still play: CoreAudio processes (macOS), one
+  `pw-dump --monitor` of PipeWire capture and playback streams (Linux), and
+  audio sessions on capture and render devices (Windows). No samples are read.
 - `meeting/detection`: pure provider classification, debounce, per-call snooze,
   and call-ended presence.
 - `calendar`: calendar meetings on every OS as a pure model (which events
@@ -1166,7 +1166,10 @@ CoreAudio formats, AppleScript details, or event serialization.
   detected call app leaves the microphone, offer `Keep Recording` or
   `Stop & Transcribe`; never stop automatically, except a recording Hex
   started on its own while `meetings.stop_when_call_ends` (Detected calls ›
-  Stop when the call ends, default off) is on. An active recording stays
+  Stop when the call ends, default off) is on, or an offered, calendar, or
+  by-hand recording that watches a call app while the Labs switch
+  `labs.stop_any_call_recording` (Stop every call recording when the call
+  ends, default off) is on. An active recording stays
   visible and stoppable from the menu bar without the Settings window.
 - Calendar access is asked for only by Meetings › Settings' Connect calendar, never at
   launch, and only with Meetings on; Meetings off means no EventKit reads and
@@ -1902,8 +1905,8 @@ workflow on every push to `dev` with `test-build`, plus an ad-hoc signed
 it must never read the real `hex` data), as unsigned 14-day artifacts for
 teammates (`docs/test-builds.md`). `HEX_TEST_BUILD=1` builds never update
 themselves, and neither do local builds (`HEX_LOCAL_BUILD=1`, the owner's own
-build from a checkout: footer "Local build · updates off", version label with its
-commit, no channel row). Every push to `dev` (except docs/site-only changes) publishes a dev-channel
+build from a checkout: footer "<version> · Local build", full commit and updates
+off in its tooltip and `hex --version`, no channel row). Every push to `dev` (except docs/site-only changes) publishes a dev-channel
 build for signed platforms. Stable requires a manual dispatch on `dev`.
 Like OpenCode, every run uses the one `release` environment, with no
 required reviewer; its deployment policy admits only the `dev` branch. Rerunning

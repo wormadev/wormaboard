@@ -58,6 +58,14 @@ struct ExperimentsSettingsPage: View {
             layoutSection
             typingSection
             wormaDevSection
+
+            // Testers tell the team how an experiment went (absent without a report key).
+            if Feedback.isAvailable {
+                SettingsCard {
+                    FeedbackRow(screen: "Settings › Experiments", dictation: DictationController.shared)
+                }
+                .padding(.top, 8)
+            }
         }
         .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: adaptiveTouchOn)
         .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: keyboardThemesOn)

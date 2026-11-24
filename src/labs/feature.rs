@@ -199,6 +199,7 @@ define_features! {
     Screenshots => labs(screenshots), "screenshots", Annotate, Everyone, MACOS, 20261104;
     AnnotateReplay => labs(annotate_replay), "annotate-replay", Annotate, Everyone, MACOS, 20261104, extra: ["capture.replay_hotkey"];
     MeetingImport => labs(meeting_import), "meeting-import", Meetings, Everyone, MACOS, 20261106;
+    TranscriptEdits => labs(transcript_edits), "transcript-edits", Meetings, Everyone, EVERY, 20261123;
     CapsLockDictation => labs(caps_lock_dictation), "caps-lock-dictation", Shortcuts, Everyone, MACOS, 20261107, extra: ["labs.caps_lock_light"];
     OpenCodeInWsl => labs(opencode_in_wsl), "opencode-in-wsl", Output, Everyone, WINDOWS, 20261108;
     ApiProcessing => labs(api_processing), "api-processing", Output, Everyone, EVERY, 20261109;
@@ -227,6 +228,7 @@ define_features! {
     HudHeight => labs(hud_height), "hud-height", Dictation, Everyone, MACOS, 20261122, extra: ["labs.hud_bottom_gap"];
     VoiceIsolation => labs(voice_isolation), "voice-isolation", Dictation, Everyone, MACOS, 20261122;
     DictateWhileAnnotating => labs(dictate_while_annotating), "dictate-while-annotating", Annotate, Everyone, EVERY, 20261122;
+    StopAnyCallRecording => labs(stop_any_call_recording), "stop-any-call-recording", Meetings, Everyone, EVERY, 20261123;
 }
 
 impl Feature {
@@ -312,6 +314,13 @@ impl Feature {
 
     pub fn set(self, settings: &mut AppSettings, on: bool) {
         self.set_field(settings, on);
+        self.apply_side_effects(settings);
+    }
+
+    /// Runs any setting normalization or shortcut repair implied by this
+    /// feature's current value in `settings`. Shared by [`Self::set`] and
+    /// `hex settings set`.
+    pub(crate) fn apply_side_effects(self, settings: &mut AppSettings) {
         match self {
             Self::DoubleTapModifiers => {
                 // Off, a modifier-only shortcut can't be double-tap-only, so
@@ -321,7 +330,7 @@ impl Feature {
             Self::Screenshots =>
             {
                 #[cfg(hex_capture)]
-                if on {
+                if self.on(settings) {
                     settings.clear_record_shortcut_sharing_capture();
                 }
             }

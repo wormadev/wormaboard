@@ -86,6 +86,16 @@ struct PrivacySettingsPage: View {
                     .buttonStyle(.plain)
                 }
             }
+
+            // What Send feedback sends, and when (FeedbackForm; the website's policy says the same).
+            if Feedback.isAvailable {
+                SettingsSectionHeader(title: "Feedback")
+                Text("WormaBoard sends nothing unless you tap Send in Send feedback. Then it sends your message and the pictures you kept, your email if you add one, and details about WormaBoard and this iPhone to Anomaly's feedback inbox. Your dictations, what you type, and what WormaBoard learned are never included.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(HexTheme.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 16)
+            }
         }
         .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: learnTyping)
         .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: typingLogs)

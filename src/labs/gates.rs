@@ -34,6 +34,13 @@ pub fn live_chapters() -> bool {
     feature_on(Feature::LiveChapters)
 }
 
+/// Stop an offered, calendar, or by-hand call recording once its call app
+/// leaves the microphone (read as each recording's start and every
+/// controller pass while it runs).
+pub fn stop_any_call_recording() -> bool {
+    feature_on(Feature::StopAnyCallRecording)
+}
+
 /// The playground in the window.
 pub fn playground() -> bool {
     feature_on(Feature::Playground)
@@ -116,13 +123,8 @@ pub(crate) fn copy_dictation_audio_enabled_under(
     settings: &AppSettings,
     policy: crate::policy::Policy,
 ) -> bool {
-    let on = |feature: Feature| {
-        feature.on(settings)
-            && feature.shipped()
-            && feature.on_this_os()
-            && policy.labs_lock(feature).is_none()
-    };
-    on(Feature::CopyDictationAudio) && on(Feature::KeepRecordings)
+    Feature::CopyDictationAudio.enabled_under(settings, policy)
+        && Feature::KeepRecordings.enabled_under(settings, policy)
 }
 
 /// A pasted dictation stays on the clipboard rather than the previous
@@ -245,13 +247,8 @@ pub(crate) fn history_stats_strip_enabled_under(
     settings: &AppSettings,
     policy: crate::policy::Policy,
 ) -> bool {
-    let on = |feature: Feature| {
-        feature.on(settings)
-            && feature.shipped()
-            && feature.on_this_os()
-            && policy.labs_lock(feature).is_none()
-    };
-    on(Feature::HistoryStatsStrip) && on(Feature::HistoryStats)
+    Feature::HistoryStatsStrip.enabled_under(settings, policy)
+        && Feature::HistoryStats.enabled_under(settings, policy)
 }
 
 /// The menu bar's Copy Recent Dictation submenu (macOS; read each time the
@@ -384,6 +381,12 @@ pub fn annotate_replay() -> bool {
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn meeting_import() -> bool {
     feature_on(Feature::MeetingImport)
+}
+
+/// A saved meeting's transcript lines may be deleted (read where the pane
+/// offers selection and where the controller starts an edit).
+pub fn transcript_edits() -> bool {
+    feature_on(Feature::TranscriptEdits)
 }
 
 /// "While dictating" applies only while the default output is speakers
