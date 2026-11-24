@@ -195,7 +195,64 @@ struct HexStatusDot: View {
     }
 }
 
-/// Hex's concentric-hexagon brand mark (`site/src/App.tsx`).
+/// The app icon's mark: the wormadev worm followed by a text cursor
+/// (`ios/HEXMobile/AppIcon.icon`), in the worm's own 107 x 66 units.
+enum WormaMark {
+    private static let width: CGFloat = 128
+    private static let cursorX: CGFloat = 121.2
+    private static let cursorWidth: CGFloat = 6.8
+    private static let cursorTop: CGFloat = -8.8
+    private static let cursorHeight: CGFloat = 84
+    private static let wormWidth: CGFloat = 107
+    private static let wormHeight: CGFloat = 66
+    private static let start = CGPoint(x: 90.72, y: 3.16)
+    private static let curves: [[CGFloat]] = [
+        [86.61, 8.34, 86.28, 15.54, 84.33, 21.70],
+        [81.46, 30.54, 74.96, 51.54, 64.13, 40.23],
+        [59.71, 35.54, 56.80, 28.96, 52.38, 24.33],
+        [47.48, 18.91, 41.73, 20.72, 37.70, 26.07],
+        [33.37, 31.37, 29.66, 38.31, 25.23, 43.69],
+        [16.52, 54.24, 9.99, 49.85, 2.59, 40.95],
+        [1.19, 39.48, 0.22, 38.88, 0.00, 39.58],
+        [-0.10, 42.51, 1.92, 46.19, 3.16, 49.19],
+        [6.52, 56.41, 12.04, 65.84, 19.41, 64.42],
+        [27.64, 62.58, 31.98, 54.32, 38.03, 49.17],
+        [43.14, 44.35, 47.95, 44.61, 52.57, 50.02],
+        [58.51, 56.78, 65.44, 68.47, 75.57, 64.16],
+        [87.51, 60.05, 111.48, 18.74, 105.05, 4.73],
+        [102.53, -0.75, 94.55, -1.62, 90.84, 3.04],
+    ]
+
+    /// The worm and its cursor, fitted and centred in `rect`.
+    static func paths(in rect: CGRect) -> (worm: CGPath, cursor: CGPath) {
+        let s = min(rect.width / width, rect.height / cursorHeight)
+        let origin = CGPoint(x: rect.midX - width * s / 2, y: rect.midY - cursorHeight * s / 2 - cursorTop * s)
+        let barWidth = max(1.2, cursorWidth * s)
+        let bar = CGRect(x: origin.x + cursorX * s, y: origin.y + cursorTop * s, width: barWidth, height: cursorHeight * s)
+        let corner = min(0.6 * s, barWidth / 2)
+        let cursor = CGPath(roundedRect: bar, cornerWidth: corner, cornerHeight: corner, transform: nil)
+        return (worm(scale: s, origin: origin), cursor)
+    }
+
+    /// The worm alone, fitted and centred in `rect`.
+    static func worm(in rect: CGRect) -> CGPath {
+        let s = min(rect.width / wormWidth, rect.height / wormHeight)
+        return worm(scale: s, origin: CGPoint(x: rect.midX - wormWidth * s / 2, y: rect.midY - wormHeight * s / 2))
+    }
+
+    private static func worm(scale s: CGFloat, origin: CGPoint) -> CGPath {
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: origin.x + x * s, y: origin.y + y * s) }
+        let path = CGMutablePath()
+        path.move(to: point(start.x, start.y))
+        for c in curves {
+            path.addCurve(to: point(c[4], c[5]), control1: point(c[0], c[1]), control2: point(c[2], c[3]))
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// The app's brand mark (`WormaMark`); `coreColor` tints the cursor.
 struct HexMarkView: View {
     var size: CGFloat = 20
     var color: Color = HexTheme.textBase
@@ -203,38 +260,9 @@ struct HexMarkView: View {
 
     var body: some View {
         Canvas { context, canvasSize in
-            let side = min(canvasSize.width, canvasSize.height)
-            let s = side / 64.0
-            let lineWidth = max(1.15, 4.5 * s)
-            let stroke = StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
-
-            func hexPath(_ points: [(CGFloat, CGFloat)]) -> Path {
-                var path = Path()
-                guard let first = points.first else { return path }
-                path.move(to: CGPoint(x: first.0 * s, y: first.1 * s))
-                for pt in points.dropFirst() {
-                    path.addLine(to: CGPoint(x: pt.0 * s, y: pt.1 * s))
-                }
-                path.closeSubpath()
-                return path
-            }
-
-            let outer = hexPath([
-                (32, 4), (57, 18.5), (57, 45.5),
-                (32, 60), (7, 45.5), (7, 18.5),
-            ])
-            let middle = hexPath([
-                (32, 15), (48, 24.25), (48, 39.75),
-                (32, 49), (16, 39.75), (16, 24.25),
-            ])
-            let core = hexPath([
-                (32, 24), (39.5, 28.25), (39.5, 36.75),
-                (32, 41), (24.5, 36.75), (24.5, 28.25),
-            ])
-
-            context.stroke(outer, with: .color(color), style: stroke)
-            context.stroke(middle, with: .color(color), style: stroke)
-            context.fill(core, with: .color(coreColor ?? color))
+            let mark = WormaMark.paths(in: CGRect(origin: .zero, size: canvasSize))
+            context.fill(Path(mark.worm), with: .color(color))
+            context.fill(Path(mark.cursor), with: .color(coreColor ?? color))
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
