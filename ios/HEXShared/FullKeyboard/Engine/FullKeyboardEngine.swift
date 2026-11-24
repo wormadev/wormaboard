@@ -45,7 +45,7 @@ final class FullKeyboardEngine {
     private(set) var lastKeyTouchAt: TimeInterval?
     /// Two-thumb selection: the switch, the range picked, and the Dictate waiting on its words.
     var trackpadSelectionState = TrackpadSelectionState()
-    /// Settings › Experiments › Korean keyboard (두벌식): its switch and composing run.
+    /// Settings › Labs › Korean keyboard (두벌식): its switch and composing run.
     var korean = KoreanKeyboardState()
 
     /// Where each letter of the word being typed was tapped (nil for one that came another
@@ -55,6 +55,8 @@ final class FullKeyboardEngine {
     var tapOffsets: [Character: CGVector] = [:] {
         didSet { if tapOffsets != oldValue { syncDecoderKeys() } }
     }
+    /// Settings › Experiments › Typing configs: the active config (`FullKeyboardEngine+TypingConfig`).
+    var typingConfig: TypingConfigActive? { didSet { if typingConfig !== oldValue { typingConfigChanged() } } }
 
     /// The layout language's word list, which lets the likelier of two neighbouring letters
     /// claim a few points of the other's touch target, as Apple's keyboard does ("th" then a
@@ -88,7 +90,7 @@ final class FullKeyboardEngine {
 
     let target: KeyboardTextTarget
     let autocorrect: AutocorrectEngine
-    /// Learn how I type (Experiments); nil while off.
+    /// Learn how I type (Privacy); nil while off.
     var journal: TypingJournal? {
         didSet { syncLearning() }
     }
@@ -97,10 +99,10 @@ final class FullKeyboardEngine {
         guard let journal, TypingJournal.allows(field: field, target: target) else { return nil }
         return journal
     }
-    /// Record typing logs (Experiments); nil while it is off, in fields it skips, and in the
+    /// Record typing logs (Privacy › Advanced); nil while it is off, in fields it skips, and in the
     /// app's fixtures. Every call through it is skipped (arguments too) while nil.
     var typingLog: TypingLogger?
-    /// Adaptive touch (Experiments): personal key centres for Spatial autocorrect, in place of
+    /// Adaptive touch (Labs): personal key centres for Spatial autocorrect, in place of
     /// `tapOffsets`, learned from taps with evidence of what you meant. Nil while off.
     var adaptiveTouch: AdaptiveTouch? {
         didSet {
@@ -116,15 +118,15 @@ final class FullKeyboardEngine {
     /// Adaptive touch where this field lets it learn (text or web search allowing autocorrect).
     private var adaptiveLearning: AdaptiveTouch?
 
-    private func syncAdaptiveField() {
-        adaptiveLearning = adaptiveTouch.flatMap { AdaptiveTouch.allows(field: field, target: target) ? $0 : nil }
+    func syncAdaptiveField() {
+        adaptiveLearning = adaptiveTouch.flatMap { AdaptiveTouch.allows(field: field, target: target) && typingConfig?.hasZones != true ? $0 : nil }
     }
     var width: CGFloat = 375 { didSet { if width != oldValue { rebuildLayout() } } }
     var orientation: KeyboardOrientation = .portrait { didSet { if orientation != oldValue { rebuildLayout() } } }
     var showsGlobe = false { didSet { if showsGlobe != oldValue { rebuildLayout() } } }
     /// Settings › Keyboard › Emoji, in fields that take emoji.
     var showsEmoji = false { didSet { if showsEmoji != oldValue { rebuildLayout() } } }
-    /// Settings › Experiments › Emoji shortcodes: what a closing ":" types for a name typed
+    /// Settings › Labs › Emoji shortcodes: what a closing ":" types for a name typed
     /// in full (":pizza"), set by the keyboard from the App Group; nil is off.
     var emojiShortcode: ((String?) -> EmojiShortcode.Replacement?)?
     var horizontalInset: CGFloat = 0 { didSet { if horizontalInset != oldValue { rebuildLayout() } } }
@@ -146,24 +148,24 @@ final class FullKeyboardEngine {
     var showsNumberRow = false {
         didSet { if showsNumberRow != oldValue { rebuildLayout(cause: "number_row") } }
     }
-    /// Settings › Experiments › Join the keyboard when unfolded (off by default): the Duo
+    /// Settings › Labs › Join the keyboard when unfolded (off by default): the Duo
     /// unfolded upright draws the joined keyboard instead of the split one.
     var joinsUnfoldedKeyboard = false {
         didSet { if joinsUnfoldedKeyboard != oldValue { rebuildLayout(cause: "join_unfolded") } }
     }
-    /// Settings › Experiments › Dvorak punctuation keys (off by default): English's Dvorak
+    /// Settings › Labs › Dvorak punctuation keys (off by default): English's Dvorak
     /// letters gain comma and period on row 1 and a semicolon by the space bar, which type
     /// `<`, `>` and `:` with shift.
     var dvorakPunctuation = false {
         didSet { if dvorakPunctuation != oldValue { rebuildLayout(cause: "dvorak_punctuation") } }
     }
-    /// Settings › Experiments › Comma and period keys (off by default): a comma left of the
+    /// Settings › Labs › Comma and period keys (off by default): a comma left of the
     /// space bar and a period right of it on an iPhone's letters page in a text field, unless
     /// Dvorak punctuation already puts them on row 1.
     var commaPeriodKeys = false {
         didSet { if commaPeriodKeys != oldValue { rebuildLayout(cause: "comma_period_keys") } }
     }
-    /// Settings › Experiments › Quick accents (off by default): a held letter's callout opens
+    /// Settings › Labs › Quick accents (off by default): a held letter's callout opens
     /// on its language's preferred accent (`AccentCatalog.primaryVariant`, Spanish "o" → "ó"),
     /// so letting go types it; sliding into another cell still picks that one.
     var quickAccentsEnabled = false
@@ -258,7 +260,7 @@ final class FullKeyboardEngine {
     /// The key whose balloon shows: the newest character still held, or the one a 123, #+= or
     /// shift press slid onto (hidden while an accent menu is up).
     var previewKey: KeyboardKey? {
-        guard activeAccentMenu == nil else { return nil }
+        guard activeAccentMenu == nil, !layout.isNumberPad else { return nil }
         for id in touchOrder.reversed() {
             guard let touch = touches[id] else { continue }
             if let slid = touch.slideKey { return slid }
@@ -273,13 +275,9 @@ final class FullKeyboardEngine {
 
     /// Call when the keyboard appears or the field changes.
     func configureForField() {
-        switch KeyboardFieldRouting.route(for: target.keyboardType) {
-        case .keys(let kind, let initialLayer):
+        if case .keys(let kind, let initialLayer) = KeyboardFieldRouting.route(for: target.keyboardType) {
             field = kind
             layerState.reset(to: initialLayer)
-        case .handOff:
-            field = .text
-            layerState.reset(to: .numbers)
         }
         shift.reset()
         korean.reset()
@@ -598,7 +596,7 @@ final class FullKeyboardEngine {
         onChange?()
     }
 
-    /// Settings › Experiments › Quick accents: opens the callout on the held letter's main
+    /// Settings › Labs › Quick accents: opens the callout on the held letter's main
     /// accent. Letters on the letters page only, so the 123 and #+= pages' held symbols and the
     /// mark keys ˇ and ʼ keep the key's own. `accentOpenCell` still holds the cell under the
     /// finger at opening, so only a slide into another cell changes the selection; a lift in
@@ -1293,10 +1291,10 @@ final class FullKeyboardEngine {
 
     /// Hands what the journal learned (typos, rejected corrections) to autocorrect;
     /// nothing while Learn how I type is off.
-    private func syncLearning() {
+    func syncLearning() {
         autocorrect.applyLearning(
-            journal?.typingLearning(for: autocorrect.language) ?? TypingLearning(),
-            partner: journal?.typingLearning(for: autocorrect.partner?.language) ?? TypingLearning()
+            withTypingConfig(journal?.typingLearning(for: autocorrect.language) ?? TypingLearning()),
+            partner: withTypingConfig(journal?.typingLearning(for: autocorrect.partner?.language) ?? TypingLearning())
         )
     }
 
@@ -1305,7 +1303,7 @@ final class FullKeyboardEngine {
     private(set) var swipedWord: SwipedWord?
     /// Words just taken back after swipes typed them, which the next swipe there skips.
     let swipeRetries = SwipeRetries()
-    /// Settings › Experiments › Delete swiped words letter by letter (off by default): delete
+    /// Settings › Labs › Delete swiped words letter by letter (off by default): delete
     /// right after a swipe acts as an ordinary delete and takes one character, instead of the
     /// whole word and the space the swipe added before it (`deleteBackward`). Its record still
     /// clears with that delete, as with any delete, so what remains types like ordinary text.
@@ -1469,8 +1467,8 @@ final class FullKeyboardEngine {
         }
     }
 
-    private func rebuildLayout(cause: String = "layout") {
-        layout = KeyboardLayout(
+    func rebuildLayout(cause: String = "layout") {
+        layout = zoned(KeyboardLayout(
             width: width,
             orientation: orientation,
             layer: layerState.layer,
@@ -1490,7 +1488,7 @@ final class FullKeyboardEngine {
             dvorakPunctuation: dvorakPunctuation,
             commaPeriodKeys: commaPeriodKeys,
             availableHeight: availableHeight
-        )
+        ))
         autocorrect.setKeys(layout.language, letters: layout.letters)
         syncDecoderKeys()
         logState(cause)

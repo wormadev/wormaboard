@@ -1,6 +1,6 @@
 import UIKit
 
-/// Settings › Experiments › Clipboard history in the full keyboard: the strip's Clipboard chip
+/// Settings › Labs › Clipboard history in the full keyboard: the strip's Clipboard chip
 /// opens the list of kept copies over the keys (`ClipboardHistoryPanelView`), and tapping one
 /// inserts it. What is kept and when the clipboard is read is `ClipboardHistory`'s.
 extension FullKeyboardView {

@@ -2949,8 +2949,12 @@ iOS prototype (`HEXMobile`) -> Record/transcribe/copy and keyboard handoff
 │   Swipe typing in more languages, Korean keyboard (두벌식), Dvorak punctuation keys, Comma
 │   and period keys, Quick accents, Emoji shortcodes, ABC under the emoji key, Keyboard
 │   themes (Black, White, Navy, Forest, Ember), Two-thumb selection, Delete swiped words
-│   letter by letter, Hide word suggestions, Join the keyboard when unfolded, Learn each
-│   language separately
+│   letter by letter, Hide word suggestions, Join the keyboard when unfolded, Typing configs
+│   (a `.mhexconfig` from the person's own agent opens Hex in a review sheet that applies
+│   nothing by itself; history of every config, `ios/docs/typing-configs.md`; simulator
+│   only, no iPhone run; it suggests going back when typing seems worse with a new config:
+│   keyboard bar notice, notification, Home card; falls back only when the keyboard failed to
+│   start twice), Learn each language separately
 ├── Full keyboard's languages (Settings › Keyboard › Languages, with Full chosen): one or
 │   more layouts, the space bar names the current one and a slide switches letters, accents
 │   and autocorrect, and the input mode reports the language typing
@@ -3178,15 +3182,20 @@ Android keyboard -> English, Spanish, German and Bokmål typing assistance
 │   tried on a device.
 ├── Keyboard > Suggest swear words (off) -> opt in to profanity; listed slurs never offered
 ├── Type a listed word in full -> keep its spelling on space or tap its literal chip
-├── Labs > Keyboard > Symbols on letter keys (off) -> hold a letter from QWERTY's home and
-│   bottom rows (a–l, z–m) for its symbol first, SwiftKey-style (m for /, a for @), with the
-│   letter's accents after it; symbols follow the letter, so AZERTY q/w and QWERTZ y get none,
-│   and row 1 (including AZERTY a/z) keeps its digits; off, the keys are unchanged. With
-│   Number row on, row 1's AZERTY a/z and QWERTZ z show their symbols (@, _) as hint and hold
-│   instead of digits.
-│   `heldLettersOfferSymbolsWhenTheLabIsOn` in InsertionTest.kt passed in
-│   https://github.com/anomalyco/hex/actions/runs/45273240353 (testDebugUnitTest + compileDebugKotlin,
-│   GitHub-hosted); not tried on a device or emulator.
+├── Labs > Keyboard > Symbols on letter keys (off) -> hold a letter from QWERTY's home or
+│   bottom row for its symbol first, SwiftKey-style (m for /, a for @), with the letter's
+│   accents after it; symbols follow the letter, so AZERTY q/w and QWERTZ y get none where
+│   their layouts draw them below row 1. Row 1 keeps its digit while it shows one: with Number
+│   row off it hints and holds the digit first. With it on, the top row's letters show and hold
+│   Gboard's symbols in the hidden digit's place (q for %, p for }, r for = as j holds it),
+│   while a letter that already has a home- or bottom-row symbol keeps that one wherever the
+│   layout draws it (AZERTY a/z for @/_, QWERTZ z for _). The top row's symbols stay on row 1,
+│   so a layout that draws q, w or y lower is unchanged there. Off, the keys are unchanged.
+│   `heldLettersOfferSymbolsWhenTheLabIsOn` in InsertionTest.kt covers the holds, and
+│   `withBothLabsTheTopRowShowsGboardsSymbols` and `theTopRowSymbolsStayOnTheTopRow` in
+│   KeyboardPageTest.kt the top row and the rows it leaves alone; all three passed in
+│   https://github.com/anomalyco/hex/actions/runs/45367619509 (testDebugUnitTest + compileDebugKotlin,
+│   GitHub-hosted); not tried on a device or emulator. The repo has no Android CI.
 ├── Labs > Output > Signature (off) -> one editable line (up to 200 characters; empty adds
 │   nothing, default "Sent from Hex") on its own line at the end of each keyboard dictation,
 │   added once; the next dictation starts on a new line below it, and a signed dictation
@@ -3198,14 +3207,34 @@ Android keyboard -> English, Spanish, German and Bokmål typing assistance
 ├── Labs > Keyboard > Number row (off) -> 1 2 3 4 5 6 7 8 9 0 above the letter rows on
 │   every layout (en, es, nb, de, fr, it), typed like normal keys. The first letter row's
 │   corner digits and digit-first hold are hidden while it shows; accents on hold stay, and
-│   the Symbols on letter keys hints and holds still work, with row 1 letters that have a
-│   symbol (AZERTY a/z, QWERTZ z) showing it instead of the digit. The keyboard is one row
-│   taller and the Hex menu matches that height; ?123, the symbols pages and the pads keep
-│   their keys and are a row shorter than the letters while it is on. Off, the page is
-│   unchanged.
-│   KeyboardPageTest plus a passing `./gradlew :app:testDebugUnitTest :app:compileDebugKotlin`
-│   on a GitHub-hosted runner (https://github.com/anomalyco/hex/actions/runs/45275591325, the
-│   latest observed verification); not tried on a device. The repo has no Android CI.
+│   the Symbols on letter keys hints and holds still work: row 1's first ten letters show a
+│   symbol instead of the digit, Gboard's such as q for % and p for }, or its own home- or
+│   bottom-row symbol where it has one, like AZERTY a for @. The keyboard is one row taller
+│   and the Hex menu matches that height; ?123, the symbols pages and the pads keep their keys
+│   and are a row shorter than the letters while it is on. Off, the page is unchanged.
+│   KeyboardPageTest covers it, including the top row's symbols, and passed in
+│   https://github.com/anomalyco/hex/actions/runs/45367619509 (testDebugUnitTest + compileDebugKotlin,
+│   GitHub-hosted); not tried on a device. The repo has no Android CI.
+├── Labs > Keyboard > Local currency (off) -> the phone's region picks the ?123 page's
+│   currency symbol in $'s place from a fixed set of single-character symbols: GBP £, EUR €,
+│   JPY and CNY ¥, INR ₹, PHP ₱, KRW ₩, RUB ₽ and UAH ₴. USD, a locale with no country, a
+│   region with no currency (Antarctica), a first language whose region is not a country
+│   (Latin American Spanish, es-419) and every other currency keep $. Only the first
+│   system locale with a country is read, and its `Currency.currencyCode` rather than a
+│   localized symbol chooses the character, so the same phone shows the same one in any
+│   language. Holding the key offers $ first, then $'s held symbols without a second copy
+│   of the local one, in their order. The second symbols page always draws $, with ten keys
+│   still: where it drew that currency for £, € and ¥ (with £ or € local, ¥ stays in $'s
+│   holds; with ¥ local, $'s holds drop it because ¥ is the ?123 key), and where it drew ¥
+│   for ₹, ₱, ₩, ₽ and ₴, so that page reads €£$ there and $ is on one of the two pages.
+│   Only the symbol pages read the currency: a number, PIN, phone or date pad, including the
+│   symbols page's own 1234 pad, draws none and reads none. Off, both pages and every hold
+│   are unchanged.
+│   Checks: `LocalCurrencyTest` in android/app/src/test (rows, holds and region cases) and
+│   `./gradlew :app:testDebugUnitTest :app:compileDebugKotlin` on a GitHub-hosted runner
+│   (https://github.com/anomalyco/hex/actions/runs/45359081407: LocalCurrencyTest 6/6 and
+│   KeyboardPageTest 7/7 passed, 156 tests in all, the latest observed verification); not
+│   tried on a device or emulator, and the repo has no Android CI.
 ├── Labs > Keyboard > Emoji suggestions (off) -> on the English layout, while a word
 │   that names an emoji is being typed (smile -> 😊, joy/haha -> 😂, heart -> ❤️), the
 │   strip's last slot offers it beside the word suggestions, padded to that slot even when
@@ -3223,7 +3252,7 @@ Android keyboard -> English, Spanish, German and Bokmål typing assistance
 │   Checks: `./gradlew :app:testDebugUnitTest :app:compileDebugKotlin` (includes
 │   `EmojiKeywordsTest`) and `python3 scripts/code-shape.py --check`; the repo has no
 │   Android CI.
-└── Labs > Keyboard > Keyboard tools (off) -> while the strip has nothing else to show (no
+├── Labs > Keyboard > Keyboard tools (off) -> while the strip has nothing else to show (no
     suggestion chips, Undo dictation, notice or dictation) and the field is not a password,
     PIN or other secure field, the "Hold Hex to talk" hint becomes up to four icon buttons
     without making the keyboard taller: Emoji (the bottom row's emoji key, so only on the
@@ -3239,6 +3268,21 @@ Android keyboard -> English, Spanish, German and Bokmål typing assistance
     Checks: `./gradlew :app:testDebugUnitTest :app:compileDebugKotlin` (includes
     `KeyboardToolsTest`) and `python3 scripts/code-shape.py --check`; the repo has no
     Android CI. Not tried on a device or emulator.
+└── Labs > Keyboard > Smart quotes (off) -> in a plain-text field (not a password, email or URL
+    field, or a TYPE_NULL field such as a terminal), the ' and " keys type ’ ‘ “ ”: an opening
+    quote — ‘ or “ — at the start, after whitespace, or after an opening bracket or quote, and
+    the closing quote or apostrophe — ’ or ” — after anything else. A word a suggestion,
+    autocorrection or swipe commits goes in with ’ for its straight apostrophe ("don't" becomes
+    "don’t"), your own text replacements get ’ for each straight apostrophe they contain (a " in
+    one stays straight), and a dictation's straight quotes are placed by the same rules, after its
+    spacing is decided, in the same plain-text fields as the keys. The strip shows the ’ a
+    suggestion will insert. A quote key's held alternates still type exactly the character they
+    show. Off, keys, picks and dictation insert the straight characters they did before, and
+    existing ’ and ” are treated like ' and " for word boundaries, spacing and lookups. Checks:
+    `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest` passed with 150 tests (including
+    `SmartQuotesTest`'s 12) on 2026-11-24, on Temurin JDK 21 and Android SDK 36 (platform 36,
+    build-tools 35/36, NDK 27.2.12479018); the repo has no Android CI, and nothing was tried on a
+    device or emulator. `python3 scripts/code-shape.py --check` passes.
 Unmerged Windows / deferred features -> Not part of this map
 ```
 

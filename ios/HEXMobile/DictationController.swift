@@ -49,7 +49,7 @@ final class DictationController {
 
     var transcriber: any LocalTranscribing
     let transcriberFactory: () async -> any LocalTranscribing
-    /// Experiments › Multilingual model (Parakeet): its download, beside the engine Hex
+    /// Labs › Multilingual model (Parakeet): its download, beside the engine Hex
     /// dictates with until it's ready.
     @ObservationIgnored let multilingualDownload: ParakeetUltraDownload
     private let cleaner: (any TranscriptCleaning)?
@@ -779,7 +779,8 @@ final class DictationController {
         let preferences = DictationPipeline.Preferences.current(
             style: effectiveStyle,
             vocabulary: customVocabularySettings,
-            corrections: learnedDictationCorrections(language),
+            corrections: learnedDictationCorrections(language)
+                + TypingConfigDictation.corrections(translating: DictationTranslationSettings().isEnabled),
             lowercase: lowercaseSettings,
             lists: listSettings,
             punctuation: punctuationSettings,

@@ -23,7 +23,7 @@ struct PrivacySettingsPage: View {
 
             // The one exception, and only while its experiment is on.
             if GifSearchSettings().isEnabled {
-                Text("Except GIF searches: Experiments › GIFs sends what you search to KLIPY.")
+                Text("Except GIF searches: Labs › GIFs sends what you search to KLIPY.")
                     .font(.system(size: 13))
                     .foregroundStyle(HexTheme.textMuted)
                     .padding(.horizontal, 16)

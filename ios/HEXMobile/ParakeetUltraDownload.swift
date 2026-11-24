@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import SwiftUI
 
-/// Experiments › Multilingual model (Parakeet): gets Parakeet Ultra onto the iPhone beside the
+/// Labs › Multilingual model (Parakeet): gets Parakeet Ultra onto the iPhone beside the
 /// engine Hex dictates with meanwhile, so turning the experiment on never takes dictation away.
 /// Each file resumes from its `.partial`, at the next launch too. A dropped connection or a
 /// download that stops moving for `stallLimit` tries again by itself (after 2, 4, 8, 16, 30 s),
@@ -374,7 +374,7 @@ private nonisolated final class ByteReading: @unchecked Sendable {
     }
 }
 
-/// The multilingual model's download or load, on home and under its switch in Experiments:
+/// The multilingual model's download or load, on home and under its switch in Labs:
 /// what it's doing, that Hex dictates with its usual model meanwhile, and after a failure
 /// Try again and Turn off.
 struct MultilingualModelStatus: View {

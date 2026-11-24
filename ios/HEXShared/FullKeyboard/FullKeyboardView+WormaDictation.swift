@@ -1,6 +1,6 @@
 import UIKit
 
-/// Settings › Experiments › New dictation key in the full keyboard: the Hex key loses its slide
+/// Settings › Labs › New dictation key in the full keyboard: the Hex key loses its slide
 /// menu, and a chevron beside it opens a shortcut tray
 /// in place of the suggestions (`WormaDictationTrayView`). Off, there is no tray and the
 /// Hex key is upstream's.

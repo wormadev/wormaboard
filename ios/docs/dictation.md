@@ -325,7 +325,7 @@ the App Group, or the keyboard's own Library for an unsigned build) from the fir
 `ParakeetLiveTranscriber` (the audio so far again about once a second, a 20 s window) is
 written for when the speech model's own words should show, and not used yet.
 
-## Apple Intelligence cleanup (Settings › Experiments › Clean up with Apple Intelligence, iOS 26+)
+## Apple Intelligence cleanup (Settings › Labs › Clean up with Apple Intelligence, iOS 26+)
 
 Off by default. For every style but `Verbatim`,
 one on-device FoundationModels pass before formatting fixes clearly
@@ -333,7 +333,7 @@ misheard words and spoken self-corrections, within a 2 s budget. A
 timeout, error, empty or implausible output keeps the raw transcript, and
 the toggle is disabled with a reason when Apple Intelligence is unusable.
 
-## Multilingual model (Settings › Experiments › Multilingual model (Parakeet), iOS 18+)
+## Multilingual model (Settings › Labs › Multilingual model (Parakeet), iOS 18+)
 
 Off by default, and disabled on iPhones under 6 GB
 (`MultilingualParakeetSettings`, in the App Group). While on, Hex dictates
@@ -400,7 +400,7 @@ dictation". Home shows the same status under "New: Hex's own speech model" where
 keyboard would use it (`SpeechModelHomeCard`: the switch on, an iPhone that fits, English
 and no other engine); once it's ready in the keyboard the card can be dismissed, for good. The keyboard's own dictation transcribes with Parakeet in
 the keyboard's process (`HEXKeyboard/KeyboardParakeet.swift`), with the app closed:
-V2 for English, and Parakeet Ultra for a language Experiments › Multilingual model
+V2 for English, and Parakeet Ultra for a language Labs › Multilingual model
 dictates once its files are there, in which case Dictate and the Hex key stop opening
 Hex for it. Parakeet's files moved from the app's Application Support into the App
 Group (`SpeechModelStore`), renamed in place at launch (`moveLegacyDownloads`) rather
@@ -619,7 +619,7 @@ Spanish, German ones (äh, ähm, öhm) in German, and none elsewhere (Norwegian
 "er" is "is", Portuguese "um" is "a"); translation's source is the dictation
 language rather than a guess. Custom vocabulary works in any language.
 
-## Voice isolation (Settings › Experiments › Voice isolation)
+## Voice isolation (Settings › Labs › Voice isolation)
 
 Off by default
 (`experiments.voiceIsolation`, App Group). While on, the app records in
@@ -632,7 +632,7 @@ profile. With it off, both record exactly as before. Not verified on a
 device: that Control Center actually offers Voice Isolation for Hex, and how
 the mode changes a recording's level.
 
-## Two-language dictation (Settings › Experiments › Two-language dictation, iOS 26+)
+## Two-language dictation (Settings › Labs › Two-language dictation, iOS 26+)
 
 Off by default (`experiments.twoLanguageDictation`, App Group). While on, and while
 dictation uses Apple Speech's `SpeechTranscriber`, one recording is read twice: in the

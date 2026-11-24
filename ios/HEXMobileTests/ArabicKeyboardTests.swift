@@ -2,7 +2,7 @@ import UIKit
 import XCTest
 @testable import HEX
 
-/// Settings › Experiments › Arabic keyboard: Apple's Arabic letters and 123 pages, the gating,
+/// Settings › Labs › Arabic keyboard: Apple's Arabic letters and 123 pages, the gating,
 /// the bundled Arabic model (`ar.hextm`) for taps and swipes, and Arabic dictation's
 /// language pick and formatting.
 @MainActor

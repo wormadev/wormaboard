@@ -1,6 +1,6 @@
 import Foundation
 
-/// Experiments › Multilingual model (Parakeet), in the shared App Group so the keyboard reads
+/// Labs › Multilingual model (Parakeet), in the shared App Group so the keyboard reads
 /// it too. Off by default. While it's on and Hex has the model ready, Hex dictates its 25
 /// languages with Parakeet Ultra (`ParakeetUltraTranscriber`), which hears them mixed within a
 /// sentence (Dutch with English words), and the Hex key hands its dictations to Hex, as before

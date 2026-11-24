@@ -64,10 +64,10 @@ final class KeyboardStripView: UIView {
     var onHoldSuggestion: ((KeyboardSuggestion) -> Void)?
     var onUndoDictation: (() -> Void)?
     var onPaste: (() -> Void)?
-    /// Settings › Experiments › Clipboard history: the Clipboard chip opens the kept copies.
+    /// Settings › Labs › Clipboard history: the Clipboard chip opens the kept copies.
     var onClipboardHistory: (() -> Void)?
     var onNextKeyboard: (() -> Void)?
-    /// Code from Messages' touches where it opens iOS's keyboard list (`.code(opensList: true)`).
+    /// Code from Messages' and Passwords' touches where they open iOS's keyboard list (`opensList`).
     var onKeyboardListTouch: ((UIButton, UIEvent) -> Void)?
     /// The Full Access hint's Open Hex was tapped (it opens Hex's setup).
     var onOpenHexFromHint: (() -> Void)?
@@ -263,9 +263,23 @@ final class KeyboardStripView: UIView {
         show(pasteControl, showsPasteChip)
         show(nextKeyboardChip, showsNextKeyboardChip)
         show(historyChip, showsHistoryChip)
-        nextKeyboardChip.accessibilityHint = chipOpensList
-            ? String(localized: "Shows your keyboards: pick Apple's, where iOS offers codes from Messages and Mail")
-            : String(localized: "Switches to the next keyboard, where iOS offers codes from Messages and Mail")
+        var next = nextKeyboardChip.configuration
+        let logins = if case .passwords? = clipboard { true } else { false }
+        let nextTitle = logins ? String(localized: "Passwords") : String(localized: "Code from Messages")
+        if next?.title != nextTitle {
+            next?.title = nextTitle
+            next?.image = UIImage(
+                systemName: logins ? "key" : "keyboard",
+                withConfiguration: UIImage.SymbolConfiguration(pointSize: 12.5, weight: .medium)
+            )
+            nextKeyboardChip.configuration = next
+        }
+        nextKeyboardChip.accessibilityHint = switch (logins, chipOpensList) {
+        case (true, true): String(localized: "Shows your keyboards: pick Apple's, where iOS offers your saved passwords")
+        case (true, false): String(localized: "Switches to the next keyboard, where iOS offers your saved passwords")
+        case (false, true): String(localized: "Shows your keyboards: pick Apple's, where iOS offers codes from Messages and Mail")
+        case (false, false): String(localized: "Switches to the next keyboard, where iOS offers codes from Messages and Mail")
+        }
         // Words swap letter by letter (and leave the same way when a chip or status takes the
         // strip); the strip being shown for the first time just draws them.
         let animated = animates
@@ -333,23 +347,21 @@ final class KeyboardStripView: UIView {
     /// Clipboard chips replace the empty strip; suggestions and status win.
     private var showsClipboard: Bool {
         guard let clipboard, !showsUndo, statusText == nil, !showsFullAccessHint, notice == nil else { return false }
-        if case .code = clipboard { return true }
+        if clipboard.leadsToAppleKeyboard { return true }
         return currentSuggestions.isEmpty
     }
 
     private var showsPasteChip: Bool {
-        if case .code(canPaste: false, _)? = clipboard { return false }
+        if clipboard?.canPaste == false { return false }
         return showsClipboard
     }
 
     private var chipOpensList: Bool {
-        if case .code(_, opensList: true)? = clipboard { return true }
-        return false
+        clipboard?.opensList == true
     }
 
     private var showsNextKeyboardChip: Bool {
-        guard showsClipboard, case .code = clipboard else { return false }
-        return true
+        showsClipboard && clipboard?.leadsToAppleKeyboard == true
     }
 
     /// Beside Paste in a strip with no words, never where a code is expected.
@@ -849,6 +861,10 @@ final class KeyboardStripView: UIView {
             let size = (text as NSString).size(withAttributes: [.font: font])
             guard size.width > maxTextW else {
                 let origin = CGPoint(x: textMidX - size.width / 2, y: midY - size.height / 2)
+                if Self.shapesAcrossLetters(text) {
+                    let glyph = Glyph(text: text, font: font, offset: 0, y: origin.y, box: nil)
+                    return Word(text: text, font: font, origin: origin, width: size.width, box: nil, glyphs: [glyph])
+                }
                 var glyphs: [Glyph] = []
                 var prefix = ""
                 for character in text {
@@ -865,6 +881,17 @@ final class KeyboardStripView: UIView {
             let box = CGSize(width: width, height: smallSize.height)
             let glyph = Glyph(text: text, font: small, offset: 0, y: origin.y, box: box)
             return Word(text: text, font: small, origin: origin, width: width, box: box, glyphs: [glyph])
+        }
+
+        /// Arabic letters join and right-to-left words run backwards, so drawing letters one at a
+        /// time at left-to-right offsets scrambles them: such words roll in whole.
+        private static func shapesAcrossLetters(_ text: String) -> Bool {
+            text.unicodeScalars.contains { scalar in
+                switch scalar.value {
+                case 0x0590...0x08FF, 0x0900...0x0DFF, 0x0E00...0x0EFF, 0x1000...0x109F, 0xFB1D...0xFDFF, 0xFE70...0xFEFF: true
+                default: false
+                }
+            }
         }
 
         static let chipPadding: CGFloat = 12
