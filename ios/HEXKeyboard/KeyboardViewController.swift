@@ -878,7 +878,7 @@ final class KeyboardViewController: UIInputViewController {
             applyHeight(keyboard.preferredHeight)
         } else {
             let hosting = UIHostingController(
-                rootView: KeyboardSurfaceView(model: viewModel, defersDotScopeUntilActive: true)
+                rootView: KeyboardSurfaceView(model: viewModel)
             )
             hosting.view.backgroundColor = .clear
             addChild(hosting)
