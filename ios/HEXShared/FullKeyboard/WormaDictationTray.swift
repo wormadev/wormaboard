@@ -115,10 +115,13 @@ final class WormaDictationTrayView: UIView {
         scroller.delaysContentTouches = true
         scroller.isHidden = true
         // iOS 26 blurs a scroll view's edges as content slides under them; the strip has no bar
-        // to blur under.
+        // to blur under. The top and bottom pockets matter most: the strip is only a chip tall,
+        // so they cover every chip.
         if #available(iOS 26.0, *) {
             scroller.leftEdgeEffect.isHidden = true
             scroller.rightEdgeEffect.isHidden = true
+            scroller.topEdgeEffect.isHidden = true
+            scroller.bottomEdgeEffect.isHidden = true
         }
         addSubview(scroller)
         turnChevron(animated: false)
