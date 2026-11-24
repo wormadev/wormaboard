@@ -11,7 +11,7 @@ import UIKit
 /// Emoji states (`emoji`, `emoji-search`, `emoji-tones`, `emoji-food`, `emoji-strip`) turn
 /// Settings › Keyboard › Emoji on with a seeded history; `emoji-probe` prints the panel's
 /// footprint and latency (`EMOJI_PROBE` lines) for `simctl launch --console`. `emoji-gifs`
-/// turns Settings › Experiments › GIFs on and opens its search (a build with a KLIPY key).
+/// turns Settings › Labs › GIFs on and opens its search (a build with a KLIPY key).
 struct FullKeyboardSnapshotStage: View {
     let scene: String
     /// The `sequence` scene's dictation, once it lands in the field.
@@ -781,7 +781,7 @@ class FixtureTextTarget: KeyboardTextTarget {
         cursorIndex = max(0, min(text.count, cursorIndex + offset))
     }
 }
-/// Settings › Experiments › Clipboard history's scenes: a few copies in a store of their own,
+/// Settings › Labs › Clipboard history's scenes: a few copies in a store of their own,
 /// so a scene never touches the App Group's.
 @MainActor
 enum ClipboardHistoryFixture {

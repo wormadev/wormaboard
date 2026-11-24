@@ -4,7 +4,7 @@ import Foundation
 /// `KeyboardLocalDictation`), so Hex needn't keep the mic warm for it: there Keep mic warm
 /// defaults to Off and its row hides (`KeyboardBridge.warmDuration`). Not before iOS 26, and
 /// not while the keyboard hands its dictations to Hex: it couldn't get its speech model
-/// (`LanguageSettings.keyboardNeedsHex`), Experiments › Multilingual model takes the language
+/// (`LanguageSettings.keyboardNeedsHex`), Labs › Multilingual model takes the language
 /// and only Hex loads it, or the keyboard opened Hex for a dictation in the last
 /// `recentWindow` (recorded by the keyboard, and by Hex whatever the reason), until the
 /// keyboard next finishes a dictation by itself.

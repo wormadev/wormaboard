@@ -106,6 +106,12 @@ struct KeyboardSettingsPage: View {
         )
     }
 
+    /// Choosing a Strength plays one key tick at it, as the keyboard's keys will feel.
+    private func previewKeyTick(_ strength: KeyHapticStrength) {
+        UIImpactFeedbackGenerator(style: FullKeyboardView.keyTickStyle(strength))
+            .impactOccurred(intensity: FullKeyboardView.keyTickIntensity(strength))
+    }
+
     /// The detail of a row that needs Full Access: none while it's on, and while it isn't, that
     /// the row needs it (as Swipe typing says it needs the full keyboard).
     private var fullAccessNeed: String? {
@@ -258,6 +264,13 @@ struct KeyboardSettingsPage: View {
                     SettingsDivider()
 
                     KeyboardVocabularyRow()
+
+                    // Settings › Experiments › Typing configs: the config in use and its history.
+                    if TypingConfigSettings().isEnabled {
+                        SettingsDivider()
+
+                        KeyboardTypingConfigsRow(fullAccessOn: fullAccessOn)
+                    }
                 }
             }
 
@@ -294,6 +307,7 @@ struct KeyboardSettingsPage: View {
                             onSelect: { choice in
                                 FullKeyboardSettings().hapticStrength = choice
                                 revision += 1
+                                previewKeyTick(choice)
                             }
                         )
                     }

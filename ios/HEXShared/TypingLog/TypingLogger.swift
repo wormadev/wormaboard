@@ -239,7 +239,8 @@ final class TypingLogger {
                 TypingLogField("row", .int(key.row)),
                 TypingLogField("frame", .rect(key.frame)),
                 TypingLogField("hitFrame", .rect(key.hitFrame)),
-            ])
+            ] + (key.gapHitFrame.map { [TypingLogField("gapHitFrame", .rect($0))] } ?? [])
+              + (key.zoneRects.map { [TypingLogField("zoneRects", .array($0.map { TypingLogValue.rect($0) }))] } ?? []))
         }
         return [
             TypingLogField("letterWidth", .pt(layout.letterWidth)),
@@ -489,6 +490,9 @@ final class TypingLogger {
         case .url: "url"
         case .email: "email"
         case .webSearch: "webSearch"
+        case .twitter: "twitter"
+        case .numberPad: "numberPad"
+        case .decimalPad: "decimalPad"
         }
     }
 
@@ -532,6 +536,7 @@ final class TypingLogger {
             mix(keyID(key.kind))
             mix(key.frame)
             mix(key.hitFrame)
+            for rect in key.zoneRects ?? [] { mix(rect) }
         }
         return String(format: "%016llx", hash)
     }

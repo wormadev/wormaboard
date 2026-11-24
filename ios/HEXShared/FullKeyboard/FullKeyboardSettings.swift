@@ -18,7 +18,7 @@ nonisolated enum DictationBarAutoStart: String, CaseIterable, Sendable {
     case always
 }
 
-/// Settings › Experiments › Korean keyboard (두벌식), read where the pure language helpers need
+/// Settings › Labs › Korean keyboard (두벌식), read where the pure language helpers need
 /// it before a keyboard exists (Settings' Languages list, Automatic). Stored as
 /// `experiments.koreanKeyboard`, off by default like every experiment.
 nonisolated enum KoreanKeyboardExperiment {
@@ -46,7 +46,7 @@ struct FullKeyboardSettings {
     static let launchArgument = "--experiment-full-keyboard"
     static let emojiLaunchArgument = "--experiment-emoji"
     static let emojiLettersLaunchArgument = "--experiment-emoji-letters"
-    /// Simulator scenes pass `--experiment-keyboard-themes` for Settings › Experiments ›
+    /// Simulator scenes pass `--experiment-keyboard-themes` for Settings › Labs ›
     /// Keyboard themes.
     static let keyboardThemesLaunchArgument = "--experiment-keyboard-themes"
     /// Simulator scenes pass `--keyboard-theme <automatic|black|white|navy|forest|ember>` for
@@ -61,15 +61,15 @@ struct FullKeyboardSettings {
     /// Simulator scenes pass `--number-row on` (or `off`) for Settings › Keyboard › Number row.
     static let numberRowLaunchArgument = "--number-row"
     /// Simulator scenes pass `--join-unfolded-keyboard on` (or `off`) for Settings ›
-    /// Experiments › Join the keyboard when unfolded.
+    /// Labs › Join the keyboard when unfolded.
     static let joinUnfoldedKeyboardLaunchArgument = "--join-unfolded-keyboard"
-    /// Simulator scenes pass `--experiment-dvorak-punctuation` for Settings › Experiments ›
+    /// Simulator scenes pass `--experiment-dvorak-punctuation` for Settings › Labs ›
     /// Dvorak punctuation keys.
     static let dvorakPunctuationLaunchArgument = "--experiment-dvorak-punctuation"
-    /// Simulator scenes pass `--experiment-comma-period-keys` for Settings › Experiments ›
+    /// Simulator scenes pass `--experiment-comma-period-keys` for Settings › Labs ›
     /// Comma and period keys.
     static let commaPeriodKeysLaunchArgument = "--experiment-comma-period-keys"
-    /// Simulator scenes pass `--experiment-quick-accents` for Settings › Experiments ›
+    /// Simulator scenes pass `--experiment-quick-accents` for Settings › Labs ›
     /// Quick accents.
     static let quickAccentsLaunchArgument = "--experiment-quick-accents"
 
@@ -152,7 +152,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.spatialAutocorrect) }
     }
 
-    /// Settings › Experiments › German spatial autocorrect: lets the Deutsch layout read your
+    /// Settings › Labs › German spatial autocorrect: lets the Deutsch layout read your
     /// taps with the German model Android ships (`TypingDecoder`), as English, Spanish and
     /// French already do. Off by default, like every experiment: a keyboard without it types German
     /// exactly as before (the dictionary engine, and no word list for the letter odds, the
@@ -162,7 +162,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.germanSpatialAutocorrect) }
     }
 
-    /// Settings › Experiments › Korean keyboard (두벌식): adds 한국어 to Settings › Keyboard ›
+    /// Settings › Labs › Korean keyboard (두벌식): adds 한국어 to Settings › Keyboard ›
     /// Languages, typed on the standard two-set layout and composed as Hangul while the run is
     /// in the field (`HangulComposer`). Off by default: 한국어 isn't offered, Automatic never
     /// picks it, and a stored "ko" is ignored.
@@ -171,7 +171,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.koreanKeyboard) }
     }
 
-    /// Settings › Experiments › Arabic keyboard: adds العربية to Settings › Keyboard ›
+    /// Settings › Labs › Arabic keyboard: adds العربية to Settings › Keyboard ›
     /// Languages, on Apple's Arabic letters (`ArabicTyping`) with its bundled typing model for
     /// suggestions, autocorrect and Swipe typing. Off by default: العربية isn't offered,
     /// Automatic never picks it, and a stored "ar" is ignored.
@@ -192,7 +192,7 @@ struct FullKeyboardSettings {
     }
 
     /// Whether a swipe reads `language`'s layout: English and Spanish as ever, and with
-    /// Settings › Experiments › Swipe typing in more languages on every language
+    /// Settings › Labs › Swipe typing in more languages on every language
     /// `typingModel(for:)` has a model for (French (France), Polish, and German while its model
     /// is chosen). Elsewhere a drag stays a slide to another key.
     func swipesIn(_ language: KeyboardLanguage) -> Bool {
@@ -235,7 +235,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.emoji) }
     }
 
-    /// Settings › Experiments › ABC under the emoji key: the emoji panel's ABC sits where the
+    /// Settings › Labs › ABC under the emoji key: the emoji panel's ABC sits where the
     /// emoji key that opened it was, so switching back to the letters needs no thumb move.
     /// Off by default; a panel with no emoji key behind it (the dictation bar's, a standalone
     /// panel) keeps ABC at the bar's leading end. Stored as
@@ -245,7 +245,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.emojiLettersUnderEmojiKey) }
     }
 
-    /// Settings › Experiments › Keyboard themes: the full keyboard draws its own opaque
+    /// Settings › Labs › Keyboard themes: the full keyboard draws its own opaque
     /// colours (black, white, navy, forest or ember) instead of translucent keycaps over
     /// iOS's glass. Off by default, so the keyboard keeps the system look; the dictation bar
     /// and iOS's own strip above the keyboard keep it either way. Stored as
@@ -255,7 +255,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.keyboardThemes) }
     }
 
-    /// Settings › Experiments › Keyboard themes: the theme the full keyboard draws with.
+    /// Settings › Labs › Keyboard themes: the theme the full keyboard draws with.
     /// Automatic when unset, unknown, or without the App Group.
     var keyboardTheme: KeyboardTheme {
         get {
@@ -270,7 +270,7 @@ struct FullKeyboardSettings {
         keyboardThemesEnabled ? keyboardTheme : .automatic
     }
 
-    /// Settings › Experiments › Two-thumb selection: while the space bar is the trackpad, a
+    /// Settings › Labs › Two-thumb selection: while the space bar is the trackpad, a
     /// second thumb selects — each thumb moves one end, shown in the strip, with Delete, Cut,
     /// Copy, Dictate and Cancel once both lift. Off by default. Stored as
     /// `experiments.twoThumbSelection`; off, a second finger is ignored as it always was.
@@ -279,7 +279,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.twoThumbSelection) }
     }
 
-    /// Settings › Experiments › Hide word suggestions: the strip above the keys stops suggesting
+    /// Settings › Labs › Hide word suggestions: the strip above the keys stops suggesting
     /// words (typing and next-word suggestions, swipe readings, the finished word's emoji, and
     /// the chip that keeps what you typed while a correction is still ahead), while the Hex key,
     /// Undo, status, notices and the Paste chip stay. Autocorrect still corrects on space, and
@@ -301,7 +301,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.swipeTyping) }
     }
 
-    /// Settings › Experiments › Swipe typing in more languages: a swipe reads the layout
+    /// Settings › Labs › Swipe typing in more languages: a swipe reads the layout
     /// language's own word list wherever one is bundled, not only on English and Spanish (see
     /// `swipesIn(_:)`). Off by default, like every experiment. Stored as
     /// `experiments.swipeMoreLanguages`; off, only English and Spanish swipe as before.
@@ -310,7 +310,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.swipeMoreLanguages) }
     }
 
-    /// Settings › Experiments › Delete swiped words letter by letter: delete right after a swipe
+    /// Settings › Labs › Delete swiped words letter by letter: delete right after a swipe
     /// acts as anywhere else and takes one character, instead of the whole swiped word and the
     /// space the swipe added before it (`FullKeyboardEngine.deleteBackward`). The swipe's record
     /// clears with that delete, as with any delete, so what remains types like ordinary text.
@@ -346,7 +346,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.languageSwipe) }
     }
 
-    /// Settings › Experiments › Join the keyboard when unfolded: on the Duo unfolded and held
+    /// Settings › Labs › Join the keyboard when unfolded: on the Duo unfolded and held
     /// upright, Hex normally splits its keyboard as Apple's does there, since an extension
     /// can't read Apple's Split Keyboard preference. On, it draws the joined keyboard instead,
     /// at the same row heights and unfoldedTall's side inset. Off by default. Stored as
@@ -356,7 +356,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.joinKeyboardWhenUnfolded) }
     }
 
-    /// Settings › Experiments › Dvorak punctuation keys (off by default): English's Dvorak
+    /// Settings › Labs › Dvorak punctuation keys (off by default): English's Dvorak
     /// letters gain comma and period on row 1, ahead of P, and a semicolon left of the space
     /// bar, which type `<`, `>` and `:` with shift. Stored as `experiments.dvorakPunctuation`.
     var dvorakPunctuation: Bool {
@@ -364,7 +364,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.dvorakPunctuation) }
     }
 
-    /// Settings › Experiments › Clipboard history (off by default): with Full Access the full
+    /// Settings › Labs › Clipboard history (off by default): with Full Access the full
     /// keyboard keeps the last texts copied (`ClipboardHistory`). Turning it off deletes them.
     /// Stored as `experiments.clipboardHistory`.
     var clipboardHistory: Bool {
@@ -375,7 +375,7 @@ struct FullKeyboardSettings {
         }
     }
 
-    /// Settings › Experiments › New dictation key (off by default): the strip's Hex key loses
+    /// Settings › Labs › New dictation key (off by default): the strip's Hex key loses
     /// its slide menu, and a chevron beside it opens a shortcut
     /// tray (`WormaDictationTrayView`).
     var wormaDictationKey: Bool {
@@ -394,7 +394,7 @@ struct FullKeyboardSettings {
         }
     }
 
-    /// Settings › Experiments › Comma and period keys (off by default): a comma just left of the
+    /// Settings › Labs › Comma and period keys (off by default): a comma just left of the
     /// space bar and a period just right of it, both a letter wide, on an iPhone's letters page
     /// in a text field. Where Dvorak punctuation is drawn its row 1 already has both, so they
     /// aren't added again. Stored as `experiments.commaPeriodKeys`.
@@ -403,7 +403,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.commaPeriodKeys) }
     }
 
-    /// Settings › Experiments › Quick accents: a held letter's callout opens on its language's
+    /// Settings › Labs › Quick accents: a held letter's callout opens on its language's
     /// preferred accent (Spanish "o" → "ó"), or the first variant after the key's own where the
     /// language has none, so letting go types it. Sliding still picks another, and the 123 and
     /// #+= pages' held symbols are unchanged. Off by default, like every experiment. Stored as
@@ -413,7 +413,7 @@ struct FullKeyboardSettings {
         nonmutating set { defaults?.set(newValue, forKey: Key.quickAccents) }
     }
 
-    /// Settings › Experiments › Emoji shortcodes: the strip offers emoji for a ":name" typed
+    /// Settings › Labs › Emoji shortcodes: the strip offers emoji for a ":name" typed
     /// after a space or at the start of the field (":pizza"), a tap takes the whole token back
     /// and types the emoji, and the closing ":" of a name typed in full (":pizza:") types it
     /// instead. Off by default, so a keyboard without it types colons exactly as before; without

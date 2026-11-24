@@ -1,12 +1,12 @@
 import Foundation
 
-/// Getting the engine Hex dictates with ready: `prepareModel`, and Experiments ›
+/// Getting the engine Hex dictates with ready: `prepareModel`, and Labs ›
 /// Multilingual model (Parakeet) downloading and loading beside the engine that dictates
 /// meanwhile, including what the app does with it in the background.
 extension DictationController {
     // MARK: - Model Preparation
 
-    /// Experiments › Multilingual model (Parakeet) turned on or off. On, the engine Hex
+    /// Labs › Multilingual model (Parakeet) turned on or off. On, the engine Hex
     /// dictates with stays while Parakeet Ultra downloads and loads beside it; a load that
     /// ended Hex gets another try. Off, the download stops and is deleted, and Hex prepares
     /// the engine it picks without it if Ultra was the one dictating (now, or once the

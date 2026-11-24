@@ -2,7 +2,7 @@
 
 Part of [Hex for iPhone](../README.md).
 
-Home's single screen and the four Settings pages, the experiments list,
+Home's single screen and the four Settings pages, the Labs list,
 and every `--snap-state` scene the app and the keyboard render.
 
 ## Settings (`ContentView`, `HEXMobile/Settings/`)
@@ -47,13 +47,13 @@ list starts at the top. The pages, one file each in `HEXMobile/Settings/`
   autocorrect below it while it's on), Swipe typing, Suggest swear words and Vocabulary (Hex's
   custom vocabulary list, how many words it holds); under **Feedback**, Key pop-ups (Full
   only), Haptics (the dictation bar uses it too; Strength below it while it's on: Light, the
-  default until you choose, Medium or Strong) and Emoji (Clear emoji history while it's on,
+  default until you choose, Medium or Strong; choosing one plays a key tick at it) and Emoji (Clear emoji history while it's on,
   which asks first); and a field to try the keyboard in.
-- **Privacy:** "Everything stays on this iPhone" (and, while Experiments › GIFs is on, that GIF searches go to KLIPY), Learn how I type (what it
+- **Privacy:** "Everything stays on this iPhone" (and, while Labs › GIFs is on, that GIF searches go to KLIPY), Learn how I type (what it
   learned below the switch), and under **Advanced**, Record typing logs (off
   by default) with its Typing logs viewer while it's on; last, under **Feedback**, what
   Send feedback sends and when (only in a build with a report key).
-- **Experiments**, in five groups: **Dictation**: Multilingual model (Parakeet),
+- **Labs**, in five groups: **Dictation**: Multilingual model (Parakeet),
   Two-language dictation, Voice isolation and Clean up with Apple Intelligence;
   **Languages**: Hinglish (Hindi in Latin letters), Greeklish (Greek in Latin letters),
   Korean keyboard (두벌식), Swipe typing in more languages and German spatial autocorrect
@@ -63,7 +63,8 @@ list starts at the top. The pages, one file each in `HEXMobile/Settings/`
   keyboard when unfolded (only on a foldable iPhone, `FullKeyboardView.isFoldable`);
   **Typing**: Adaptive touch (its status and Reset touch learning below the switch),
   Two-thumb selection, Delete swiped words letter by letter, Hide word suggestions, Emoji
-  shortcodes and Learn each language separately; **WormaDev Experiments**: Arabic keyboard, Clipboard history, GIFs (KLIPY search; disabled in a build without a key) and New dictation key (its shortcuts, one switch each, below it while it's on). 21 switches, 20 on an iPhone that doesn't fold, plus WormaDev's four.
+  shortcodes, Typing configs ([typing-configs.md](typing-configs.md); a config opened while
+  it's off opens this page at it) and Learn each language separately; **WormaDev Experiments**: Arabic keyboard, Clipboard history, GIFs (KLIPY search; disabled in a build without a key) and New dictation key (its shortcuts, one switch each, below it while it's on). 22 switches, 21 on an iPhone that doesn't fold, plus WormaDev's four.
   Last, **Send feedback**, for testers to say how an experiment went (only with a report key).
 
 Simulator scenes: `--snap-state settings-home` (ready), `setup` (keyboard
@@ -86,7 +87,7 @@ a third-party keyboard, which a theme can't color.
 A form that sends one report to Bellhop, Anomaly's feedback inbox
 (`POST https://api.blhp.app/v1/feedback`, https://blhp.app/docs/feedback), from Home's
 **Send feedback** row (`metadata.screen` "Home") and the row at the end of Settings ›
-Experiments ("Settings › Experiments"). Only the app has it: the keyboard target has no
+Labs ("Settings › Labs"). Only the app has it: the keyboard target has no
 feedback code or key and still makes no network request.
 
 ```ts

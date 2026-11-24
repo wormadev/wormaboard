@@ -1,7 +1,7 @@
 import UIKit
 import UniformTypeIdentifiers
 
-/// Settings › Experiments › Clipboard history's list: it covers the keys as the emoji panel
+/// Settings › Labs › Clipboard history's list: it covers the keys as the emoji panel
 /// does, with ABC (back to the keys) and Clear all on the strip's line and the copies below,
 /// newest first: texts, image thumbnails and named files. Tapping a text inserts it; an image or
 /// file goes back on the clipboard to paste. Its ✕ forgets it. Clear all asks once more first.

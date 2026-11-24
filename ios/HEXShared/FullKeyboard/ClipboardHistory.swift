@@ -18,7 +18,7 @@ struct ClipboardItem: Codable, Equatable {
     static func text(_ text: String) -> ClipboardItem { ClipboardItem(kind: .text, text: text) }
 }
 
-/// Settings › Experiments › Clipboard history: the last copies (text, images and files), newest
+/// Settings › Labs › Clipboard history: the last copies (text, images and files), newest
 /// first, kept in the App Group on this device only. While the experiment is off, or without
 /// Full Access, nothing reads the clipboard or keeps anything; nothing is logged or sent
 /// anywhere, and turning the experiment off deletes it all (`FullKeyboardSettings.clipboardHistory`).

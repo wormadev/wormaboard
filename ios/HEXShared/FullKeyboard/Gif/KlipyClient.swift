@@ -1,6 +1,6 @@
 import Foundation
 
-/// Settings › Experiments › GIFs: KLIPY GIF search in the emoji panel. Off by default, stored
+/// Settings › Labs › GIFs: KLIPY GIF search in the emoji panel. Off by default, stored
 /// as `experiments.gifSearch` in the App Group. It works only with Full Access and a KLIPY key
 /// in this build (`KlipyClient.make`); otherwise nothing reaches the network.
 nonisolated struct GifSearchSettings {
