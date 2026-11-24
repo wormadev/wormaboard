@@ -92,6 +92,11 @@ struct KeyboardSettingsPage: View {
         return settings.emoji
     }
 
+    private var emojiSuggestions: Bool {
+        _ = revision
+        return settings.emojiSuggestions
+    }
+
     private func binding<T>(_ keyPath: WritableKeyPath<FullKeyboardSettings, T>) -> Binding<T> {
         Binding(
             get: {
@@ -320,17 +325,26 @@ struct KeyboardSettingsPage: View {
                 SettingsToggleRow(
                     title: String(localized: "Emoji"),
                     detail: fullKeyboard
-                        ? String(localized: "Emoji key and suggestions")
+                        ? String(localized: "An emoji key and its panel")
                         : String(localized: "An emoji key on the dictation bar"),
                     isOn: binding(\.emoji)
                 )
 
-                if emoji, fullKeyboard {
+                if fullKeyboard {
+                    SettingsDivider()
+                    SettingsToggleRow(
+                        title: String(localized: "Emoji suggestions"),
+                        detail: String(localized: "Emoji for the word you type, in the suggestion bar"),
+                        isOn: binding(\.emojiSuggestions)
+                    )
+                }
+
+                if emoji || emojiSuggestions, fullKeyboard {
                     SettingsDivider()
                     SkinToneRow()
                 }
 
-                if emoji {
+                if emoji || emojiSuggestions && fullKeyboard {
                     SettingsDivider()
                     Button {
                         confirmingClearEmoji = true

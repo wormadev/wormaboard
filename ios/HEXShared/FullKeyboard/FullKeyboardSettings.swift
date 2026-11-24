@@ -86,6 +86,7 @@ struct FullKeyboardSettings {
         static let hapticStrength = "settings.keyboardHapticStrength"
         static let suggestSwearWords = "settings.keyboardSuggestSwearWords"
         static let emoji = "experiments.emoji"
+        static let emojiSuggestions = "settings.keyboardEmojiSuggestions"
         static let emojiLettersUnderEmojiKey = "experiments.emojiLettersUnderEmojiKey"
         static let keyboardThemes = "experiments.keyboardThemes"
         static let keyboardTheme = "settings.keyboardTheme"
@@ -233,6 +234,13 @@ struct FullKeyboardSettings {
     var emoji: Bool {
         get { defaults?.object(forKey: Key.emoji) as? Bool ?? true }
         nonmutating set { defaults?.set(newValue, forKey: Key.emoji) }
+    }
+
+    /// Settings › Keyboard › Emoji suggestions: emoji in the strip for a word typed or just
+    /// finished, and emoji shortcodes, apart from the emoji key. On by default.
+    var emojiSuggestions: Bool {
+        get { defaults?.object(forKey: Key.emojiSuggestions) as? Bool ?? true }
+        nonmutating set { defaults?.set(newValue, forKey: Key.emojiSuggestions) }
     }
 
     /// Settings › Labs › ABC under the emoji key: the emoji panel's ABC sits where the
