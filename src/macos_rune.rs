@@ -863,6 +863,11 @@ pub(crate) fn open_paste_history() {
     });
 }
 
+#[cfg(hex_capture)]
+pub(crate) fn open_routing_rules() {
+    with_window(|window| show(window, Destination::RoutingRules));
+}
+
 fn bring_forward(window: &rune::AppHandle<Ui>) {
     // An open window always shows the Dock icon: hiding it
     // would deactivate Hex and drop the window behind other apps.
@@ -1057,6 +1062,21 @@ impl Pump {
                     tracing::warn!(%error, "could not stop meeting from status item");
                 }
             }
+            // Labs › Mute the microphone while recording: the recording's own
+            // microphone leaves or returns; the call's audio records on.
+            StatusItemAction::ToggleMeetingMicrophoneMute => {
+                if !crate::labs::meeting_microphone_mute() {
+                    return;
+                }
+                let muted = !crate::meeting::microphone_muted();
+                if let Err(error) = self
+                    .runtime
+                    .meeting(MeetingRequest::SetMicrophoneMuted(muted))
+                {
+                    tracing::warn!(%error, "could not mute the meeting microphone");
+                }
+                self.meeting_menu_at = Instant::now();
+            }
             StatusItemAction::CopyLastMeetingTranscript => {
                 let copied = crate::meeting::latest_transcript_markdown().and_then(|markdown| {
                     arboard::Clipboard::new()?.set_text(markdown)?;
@@ -1105,7 +1125,9 @@ impl Pump {
             | ControllerEvent::Reminder { .. }
             | ControllerEvent::ReminderWithdrawn { .. }
             | ControllerEvent::CallEndedWithdrawn => {}
-            ControllerEvent::Starting(_) => self.meeting_state = MeetingMenuState::Starting,
+            ControllerEvent::Starting(_) => {
+                self.meeting_state = MeetingMenuState::Starting { stopping: false }
+            }
             ControllerEvent::RecordingStarted { id, title, .. } => {
                 self.meeting_state = MeetingMenuState::Recording {
                     started: Instant::now(),
@@ -1113,6 +1135,7 @@ impl Pump {
                     title,
                     chapters: Vec::new(),
                     warning: None,
+                    stopping: false,
                 };
             }
             ControllerEvent::SourceWarning { warning } => {
@@ -1138,7 +1161,7 @@ impl Pump {
                     tracing::info!(%app, "the call ended; the recording continues until Stop");
                 }
             }
-            ControllerEvent::Stopping => {}
+            ControllerEvent::Stopping => self.meeting_state.stopping_requested(),
             ControllerEvent::Transcribing => self.meeting_state = MeetingMenuState::Transcribing,
             ControllerEvent::Finished(manifest) => {
                 tracing::info!(id = %manifest.id, "meeting transcript ready");

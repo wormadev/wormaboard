@@ -57,6 +57,16 @@ internal class TypingPreferences(context: Context) {
     var smartQuotes: Boolean
         get() = prefs.getBoolean(SMART_QUOTES, false)
         set(value) { prefs.edit().putBoolean(SMART_QUOTES, value).apply() }
+    /** Labs › Keyboard › Password manager suggestions: Android's inline autofill suggestions in the
+     * strip, off by default. Hex shows the service's own chips and never reads them. */
+    var passwordManagerSuggestions: Boolean
+        get() = prefs.getBoolean(PASSWORD_MANAGER_SUGGESTIONS, false)
+        set(value) { prefs.edit().putBoolean(PASSWORD_MANAGER_SUGGESTIONS, value).apply() }
+    /** Labs › Keyboard › Voice-only mode: a "voice" subtype other keyboards switch to for dictation
+     * alone, off by default. */
+    var voiceOnly: Boolean
+        get() = prefs.getBoolean(VOICE_ONLY, false)
+        set(value) { prefs.edit().putBoolean(VOICE_ONLY, value).apply() }
 
     // Remember only explicit rejection of this exact pair in this language; never save typed text.
     private fun pair(language: String, original: String, replacement: String): String {
@@ -79,5 +89,7 @@ internal class TypingPreferences(context: Context) {
         const val EMOJI_SUGGESTIONS = "emojiSuggestions"
         const val KEYBOARD_TOOLS = "keyboardTools"
         const val SMART_QUOTES = "smartQuotes"
+        const val PASSWORD_MANAGER_SUGGESTIONS = "passwordManagerSuggestions"
+        const val VOICE_ONLY = "voiceOnly"
     }
 }

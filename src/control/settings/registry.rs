@@ -697,6 +697,11 @@ pub(super) const KEYS: &[Key] = &[
         "Labs: a saved meeting's transcript offers selecting lines and deleting them, and later summaries, copies, search, and the Markdown file use what's left",
     ),
     key(
+        "labs.meeting_microphone_mute",
+        Kind::Bool,
+        "Labs: while a meeting records, Mute microphone leaves Hex's microphone out of the recording and Unmute microphone puts it back; the call's own audio keeps recording and transcribing (macOS)",
+    ),
+    key(
         "labs.output_fixes",
         Kind::Bool,
         "Labs: Output's Try card offers Vocabulary and Fix this, which copies an agent prompt naming the wrong result",
@@ -813,6 +818,19 @@ pub(super) const KEYS: &[Key] = &[
         Kind::Text,
         "Labs: the line added to each normal dictation, one line of at most 200 characters; \
          \"Sent from Hex\" by default, and empty adds nothing",
+    ),
+    key(
+        "labs.clipboard_phrase",
+        Kind::Bool,
+        "Labs: labs.clipboard_phrase_text spoken in a normal dictation becomes the clipboard's \
+         text in double quotes, before it is pasted, kept in History, and remembered for Paste \
+         Last",
+    ),
+    key(
+        "labs.clipboard_phrase_text",
+        Kind::Text,
+        "Labs: the words replaced with the clipboard, at least two words and six letters; \
+         \"my clipboard\" by default",
     ),
     key(
         "labs.dictation_style",
@@ -965,7 +983,7 @@ pub(super) const KEYS: &[Key] = &[
     optional(
         "ui_language",
         Kind::Choice(&[
-            "en", "pl", "zh", "zh-Hant", "ja", "de", "es", "uk", "pt", "fr", "ru",
+            "en", "pl", "zh", "zh-Hant", "ja", "de", "es", "uk", "pt", "fr", "ru", "hu",
         ]),
         "Interface language; none follows the system",
     ),
@@ -1082,6 +1100,7 @@ pub(super) const NEEDS: &[(&str, &str)] = &[
     ("meetings.", "meetings"),
     ("labs.live_chapters", "meetings"),
     ("labs.stop_any_call_recording", "meetings"),
+    ("labs.meeting_microphone_mute", "meetings"),
     ("experimental.hex_microphone", "fun"),
     ("typed_text_hotkey", "typed_text"),
     ("show_dock_icon", "dock_icon"),

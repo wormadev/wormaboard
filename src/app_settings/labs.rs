@@ -257,6 +257,10 @@ pub struct LabsSettings {
     /// reminder's on macOS) 30 s after its call app leaves the microphone, as
     /// Always record's Stop when the call ends does.
     pub stop_any_call_recording: bool,
+    /// A meeting recording can leave the microphone out of its track while
+    /// the call's own audio keeps recording and transcribing (macOS; Labs ›
+    /// Mute the microphone while recording).
+    pub meeting_microphone_mute: bool,
     /// With `labs.annotate_replay` on, keeps a rolling 15 s display buffer via `SCClipBufferingOutput` (macOS 27+).
     pub annotate_replay: bool,
     /// An OpenCode service running in the default WSL distribution is used
@@ -344,6 +348,14 @@ pub struct LabsSettings {
     /// the field returns to its default.
     #[serde(deserialize_with = "deserialize_signature")]
     pub signature_text: String,
+    /// A spoken phrase inside a normal dictation becomes the clipboard's
+    /// text in double quotes before it is pasted (every OS).
+    pub clipboard_phrase: bool,
+    /// The words replaced while `clipboard_phrase` is on: at least two words
+    /// and six letters, or the default. Another value fails to load, so the
+    /// field returns to its default.
+    #[serde(deserialize_with = "deserialize_phrase")]
+    pub clipboard_phrase_text: String,
     /// A key or click joining a held modifier-only shortcut a second or more
     /// after it went down reaches the app in front and leaves the dictation
     /// recording, which the release still finishes (macOS and Windows).
@@ -441,7 +453,8 @@ where
     }
 }
 
-/// A saved phrase (`voice_prompt_phrase`, `stop_phrase_text`) must pass
+/// A saved phrase (`voice_prompt_phrase`, `stop_phrase_text`,
+/// `clipboard_phrase_text`) must pass
 /// [`crate::dictation::voice_prompt::phrase_problem`]; another value fails to
 /// load, so the field returns to the default with the usual launch note.
 fn deserialize_phrase<'de, D>(deserializer: D) -> Result<String, D::Error>
@@ -556,6 +569,8 @@ impl Default for LabsSettings {
             stop_phrase_text: crate::dictation::stop_phrase::DEFAULT_PHRASE.to_owned(),
             signature: false,
             signature_text: crate::dictation::signature::DEFAULT_TEXT.to_owned(),
+            clipboard_phrase: false,
+            clipboard_phrase_text: crate::dictation::clipboard_phrase::DEFAULT_PHRASE.to_owned(),
             hold_through_keys: false,
             modes_editor: false,
             gnome_meeting_capsules: false,
@@ -566,6 +581,7 @@ impl Default for LabsSettings {
             meeting_import: false,
             transcript_edits: false,
             stop_any_call_recording: false,
+            meeting_microphone_mute: false,
             groups: std::collections::BTreeMap::new(),
             stop_when_call_ends: None,
             meeting_descriptive_filenames: None,

@@ -99,6 +99,10 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 │                                        every normal dictation pastes with the signature on its own line at the end, and
 │                                        History and Paste Last keep that same text; not added to an empty transcript, one
 │                                        that already ends with it as its own line, raw, printed, or API output
+├── Clipboard phrase no   labs.clipboard_phrase + labs.clipboard_phrase_text ("my clipboard", every OS)
+│                                        each whole-word phrase in a normal or printed dictation becomes the clipboard's
+│                                        text in double quotes after processing and before the signature and paste;
+│                                        History and Paste Last keep that text; an empty clipboard leaves the words
 ├── Copy dictation only no labs.copy_only (macOS, Windows)    a dictation goes to the clipboard and is never pasted; Paste last dictation still pastes (#629)
 ├── YOLO mode no labs.yolo_mode (every OS) press Return after pasting a shortcut dictation in a chosen app (none chosen = everywhere); Escape after release skips Return on macOS
 ├── Return to app   no    labs.return_to_app           (macOS)   a dictation pastes into the app it started in, switching back to it first when another app came forward
@@ -293,6 +297,14 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 │                                        // one_native_call_app_is_watched_and_a_browser_or_two_are_not,
 │                                        // windows_and_linux_executables_link_to_their_canonical_call_app
 │                                        // (meeting/watcher/call_end.rs); not observed on a real Mac, Windows, or Linux call
+├── Mute the microphone while recording no labs.meeting_microphone_mute (macOS) a recording's header and the menu bar under
+│                                        Stop & Transcribe offer Mute microphone, and the recording capsule shows Microphone
+│                                        muted beside its meter: Hex's microphone leaves the recording, so no "You" line is
+│                                        produced, while the call's audio keeps recording and transcribing; the microphone's
+│                                        packets stay the same length as exact zeros, so the WAV timeline and every position
+│                                        stay put. Unmute microphone puts it back, and turning the lab off restores it
+│                                        at once without stopping, clearing the switch so turning it back on does not
+│                                        re-mute (see meetings.md)
 ├── Restore clipboard on GNOME no labs.gnome_clipboard_restore (Linux) on a Wayland desktop without data-control (GNOME), a paste snapshots and restores
 │                                        the clipboard through XWayland, only while this user's Xwayland already runs; never starts it (#1111)
 ├── Transform typed text no labs.typed_text + typed_text_hotkey (Linux) Settings › Output shows a Typed text section whose shortcut is unbound by
@@ -1334,6 +1346,52 @@ pastes into a real app here; the three call sites are gated by the same pure
 rule and their platform tests, and CI's clippy builds compile macOS and
 Windows. Not yet observed: a real dictation with the lab on, and the next
 dictation's continuation after a signed paste.
+
+Clipboard phrase (`clipboard-phrase`, every OS): while on, each whole-word
+`labs.clipboard_phrase_text` ("my clipboard" by default) in a normal,
+copy-only, or printed dictation becomes the clipboard's text, trimmed, in
+straight double quotes. It runs in the shared delivery policy,
+`dictation::modes::output::deliver`, after the Output pane's processing (so
+corrections, rewrites, and transformations never touch what was copied) and
+before Signature, so History and Paste last dictation keep exactly what was
+inserted. The clipboard is read only when the phrase is there, through each
+OS's `OutputAdapter::clipboard_text`: `arboard` on macOS and Windows, and the
+session's selection (`linux::clipboard::Selection::text`, Wayland or X11) on
+Linux. Every read happens before Hex's own paste puts the dictation on the
+clipboard. Raw dictations and the local API are left alone. Matching reuses
+`dictation::voice_prompt::words`, so it ignores case and the punctuation
+around the words, and the punctuation stays: "My clipboard." becomes
+`"copied".`. A saved phrase follows Rewrite by voice's rules (at least two
+words and six letters); an invalid one is refused and loads as the default.
+While on, its card shows Phrase, which behaves like Stop phrase's.
+
+```ts
+Dictate "fix my clipboard please"            // labs.clipboard_phrase + labs.clipboard_phrase_text
+├── Off -> pasted exactly as spoken; the clipboard is never read
+├── On, clipboard "index out of range" -> pasted `fix "index out of range" please`
+│   -> History and Paste Last hold the same text; Signature appends after it
+├── The phrase twice -> both are replaced
+├── "my clipboards", "my-clipboard" -> not whole words, left alone
+├── Clipboard empty, not text, or unreadable -> the words stay as spoken
+└── Raw (Dictate without processing), API, meeting, Annotate -> unaffected
+```
+
+With Keep dictation on clipboard on, the clipboard holds the previous
+dictation unless something else was copied since, and that is what the phrase
+reads.
+
+Checks: the tests in
+[dictation/clipboard_phrase.rs](../../src/dictation/clipboard_phrase.rs)
+(whole-word matching, every occurrence, trimming, reading the clipboard only
+when the phrase is there); `clipboard_phrase_quotes_the_clipboard_before_signing_and_skips_raw`,
+`clipboard_phrase_off_or_absent_never_reads_the_clipboard`, and
+`an_empty_clipboard_leaves_the_phrase_as_spoken` in
+[dictation/modes/output.rs](../../src/dictation/modes/output.rs);
+`a_clipboard_phrase_needs_two_words_and_six_letters` in
+[control/settings.rs](../../src/control/settings.rs); and
+`an_invalid_clipboard_phrase_loads_the_default_and_keeps_its_switch` in
+[persistence/tests.rs](../../src/app_settings/persistence/tests.rs). Not yet
+observed: a real dictation with the lab on, on any OS.
 
 Spoken formatting (`spoken-formatting`, issue 630, every OS): while on,
 `Profiles::process_cancellable` in
@@ -4195,6 +4253,34 @@ vocabulary list itself (rewriting and search), and Linux's Terminal paste.
   `only_an_automatic_browser_call_with_a_code_keeps_reading_its_page`
   ([meeting/watcher.rs](../../src/meeting/watcher.rs)). Not observed on a real
   Mac, Windows, or Linux call, or a real Slack huddle.
+- Mute the microphone while recording (macOS, with Meetings on): the
+  recording's header offers **Mute microphone** beside Stop & transcribe, the
+  menu bar offers it under Stop & Transcribe, and the recording capsule says
+  **Microphone muted** beside its meter. On, Hex's microphone leaves the
+  recording without stopping it: its packets keep the length they arrived at
+  but carry exact zeros (`PacketSink::send_samples` in
+  [capture.rs](../../src/meeting/capture.rs)), so the WAV timeline and every
+  position stay put, no "You" line is produced, and the call's own audio keeps
+  recording and transcribing. Nothing about the call app changes. Its toggle is
+  `labs.meeting_microphone_mute` (off by default); the row, the capsule's
+  notice, and the pane's button read the same gate, so with the lab off
+  nothing shows and no sample changes. Turning the lab off mid-recording
+  restores audio at once, because the sink reads the gate with each packet,
+  and the controller's next pass clears its own switch
+  (`reconcile_microphone_mute`), so turning the lab back on in the same
+  recording does not mute it again. The switch is also cleared when a
+  recording starts or ends (`start_recording`, and where the finished
+  worker's recording is taken in
+  [watcher.rs](../../src/meeting/watcher.rs)). A mute request is ignored unless a
+  meeting records with the lab on. Checks:
+  `the_meeting_microphone_mute_lab_is_a_macos_meetings_lab_off_by_default`
+  ([labs.rs](../../src/labs.rs)),
+  `a_muted_microphone_goes_silent_in_place_and_the_call_does_not`,
+  `a_microphone_mute_needs_a_recording_and_its_lab`, and
+  `a_lab_turned_off_clears_the_microphone_mute`
+  ([capture.rs](../../src/meeting/capture.rs)); not observed on a real Mac call,
+  and the menu bar, capsule, and pane controls are macOS-only code this Linux
+  build never compiled.
 - Import audio (macOS): Meetings offers **Import audio…** beside Start
   recording. A local WAV, M4A, MP3, AIFF, or CAF file is decoded to 16 kHz
   mono float WAV by the AVFoundation bridge, then transcribed with the
