@@ -48,50 +48,17 @@ struct BraidScopeView: View {
     }
 
     private func draw(in context: inout GraphicsContext, size: CGSize, time: Double) {
-        let height = size.height
-        let start = leadingInset + height * 0.5
-        let end = size.width - trailingInset - height * 0.5
-        guard end > start else { return }
-        let mid = height / 2
         let knot = phase == .processing ? (time * 0.45).truncatingRemainder(dividingBy: 1.2) - 0.1 : nil
-        let open = motion.strength * (phase == .processing ? 1 : 0.25 + 0.75 * motion.level)
-
-        for (sign, opacity) in [(1.0, 1.0), (-1.0, 0.45)] {
-            let points = (0...64).map { i -> CGPoint in
-                let u = Double(i) / 64
-                var amplitude = sin(.pi * u) * height * 0.3 * open
-                if let knot {
-                    amplitude *= 0.35 + 0.65 * exp(-pow((u - knot) * 5, 2))
-                }
-                let y = mid + sign * amplitude * sin(u * .pi * 3.2 - time * 4)
-                return CGPoint(x: start + (end - start) * u, y: y)
-            }
-            context.fill(
-                Self.taperedPath(points) { u in 1.5 + sin(.pi * u) * height * 0.11 },
-                with: .color(color.opacity(opacity))
-            )
-        }
-    }
-
-    /// A filled outline around `points`, `width(u)` wide at each point.
-    private static func taperedPath(_ points: [CGPoint], width: (Double) -> Double) -> Path {
-        let last = points.count - 1
-        var left: [CGPoint] = []
-        var right: [CGPoint] = []
-        for i in 0...last {
-            let a = points[max(i - 1, 0)]
-            let b = points[min(i + 1, last)]
-            let length = max(hypot(b.x - a.x, b.y - a.y), 0.001)
-            let half = width(Double(i) / Double(last)) / 2
-            let nx = -(b.y - a.y) / length * half
-            let ny = (b.x - a.x) / length * half
-            left.append(CGPoint(x: points[i].x + nx, y: points[i].y + ny))
-            right.append(CGPoint(x: points[i].x - nx, y: points[i].y - ny))
-        }
-        var path = Path()
-        path.addLines(left + right.reversed())
-        path.closeSubpath()
-        return path
+        BraidStrokes.draw(
+            in: &context,
+            from: leadingInset + size.height * 0.5,
+            to: size.width - trailingInset - size.height * 0.5,
+            height: size.height,
+            open: motion.strength * (phase == .processing ? 1 : 0.25 + 0.75 * motion.level),
+            time: time,
+            knot: knot,
+            color: color
+        )
     }
 }
 

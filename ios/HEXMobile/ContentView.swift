@@ -781,8 +781,14 @@ struct ContentView: View {
                             .foregroundStyle(HexTheme.textFaint)
                             .opacity(showHomeSwipeCue ? 1 : 0)
 
-                        DotSwipeCueView(isActive: showHomeSwipeCue)
-                            .frame(width: geo.size.width, height: 21)
+                        // The braid's knot sweeps right along the home bar.
+                        BraidScopeView(
+                            phase: showHomeSwipeCue ? .processing : .hidden,
+                            leadingInset: 40,
+                            trailingInset: 40,
+                            loudnessProvider: { -120 }
+                        )
+                        .frame(width: geo.size.width, height: 21)
                     }
                     .allowsHitTesting(false)
                     .offset(y: bottomInset)
