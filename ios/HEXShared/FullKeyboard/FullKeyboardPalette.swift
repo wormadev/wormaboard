@@ -9,7 +9,7 @@ import UIKit
 /// could still say light in dark mode (TestFlight build 29).
 struct FullKeyboardPalette: Equatable {
     let isDark: Bool
-    /// Settings › Experiments › Keyboard themes: Automatic keeps iOS's glass, every other
+    /// Settings › Labs › Keyboard themes: Automatic keeps iOS's glass, every other
     /// theme supplies its own opaque colours.
     let theme: KeyboardTheme
 

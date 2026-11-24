@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 import XCTest
 @testable import HEX
 
-/// Settings › Experiments › Clipboard history: the last 20 copies, newest first, once each,
+/// Settings › Labs › Clipboard history: the last 20 copies, newest first, once each,
 /// nothing read or kept while it's off or without Full Access, and deleted when turned off.
 @MainActor
 final class ClipboardHistoryTests: XCTestCase {

@@ -19,7 +19,7 @@ final class HexKeyControl: UIControl {
     /// In the strip, the suggestions' line in this view's coordinates
     /// (`KeyboardMetrics.stripTextCenter`): the mark centres on it, beside the words.
     var markCenterY: CGFloat? { didSet { if markCenterY != oldValue { setNeedsDisplay() } } }
-    /// Settings › Experiments › New dictation key: no styles action (it has no slide menu).
+    /// Settings › Labs › New dictation key: no styles action (it has no slide menu).
     var hasTray = false {
         didSet {
             guard hasTray != oldValue else { return }

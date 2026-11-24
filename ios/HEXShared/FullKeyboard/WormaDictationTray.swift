@@ -1,6 +1,6 @@
 import UIKit
 
-/// The New dictation key's shortcuts, in the tray's fixed order (Settings › Experiments ›
+/// The New dictation key's shortcuts, in the tray's fixed order (Settings › Labs ›
 /// New dictation key shows or hides each).
 nonisolated enum WormaTrayItem: String, CaseIterable, Sendable {
     case gif
@@ -33,7 +33,7 @@ nonisolated enum WormaTrayItem: String, CaseIterable, Sendable {
     }
 }
 
-/// Settings › Experiments › New dictation key, laid over the suggestion strip: a chevron at
+/// Settings › Labs › New dictation key, laid over the suggestion strip: a chevron at
 /// the end beside the Hex key, and while open a row of shortcuts in place of the suggestions
 /// (or a style's or language's chips). Closed, only the chevron takes touches.
 ///

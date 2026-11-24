@@ -34,7 +34,7 @@ final class FullKeyboardView: UIView {
     var onReturnKey: (() -> Void)?
 
     let stripView = KeyboardStripView()
-    /// The strip's two-thumb selection: the range, then its actions (Settings › Experiments).
+    /// The strip's two-thumb selection: the range, then its actions (Settings › Labs).
     let selectionStrip = TrackpadSelectionStripView()
     /// The keys' touch surface; tests feed it touch samples.
     let plane: KeyboardKeyPlaneView
@@ -54,7 +54,7 @@ final class FullKeyboardView: UIView {
     /// The words so far over the keys while recording (Show words as you speak).
     let livePreview = LiveDictationPreviewHost()
     private var styleMenu: HexStyleMenuView?
-    /// Settings › Experiments › New dictation key (`FullKeyboardView+WormaDictation`).
+    /// Settings › Labs › New dictation key (`FullKeyboardView+WormaDictation`).
     var wormaTray: WormaDictationTrayView?
     private(set) var palette = FullKeyboardPalette(isDark: false)
     private var didApplyPalette = false
@@ -115,18 +115,18 @@ final class FullKeyboardView: UIView {
     }
     private let selectionHaptics = UISelectionFeedbackGenerator()
     let clipboard = KeyboardClipboardTracker()
-    /// Settings › Experiments › Clipboard history (`FullKeyboardView+ClipboardHistory`).
+    /// Settings › Labs › Clipboard history (`FullKeyboardView+ClipboardHistory`).
     var clipboardHistory = ClipboardHistory()
     var clipboardHistoryPanel: ClipboardHistoryPanelView?
     /// What the strip's Paste chip offers now.
     var stripOffer: KeyboardClipboardOffer?
-    /// Settings › Experiments › Hide word suggestions: the strip keeps its height, chips,
+    /// Settings › Labs › Hide word suggestions: the strip keeps its height, chips,
     /// status and notices but shows no words (`refreshStrip`).
     private var hidesWordSuggestions = false
-    /// Settings › Experiments › Emoji shortcodes, cached by `syncEmojiShortcodes`: the strip
+    /// Settings › Labs › Emoji shortcodes, cached by `syncEmojiShortcodes`: the strip
     /// offers emoji for a ":name" and the closing ":" completes one while it is on.
     private(set) var emojiShortcodesEnabled = false
-    /// Settings › Experiments › Keyboard themes: Automatic keeps iOS's glass; another theme
+    /// Settings › Labs › Keyboard themes: Automatic keeps iOS's glass; another theme
     /// paints the keyboard's own colours. Read again by `syncSettings`, which rebuilds the
     /// palette when it changes.
     private var keyboardTheme = FullKeyboardSettings().effectiveKeyboardTheme
@@ -152,7 +152,7 @@ final class FullKeyboardView: UIView {
     var emojiResults: EmojiRowView?
     var emojiResultEntries: [Int] = []
     var emojiSearchLift: CGFloat = 0
-    /// Settings › Experiments › GIFs (FullKeyboardView+Gif.swift): the search while it runs,
+    /// Settings › Labs › GIFs (FullKeyboardView+Gif.swift): the search while it runs,
     /// and the strip's "Copied, paste it" while it shows.
     var gifSearch: GifSearchSession?
     var gifCopiedHideWork: DispatchWorkItem?
@@ -327,7 +327,7 @@ final class FullKeyboardView: UIView {
 
     // MARK: - Typing logs
 
-    /// Record typing logs (Experiments): set by the keyboard while a session may be logged,
+    /// Record typing logs (Privacy › Advanced): set by the keyboard while a session may be logged,
     /// nil otherwise. The app's fixtures never set it.
     var typingLog: TypingLogger? {
         get { routedTarget.isSearching ? suspendedTypingLog : engine.typingLog }
@@ -562,7 +562,7 @@ final class FullKeyboardView: UIView {
         plane.spaceLabel = languages.spaceLabel ?? (model.hasFullAccess ? model.languageSummary : nil)
     }
 
-    /// Settings › Experiments › Emoji shortcodes, in the App Group: cached for the strip, and
+    /// Settings › Labs › Emoji shortcodes, in the App Group: cached for the strip, and
     /// the engine's closing ":" hook is set only while it is on, so an off keyboard types a
     /// colon exactly as it did before the experiment.
     private func syncEmojiShortcodes() {
@@ -648,7 +648,7 @@ final class FullKeyboardView: UIView {
 
     /// Settings › Keyboard › Swipe typing (on by default): on the English, Spanish and (WormaBoard)
     /// Arabic layouts, a drag across the letters types a word, read with the layout language's
-    /// bundled model, and with Settings › Experiments › Swipe typing in more languages on also in
+    /// bundled model, and with Settings › Labs › Swipe typing in more languages on also in
     /// every language that has one (`FullKeyboardSettings.swipesIn`). Off under VoiceOver, which
     /// has its own way to type. Elsewhere a drag stays a slide to another key.
     private func syncSwipeTyping() {
@@ -665,7 +665,7 @@ final class FullKeyboardView: UIView {
 
     /// Settings › Keyboard › Spatial autocorrect (on by default): maps the layout language's
     /// bundled model when the keyboard opens (English, Spanish, French, and German while its experiment
-    /// in Settings › Experiments is on; others keep `UITextChecker`), and moves the keys'
+    /// in Settings › Labs is on; others keep `UITextChecker`), and moves the keys'
     /// centres to where Learn how I type saw you tap. The same word list lets the likely next
     /// letter claim a few points of its neighbour's touch target whether or not Spatial
     /// autocorrect is on (`FullKeyboardEngine.letterOdds`; only while autocorrecting).

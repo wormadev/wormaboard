@@ -64,7 +64,7 @@ final class KeyboardStripView: UIView {
     var onHoldSuggestion: ((KeyboardSuggestion) -> Void)?
     var onUndoDictation: (() -> Void)?
     var onPaste: (() -> Void)?
-    /// Settings › Experiments › Clipboard history: the Clipboard chip opens the kept copies.
+    /// Settings › Labs › Clipboard history: the Clipboard chip opens the kept copies.
     var onClipboardHistory: (() -> Void)?
     var onNextKeyboard: (() -> Void)?
     /// Code from Messages' touches where it opens iOS's keyboard list (`.code(opensList: true)`).

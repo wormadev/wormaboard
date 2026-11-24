@@ -20,7 +20,7 @@ final class GifSearchSession {
     }
 }
 
-/// Settings › Experiments › GIFs: a GIF button beside the emoji panel's search opens a KLIPY
+/// Settings › Labs › GIFs: a GIF button beside the emoji panel's search opens a KLIPY
 /// search the letter keys type into, as the emoji search does, with trending GIFs while the
 /// query is empty. A tapped GIF types its link into the field, which messaging apps show as
 /// the GIF (a keyboard can't insert images). Without the switch, Full Access or a key in this build there

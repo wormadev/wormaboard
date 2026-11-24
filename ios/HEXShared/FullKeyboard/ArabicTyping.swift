@@ -1,6 +1,6 @@
 import Foundation
 
-/// Settings › Experiments › Arabic keyboard, read where the pure language helpers need it
+/// Settings › Labs › Arabic keyboard, read where the pure language helpers need it
 /// before a keyboard exists (Settings' Languages list, Automatic). Stored as
 /// `experiments.arabicKeyboard`, off by default like every experiment.
 nonisolated enum ArabicKeyboardExperiment {

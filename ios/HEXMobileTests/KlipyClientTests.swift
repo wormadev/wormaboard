@@ -1,7 +1,7 @@
 import XCTest
 @testable import HEX
 
-/// Settings › Experiments › GIFs: KLIPY's answers parse into stills and copy renditions, the
+/// Settings › Labs › GIFs: KLIPY's answers parse into stills and copy renditions, the
 /// URLs carry the right parameters, errors never repeat the URL (it holds the key and the
 /// search), and nothing is requested while the switch is off, without Full Access or a key.
 final class KlipyClientTests: XCTestCase {

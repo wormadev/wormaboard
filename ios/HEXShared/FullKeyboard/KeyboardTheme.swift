@@ -1,6 +1,6 @@
 import UIKit
 
-/// Settings › Experiments › Keyboard themes: the full keyboard drawn in colours of its own
+/// Settings › Labs › Keyboard themes: the full keyboard drawn in colours of its own
 /// instead of its translucent keycaps over iOS's glass. Automatic, the default, leaves every
 /// colour exactly as it was. Every other theme paints an opaque panel behind the keys, so Dark
 /// Mode's grey glass never shows through, and gives the keys, their pressed and held states,
@@ -13,7 +13,7 @@ nonisolated enum KeyboardTheme: String, CaseIterable, Sendable {
     case forest
     case ember
 
-    /// The theme's name, in Settings › Experiments' Theme menu.
+    /// The theme's name, in Settings › Labs' Theme menu.
     var name: String {
         switch self {
         case .automatic: String(localized: "Automatic")
