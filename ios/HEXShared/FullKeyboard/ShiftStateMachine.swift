@@ -220,6 +220,8 @@ nonisolated enum KeyboardFieldRouting {
             return .keys(.email, initialLayer: .letters)
         case .webSearch?:
             return .keys(.webSearch, initialLayer: .letters)
+        case .twitter?:
+            return .keys(.twitter, initialLayer: .letters)
         // Hex's own pad (`KeyboardNumberPad`). iOS brings its own keyboard to `.phonePad` fields
         // and Apple's letters to `.namePhonePad` ones (iOS 26.5 and 27.2), so Hex never sees them.
         case .numberPad?, .asciiCapableNumberPad?, .phonePad?:

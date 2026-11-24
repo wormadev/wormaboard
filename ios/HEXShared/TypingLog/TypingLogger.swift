@@ -490,6 +490,7 @@ final class TypingLogger {
         case .url: "url"
         case .email: "email"
         case .webSearch: "webSearch"
+        case .twitter: "twitter"
         case .numberPad: "numberPad"
         case .decimalPad: "decimalPad"
         }

@@ -9,6 +9,8 @@ nonisolated enum KeyboardFieldKind: Equatable, Sendable {
     case email
     /// A `.webSearch` field (Safari's address bar): text, with Apple's `.` right of space.
     case webSearch
+    /// A `.twitter` field: text, with Apple's `@` and `#` right of space.
+    case twitter
     /// A number pad field (`.numberPad`, `.asciiCapableNumberPad`): Hex's own pad on an iPhone
     /// (`KeyboardNumberPad`), the 123 page on an iPad.
     case numberPad
@@ -19,19 +21,21 @@ nonisolated enum KeyboardFieldKind: Equatable, Sendable {
 nonisolated extension KeyboardFieldKind {
     /// Fields typed in words, where autocorrect, swipe, suggestions, smart punctuation, emoji
     /// and Learn how I type work as the field's traits allow: text, and web search, whose only
-    /// difference is its `.` key. URL and email fields type addresses.
-    var takesWords: Bool { self == .text || self == .webSearch }
+    /// difference is its `.` key, and twitter, whose `@` and `#` keys are its only difference.
+    /// URL and email fields type addresses.
+    var takesWords: Bool { self == .text || self == .webSearch || self == .twitter }
 
     var isNumberPad: Bool { self == .numberPad || self == .decimalPad }
 
     /// The keys right of the space bar, each `width` wide: Apple's `.` and `/` in a URL field,
-    /// `@` and `.` in an email field, and `.` in a web search field.
+    /// `@` and `.` in an email field, `.` in a web search field, and `@` and `#` in a twitter field.
     func keysRightOfSpace(width: CGFloat) -> [(KeyKind, CGFloat, String)] {
         switch self {
         case .text: []
         case .url: [(.character("."), width, "."), (.character("/"), width, "/")]
         case .email: [(.character("@"), width, "@"), (.character("."), width, ".")]
         case .webSearch: [(.character("."), width, ".")]
+        case .twitter: [(.character("@"), width, "@"), (.character("#"), width, "#")]
         case .numberPad, .decimalPad: []
         }
     }

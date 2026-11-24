@@ -900,6 +900,13 @@ else. Holding the `.` offers `.` and `…` (the symbol pages' list); Apple's off
 (`KeyboardLayoutTests`, `FullKeyboardEngineTests`, `ShiftStateMachineTests`) and simulator
 screenshots beside Apple's in Safari; no physical iPhone run checks it.
 
+## Twitter fields (full keyboard)
+
+A `.twitter` field has `@` and `#` right of the space bar, on the URL and email fields' row
+(`KeyboardFieldKind.twitter`). Everything else treats it as text (`takesWords`), as in a web
+search field. Apple documents the type as easy access to `@` and `#`; their places beside
+the bar weren't measured against Apple's keyboard.
+
 ## Number pads (full keyboard, iPhone)
 
 A field that asks for `.numberPad`, `.asciiCapableNumberPad` or `.decimalPad` (in Safari,
