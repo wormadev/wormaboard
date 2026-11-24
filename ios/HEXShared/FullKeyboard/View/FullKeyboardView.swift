@@ -133,6 +133,7 @@ final class FullKeyboardView: UIView {
     /// A paste iOS asked about or refused: the strip points to the setting that stops it.
     var showsAllowPasteHint = false
     var showsModelNotice = false
+    var showsTypingConfigNotice = false
     var allowPasteHintHideWork: DispatchWorkItem?
     static let allowPasteHintDuration: TimeInterval = 8
 
@@ -198,7 +199,9 @@ final class FullKeyboardView: UIView {
         stripView.onPaste = { [weak self] in self?.pasteFromClipboard() }
         stripView.onClipboardHistory = { [weak self] in self?.openClipboardHistory() }
         stripView.onOpenHexFromHint = { [weak self] in self?.openSetupFromHint() }
-        stripView.onDismissNotice = { [weak self] in self?.dismissModelNotice() }
+        stripView.onDismissNotice = { [weak self] in
+            if self?.typingConfigNotice != nil { self?.dismissTypingConfigNotice() } else { self?.dismissModelNotice() }
+        }
         stripView.onOpenNotice = { [weak self] in
             guard let self else { return }
             self.keyFeedback()
@@ -215,6 +218,7 @@ final class FullKeyboardView: UIView {
                 return self.refreshStrip()
             }
             if self.modelNotice != nil { return self.openHexForModel() }
+            if self.typingConfigNotice != nil { return self.openHexForTypingConfig() }
             self.model.onOpenURL?(KeyboardLaunchRequest.translationSettings.url)
         }
         stripView.onNextKeyboard = { [weak self] in
@@ -271,6 +275,7 @@ final class FullKeyboardView: UIView {
             // Typing brings the suggestions back, so a correction never happens out of sight.
             self.closeWormaTray(animated: false)
             self.hideModelNotice()
+            self.hideTypingConfigNotice()
             self.refreshReturnKey()
             self.refreshStrip()
             self.onTextEdit?()
@@ -590,6 +595,8 @@ final class FullKeyboardView: UIView {
         if engine.adaptiveTouch !== adaptive {
             engine.adaptiveTouch = adaptive
         }
+        // Settings › Experiments › Typing configs: the App Group's active config, with Full Access only.
+        engine.typingConfig = TypingConfigActive.current(fullAccess: hostController?.hasFullAccess == true)
         engine.korean.isEnabled = FullKeyboardSettings().koreanKeyboard
         engine.showsKeyPopups = FullKeyboardSettings().keyPopups
         engine.swipesSpaceToSwitchLanguage = FullKeyboardSettings().languageSwipe
@@ -995,7 +1002,7 @@ final class FullKeyboardView: UIView {
             clipboard: clipboardOffer,
             clipboardHistory: offersHistory,
             fullAccessHint: showsFullAccessHint && !model.hasFullAccess,
-            notice: allowPasteNotice ?? vocabularyNotice ?? stoppedNotice ?? translationNotice ?? modelNotice
+            notice: allowPasteNotice ?? vocabularyNotice ?? stoppedNotice ?? translationNotice ?? modelNotice ?? typingConfigNotice
         )
     }
 
@@ -1199,7 +1206,7 @@ final class FullKeyboardView: UIView {
         let bar = CGRect(x: 0, y: appliedLift, width: bounds.width, height: m.stripTop + m.stripHeight)
         guard bar.contains(point), !showsRecording, emojiPanel == nil, clipboardHistoryPanel == nil, styleMenu == nil,
               !(showsFullAccessHint && !model.hasFullAccess), vocabularyNotice == nil, stoppedNotice == nil, translationNotice == nil,
-              modelNotice == nil
+              modelNotice == nil, typingConfigNotice == nil
         else { return false }
         return model.stagePhase == .idle || model.stagePhase == .failed
     }

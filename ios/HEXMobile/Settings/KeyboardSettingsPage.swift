@@ -264,6 +264,13 @@ struct KeyboardSettingsPage: View {
                     SettingsDivider()
 
                     KeyboardVocabularyRow()
+
+                    // Settings › Experiments › Typing configs: the config in use and its history.
+                    if TypingConfigSettings().isEnabled {
+                        SettingsDivider()
+
+                        KeyboardTypingConfigsRow(fullAccessOn: fullAccessOn)
+                    }
                 }
             }
 
