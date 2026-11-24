@@ -99,6 +99,10 @@ struct ExperimentsSettingsPage: View {
         SettingsSectionHeader(title: "WormaDev Experiments")
 
         SettingsCard {
+            WhisperCompareRow()
+
+            SettingsDivider()
+
             // Off by default: العربية isn't offered in Languages and a stored "ar" is ignored.
             SettingsToggleRow(
                 title: String(localized: "Arabic keyboard"),
