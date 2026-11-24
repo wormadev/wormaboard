@@ -1109,21 +1109,12 @@ struct KeyboardSurfaceView: View {
                 )
                 .clipShape(Capsule())
                 .allowsHitTesting(false)
-            } else if FullKeyboardSettings().braidIndicator {
+            } else {
                 BraidScopeView(
                     phase: model.dotScopePhase,
                     leadingInset: CGFloat(leadInset),
                     trailingInset: CGFloat(trailInset),
                     color: p.textBase,
-                    loudnessProvider: { [weak model] in model?.liveLoudnessDB ?? -62.0 }
-                )
-                .clipShape(Capsule())
-                .allowsHitTesting(false)
-            } else {
-                DotScopeView(
-                    phase: model.dotScopePhase,
-                    tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 28.0, spacing: 3.5),
-                    drawPlate: false,
                     loudnessProvider: { [weak model] in model?.liveLoudnessDB ?? -62.0 }
                 )
                 .clipShape(Capsule())

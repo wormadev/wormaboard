@@ -139,15 +139,6 @@ struct ExperimentsSettingsPage: View {
 
             SettingsDivider()
 
-            // Off by default: dictation keeps Hex's dot scope.
-            SettingsToggleRow(
-                title: String(localized: "Braid indicator"),
-                detail: String(localized: "Two strands that braid with your voice while dictating, in place of the dots"),
-                isOn: keyboardBinding(\.braidIndicator)
-            )
-
-            SettingsDivider()
-
             // Off by default: the Hex key and its slide menu stay as they are.
             SettingsToggleRow(
                 title: String(localized: "New dictation key"),

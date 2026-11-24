@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// WormaDev Experiments › Braid indicator: two tapered strands that braid open with the voice
+/// WormaBoard's dictation indicator: two tapered strands that braid open with the voice
 /// while recording, and lie nearly flat with a knot travelling along them while transcribing.
 /// Drawn after the wormadev mark's stroke: thin ends, full in the middle.
 struct BraidScopeView: View {
