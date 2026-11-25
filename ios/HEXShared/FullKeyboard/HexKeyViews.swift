@@ -258,6 +258,8 @@ final class HexKeyRecordingPanel: UIView {
     var onCycleStyle: (() -> Void)?
 
     private let braid: BraidPanelState
+    /// Hex's Metal dot scope, when that's the waveform picked in Settings › Dictation.
+    private let dots: DotScopeHostView?
     let scope: UIView
     var scopePhase: DotScopePhase { braid.phase }
     private let styleButton = UIButton(type: .custom)
@@ -274,12 +276,32 @@ final class HexKeyRecordingPanel: UIView {
     /// The Hex key sits on the left (Settings › Keyboard › Hex key): ✓ and ✕ lead.
     var hexOnLeading = false { didSet { if hexOnLeading != oldValue { setNeedsLayout() } } }
 
-    init(loudness: @escaping () -> Float) {
-        braid = BraidPanelState(loudness: loudness)
-        let host = UIHostingController(rootView: BraidPanelScope(state: braid))
-        host.view.backgroundColor = .clear
-        host.safeAreaRegions = []
-        scope = host.view
+    init(
+        loudness: @escaping () -> Float,
+        waveform: DictationWaveform = .stored(in: UserDefaults(suiteName: KeyboardBridge.appGroup))
+    ) {
+        braid = BraidPanelState(loudness: loudness, waveform: waveform)
+        if waveform == .hex {
+            var tuning = DotScopeTuning.bar(leadingInset: 0, trailingInset: 0, fade: 24, spacing: 2.7)
+            tuning.height = Float(KeyboardMetrics.portrait.stripPillHeight)
+            tuning.transition = Float(StripMotion.settle)
+            // Cap drawables at 2 inside the keyboard extension to save ~2.2 MB of IOSurface RAM.
+            let dots = DotScopeHostView(tuning: tuning, maximumDrawableCount: 2)
+            dots.drawPlate = false
+            dots.look = .strip
+            dots.loudnessProvider = loudness
+            dots.reduceMotion = StripMotion.reduced
+            dots.hostFades = true
+            dots.useDemoVoice = ProcessInfo.processInfo.arguments.contains("--snap-state")
+            self.dots = dots
+            scope = dots
+        } else {
+            let host = UIHostingController(rootView: BraidPanelScope(state: braid))
+            host.view.backgroundColor = .clear
+            host.safeAreaRegions = []
+            dots = nil
+            scope = host.view
+        }
         super.init(frame: .zero)
         scope.isUserInteractionEnabled = false
 
@@ -315,6 +337,8 @@ final class HexKeyRecordingPanel: UIView {
 
     func tearDown() {
         braid.phase = .hidden
+        dots?.phase = .hidden
+        dots?.tearDown()
     }
 
     func update(phase: DotScopePhase, style: DictationStyle) {
@@ -323,6 +347,7 @@ final class HexKeyRecordingPanel: UIView {
         currentPhase = phase
         showsSpinner = phase == .starting || phase == .processing
         braid.phase = phase
+        dots?.phase = phase
         // The scope, then two round buttons, ✕ and ✓; while starting (waiting for the first
         // audio buffer) and while transcribing, ✓'s spot shows the spinner so there's one place
         // to look and no checkmark before the mic is live, while ✕ still cancels.
@@ -424,6 +449,7 @@ final class HexKeyRecordingPanel: UIView {
     private func applyPalette() {
         styleButton.setTitleColor(palette.textMuted, for: .normal)
         braid.color = Color(palette.textBase)
+        dots?.isDark = palette.isDark
         cancelButton.palette = palette
         doneButton.palette = palette
         doneSpinner.color = palette.textBase
@@ -485,16 +511,18 @@ final class HexKeyRecordingPanel: UIView {
     }
 }
 
-/// What the recording panel's braid shows, set from UIKit.
+/// What the recording panel's stroke waveform shows, set from UIKit.
 @MainActor
 @Observable
 final class BraidPanelState {
     var phase: DotScopePhase = .hidden
     var color: Color = .white
     let loudness: () -> Float
+    let waveform: DictationWaveform
 
-    init(loudness: @escaping () -> Float) {
+    init(loudness: @escaping () -> Float, waveform: DictationWaveform) {
         self.loudness = loudness
+        self.waveform = waveform
     }
 }
 
@@ -502,7 +530,7 @@ private struct BraidPanelScope: View {
     let state: BraidPanelState
 
     var body: some View {
-        BraidScopeView(phase: state.phase, color: state.color, loudnessProvider: state.loudness)
+        BraidScopeView(waveform: state.waveform, phase: state.phase, color: state.color, loudnessProvider: state.loudness)
     }
 }
 

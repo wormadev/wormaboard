@@ -1,9 +1,43 @@
 import SwiftUI
 
-/// WormaBoard's dictation indicator: two tapered strands that braid open with the voice
-/// while recording, and lie nearly flat with a knot travelling along them while transcribing.
-/// Drawn after the wormadev mark's stroke: thin ends, full in the middle.
+/// The dictation indicator in the waveform picked in Settings › Dictation: Hex's Metal dot
+/// scope, or one of the stroke waveforms (`BraidScopeView`).
+struct DictationWaveView: View {
+    var phase: DotScopePhase
+    var leadingInset: CGFloat = 0
+    var trailingInset: CGFloat = 0
+    var color: Color = .white
+    var loudnessProvider: () -> Float
+
+    @AppStorage(DictationWaveform.key, store: UserDefaults(suiteName: KeyboardBridge.appGroup))
+    private var waveform: DictationWaveform = .braid
+
+    var body: some View {
+        if waveform == .hex {
+            DotScopeView(
+                phase: phase,
+                tuning: .bar(leadingInset: Float(leadingInset), trailingInset: Float(trailingInset), fade: 28.0, spacing: 3.5),
+                drawPlate: false,
+                loudnessProvider: loudnessProvider
+            )
+            .clipShape(Capsule())
+        } else {
+            BraidScopeView(
+                waveform: waveform,
+                phase: phase,
+                leadingInset: leadingInset,
+                trailingInset: trailingInset,
+                color: color,
+                loudnessProvider: loudnessProvider
+            )
+        }
+    }
+}
+
+/// The stroke waveforms, live: they swing open with the voice while recording, and lie
+/// nearly flat with a knot (swell, crawling worm) travelling along them while transcribing.
 struct BraidScopeView: View {
+    var waveform: DictationWaveform = .braid
     var phase: DotScopePhase
     var leadingInset: CGFloat = 0
     var trailingInset: CGFloat = 0
@@ -49,7 +83,8 @@ struct BraidScopeView: View {
 
     private func draw(in context: inout GraphicsContext, size: CGSize, time: Double) {
         let knot = phase == .processing ? (time * 0.45).truncatingRemainder(dividingBy: 1.2) - 0.1 : nil
-        BraidStrokes.draw(
+        WaveStrokes.draw(
+            waveform,
             in: &context,
             from: leadingInset + size.height * 0.5,
             to: size.width - trailingInset - size.height * 0.5,

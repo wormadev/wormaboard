@@ -113,7 +113,7 @@ struct HexTrayReveal: ViewModifier {
     }
 }
 
-/// Soft recessed capsule well for `BraidScopeView` that adapts naturally to both
+/// Soft recessed capsule well for `DotScopeView` that adapts naturally to both
 /// dark and light host platters without opaque black holes or heavy box strokes.
 struct HexRecessedWell: View {
     var isDark: Bool
@@ -269,37 +269,124 @@ struct HexMarkView: View {
     }
 }
 
-/// The braid as one still frame, for WidgetKit / Live Activity surfaces, which render
-/// archived display lists rather than a running timeline.
-struct HexBraidBadge: View {
+/// Which dictation waveform the app, keyboard and Live Activity draw (Settings › Dictation).
+nonisolated enum DictationWaveform: String, CaseIterable, Codable, Sendable {
+    case braid
+    case hex
+    case ribbon
+    case worm
+
+    static let key = "settings.dictationWaveform"
+
+    var label: String {
+        switch self {
+        case .braid: String(localized: "Braid")
+        case .hex: String(localized: "Hex dots")
+        case .ribbon: String(localized: "Ribbon")
+        case .worm: String(localized: "Worm")
+        }
+    }
+
+    static func stored(in defaults: UserDefaults?) -> DictationWaveform {
+        defaults?.string(forKey: key).flatMap(DictationWaveform.init(rawValue:)) ?? .braid
+    }
+}
+
+/// The chosen waveform as one still frame, for WidgetKit / Live Activity surfaces, which
+/// render archived display lists rather than a running timeline.
+struct HexWaveBadge: View {
+    var waveform: DictationWaveform
     var width: CGFloat
     var height: CGFloat = 16
     var cooling: Bool = false
 
     var body: some View {
-        Canvas { context, size in
-            BraidStrokes.draw(
-                in: &context,
-                from: 1,
-                to: size.width - 1,
-                height: size.height,
-                open: cooling ? 0.35 : 0.9,
-                time: 0.55,
-                knot: cooling ? 0.5 : nil,
-                color: cooling ? HexTheme.agentBlue : HexTheme.warmPearl
+        if waveform == .hex {
+            let pitch: CGFloat = width <= 30 ? 2.2 : 2.5
+            HexDotMatrixBadge(
+                columns: Int((width - 8) / pitch) + 1,
+                rows: max(5, Int((height - 8) / pitch) + 1),
+                pitch: pitch,
+                cooling: cooling
             )
+        } else {
+            Canvas { context, size in
+                WaveStrokes.draw(
+                    waveform,
+                    in: &context,
+                    from: 1,
+                    to: size.width - 1,
+                    height: size.height,
+                    open: cooling ? 0.35 : 0.9,
+                    time: 0.55,
+                    knot: cooling ? 0.5 : nil,
+                    color: cooling ? HexTheme.agentBlue : HexTheme.warmPearl
+                )
+            }
+            .frame(width: width, height: height)
+            .accessibilityHidden(true)
         }
-        .frame(width: width, height: height)
+    }
+}
+
+/// Static braided dot-matrix glyph for WidgetKit / Live Activity surfaces
+/// where SpringBoard renders archived display lists rather than Metal drawables.
+struct HexDotMatrixBadge: View {
+    var columns: Int = 21
+    var rows: Int = 7
+    var pitch: CGFloat = 2.6
+    var cooling: Bool = false
+
+    var body: some View {
+        Canvas { context, size in
+            let midX = size.width * 0.5
+            let midY = size.height * 0.5
+            let halfRows = CGFloat(rows - 1) * 0.5
+            let halfCols = CGFloat(columns - 1) * 0.5
+            let tint = cooling
+                ? SIMD3<Double>(0.76, 0.85, 0.98)
+                : SIMD3<Double>(0.96, 0.93, 0.87)
+
+            for i in 0..<columns {
+                let xn = Double(i) / Double(max(1, columns - 1))
+                let edge = sin(.pi * xn)
+                let amp = (0.35 + 0.65 * sin(.pi * xn)) * Double(halfRows * 0.82)
+                let yA = Double(halfRows) + amp * sin(2.0 * .pi * 1.45 * xn - 0.5)
+                let yB = Double(halfRows) - amp * sin(2.0 * .pi * 1.45 * xn - 0.5)
+
+                for j in 0..<rows {
+                    let dA = abs(Double(j) - yA)
+                    let dB = abs(Double(j) - yB)
+                    let litA = exp(-(dA * dA) / 0.42)
+                    let litB = exp(-(dB * dB) / 0.42)
+                    let power = min(1.0, (1.0 - (1.0 - litA) * (1.0 - litB)) * (0.25 + 0.75 * edge))
+                    let alpha = 0.07 * edge + 0.89 * pow(power, 0.9)
+                    let r = (0.26 + 0.16 * pow(power, 0.6)) * Double(pitch)
+                    let cx = midX + (CGFloat(i) - halfCols) * pitch
+                    let cy = midY + (CGFloat(j) - halfRows) * pitch
+                    let rect = CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2)
+                    context.fill(
+                        Path(ellipseIn: rect),
+                        with: .color(Color(red: tint.x, green: tint.y, blue: tint.z, opacity: alpha))
+                    )
+                }
+            }
+        }
+        .frame(
+            width: CGFloat(columns - 1) * pitch + 8,
+            height: CGFloat(rows - 1) * pitch + 8
+        )
         .accessibilityHidden(true)
     }
 }
 
-/// Two tapered strands, after the wormadev mark's stroke (thin ends, full in the middle),
-/// shared by `BraidScopeView` and `HexBraidBadge`.
-enum BraidStrokes {
-    /// `open` 0...1 is how far the strands part; `knot` (0...1 along the run) gathers them
-    /// everywhere but there, for the travelling knot while transcribing.
+/// The stroke waveforms, after the wormadev mark's stroke (thin ends, full in the middle),
+/// shared by `BraidScopeView` and `HexWaveBadge`. `.hex` is the Metal dot scope instead.
+enum WaveStrokes {
+    /// `open` 0...1 is how far the line swings; `knot` (0...1 along the run) is where the
+    /// transcribing motion is: the braid's gathered knot, the ribbon's swell, the worm's head.
     static func draw(
+        _ waveform: DictationWaveform,
         in context: inout GraphicsContext,
         from start: CGFloat,
         to end: CGFloat,
@@ -310,21 +397,58 @@ enum BraidStrokes {
         color: Color
     ) {
         guard end > start else { return }
+        let x = { (u: Double) in start + (end - start) * u }
         let mid = height / 2
-        for (sign, opacity) in [(1.0, 1.0), (-1.0, 0.45)] {
-            let points = (0...64).map { i -> CGPoint in
-                let u = Double(i) / 64
-                var amplitude = sin(.pi * u) * height * 0.3 * open
-                if let knot {
-                    amplitude *= 0.35 + 0.65 * exp(-pow((u - knot) * 5, 2))
+        switch waveform {
+        case .braid, .hex:
+            for (sign, opacity) in [(1.0, 1.0), (-1.0, 0.45)] {
+                let points = (0...64).map { i -> CGPoint in
+                    let u = Double(i) / 64
+                    var amplitude = sin(.pi * u) * height * 0.3 * open
+                    if let knot {
+                        amplitude *= 0.35 + 0.65 * exp(-pow((u - knot) * 5, 2))
+                    }
+                    return CGPoint(x: x(u), y: mid + sign * amplitude * sin(u * .pi * 3.2 - time * 4))
                 }
-                let y = mid + sign * amplitude * sin(u * .pi * 3.2 - time * 4)
-                return CGPoint(x: start + (end - start) * u, y: y)
+                context.fill(
+                    tapered(points) { u in 1.5 + sin(.pi * u) * height * 0.11 },
+                    with: .color(color.opacity(opacity))
+                )
             }
+        case .ribbon:
+            let speed = knot == nil ? 5.0 : 2.5
+            let points = (0...80).map { i -> CGPoint in
+                let u = Double(i) / 80
+                var amplitude = sin(.pi * u) * height * 0.32 * open
+                if let knot {
+                    amplitude *= 0.5 + 0.5 * exp(-pow((u - knot) * 6, 2))
+                }
+                return CGPoint(x: x(u), y: mid + amplitude * sin(u * .pi * 4 - time * speed))
+            }
+            let swell = knot == nil ? 0.12 + 0.1 * open : 0.1
             context.fill(
-                tapered(points) { u in 1.5 + sin(.pi * u) * height * 0.11 },
-                with: .color(color.opacity(opacity))
+                tapered(points) { u in 2 + sin(.pi * u) * height * swell },
+                with: .color(color)
             )
+        case .worm:
+            let length = knot == nil ? 0.42 : 0.3
+            let head = knot.map { ($0 + 0.1) / 1.2 * (1 + length) } ?? 0.5 + length / 2
+            let speed = knot == nil ? 6.0 : 3.0
+            let points = (0...48).compactMap { i -> CGPoint? in
+                let u = head - length + length * Double(i) / 48
+                guard (0...1).contains(u) else { return nil }
+                let amplitude = height * 0.22 * max(open, 0.15)
+                return CGPoint(x: x(u), y: mid + amplitude * sin(u * .pi * 6 - time * speed))
+            }
+            guard points.count > 2 else { return }
+            context.fill(
+                tapered(points) { u in 2.5 + pow(u, 1.3) * height * 0.24 },
+                with: .color(color)
+            )
+            if let last = points.last {
+                let r = (2.5 + height * 0.24) / 2
+                context.fill(Path(ellipseIn: CGRect(x: last.x - r, y: last.y - r, width: r * 2, height: r * 2)), with: .color(color))
+            }
         }
     }
 

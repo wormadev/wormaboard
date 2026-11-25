@@ -57,6 +57,8 @@ struct DictationSettingsPage: View {
     private let keyboardParakeetFits = KeyboardParakeetSettings.fits()
     /// Keep mic warm stays on the page once picked, even Off where it would hide.
     @State private var keepsWarmRow = false
+    @AppStorage(DictationWaveform.key, store: UserDefaults(suiteName: KeyboardBridge.appGroup))
+    private var waveform: DictationWaveform = .braid
 
     private var showsStyleFormatting: Bool {
         dictation.style != .verbatim
@@ -109,6 +111,52 @@ struct DictationSettingsPage: View {
                 }
                 .padding(.horizontal, 16)
                 .frame(minHeight: 48)
+
+                SettingsDivider()
+
+                HStack(spacing: 12) {
+                    SettingsRowLabel(title: String(localized: "Waveform"))
+                    Spacer(minLength: 8)
+                    Menu {
+                        ForEach(DictationWaveform.allCases, id: \.self) { candidate in
+                            Button {
+                                waveform = candidate
+                            } label: {
+                                if waveform == candidate {
+                                    Label(candidate.label, systemImage: "checkmark")
+                                } else {
+                                    Text(candidate.label)
+                                }
+                            }
+                        }
+                    } label: {
+                        SettingsMenuValue(value: waveform.label)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .frame(minHeight: 48)
+
+                // Live preview of the picked waveform, recording a demo voice.
+                ZStack {
+                    HexRecessedWell(isDark: true)
+                    DictationWaveView(
+                        phase: .recording,
+                        leadingInset: 12,
+                        trailingInset: 12,
+                        loudnessProvider: {
+                            DotScopeSimulation.demoLoudness(
+                                at: Float(Date().timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600))
+                            )
+                        }
+                    )
+                    .clipShape(Capsule())
+                    .allowsHitTesting(false)
+                    .id(waveform)
+                }
+                .frame(height: 44)
+                .padding(.horizontal, 16)
+                .padding(.top, 2)
+                .padding(.bottom, 16)
 
                 DictationLanguageRow(dictation: dictation)
 

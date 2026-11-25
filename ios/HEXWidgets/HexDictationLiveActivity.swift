@@ -17,7 +17,7 @@ struct HexDictationLiveActivity: Widget {
                     LockScreenBanner(state: context.state, isStale: context.isStale)
                 }
             } compactLeading: {
-                HexBraidBadge(width: 28, cooling: isCooling)
+                HexWaveBadge(waveform: context.state.waveform ?? .braid, width: 28, cooling: isCooling)
                     .padding(.leading, 2)
             } compactTrailing: {
                 if isRecording {
@@ -34,7 +34,7 @@ struct HexDictationLiveActivity: Widget {
                         .padding(.trailing, 4)
                 }
             } minimal: {
-                HexBraidBadge(width: 22, cooling: isCooling)
+                HexWaveBadge(waveform: context.state.waveform ?? .braid, width: 22, cooling: isCooling)
             }
             .keylineTint(isRecording ? HexTheme.warmPearl : HexTheme.agentBlue)
         }
@@ -61,7 +61,8 @@ private struct LockScreenBanner: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(HexTheme.textBase)
             } else {
-                HexBraidBadge(
+                HexWaveBadge(
+                    waveform: state.waveform ?? .braid,
                     width: activeStage == .recording ? 70 : 55,
                     height: 23,
                     cooling: activeStage == .transcribing
