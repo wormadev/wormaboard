@@ -134,6 +134,27 @@ struct DictationSettingsPage: View {
                 .padding(.horizontal, 16)
                 .frame(minHeight: 48)
 
+                // Live preview of the picked waveform, recording a demo voice.
+                ZStack {
+                    HexRecessedWell(isDark: true)
+                    DictationWaveView(
+                        phase: .recording,
+                        leadingInset: 12,
+                        trailingInset: 12,
+                        loudnessProvider: {
+                            DotScopeSimulation.demoLoudness(
+                                at: Float(Date().timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600))
+                            )
+                        }
+                    )
+                    .clipShape(Capsule())
+                    .allowsHitTesting(false)
+                    .id(waveform)
+                }
+                .frame(height: 44)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
+
                 DictationLanguageRow(dictation: dictation)
 
                 SettingsDivider()
