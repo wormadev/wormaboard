@@ -80,7 +80,8 @@ struct DictationLanguageRow: View {
                 }
             }
             .padding(.horizontal, 16)
-            .frame(minHeight: 48)
+            .padding(.vertical, 10)
+            .frame(minHeight: 50)
             if listsOnDeviceLanguages {
                 Text("To add a language, turn on its keyboard and dictation in Settings › General › Keyboard.")
                     .font(.system(size: 12))
