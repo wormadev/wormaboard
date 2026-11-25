@@ -771,9 +771,13 @@ final class AutocorrectEngine {
         // A short prefix is usually an unfinished word. Reserve a slot for its most likely
         // completion in this phrase without changing what space does to the literal.
         var predictions: [String] = []
-        if pool.count < end, token.count <= 3, let model, model.language == language.rawValue {
+        // Arabic completes every length from the model: its words run long, and Apple's bar
+        // offers "مرحبا" for "مرحب" as it does "السلام" for "السلا".
+        let longest = language == .arabic ? 24 : 3
+        if pool.count < end, token.count <= longest, let model, model.language == language.rawValue {
             let previous = Self.previousWord(beforeInput ?? "", token: token)
-            predictions = model.completions(of: lower, after: previous, allowing: { mayOffer($0, after: previous) })
+            let respellings = language == .arabic && lower.hasPrefix("ا") ? ["أ", "إ", "آ"].map { $0 + lower.dropFirst() } : []
+            predictions = model.completions(of: lower, respellings: respellings, after: previous, longest: longest, allowing: { mayOffer($0, after: previous) })
                 .map { Self.matchCase(of: token, onto: $0) }
             if autoFix == nil, let first = predictions.first(where: { !has($0) }) { pool.append(first) }
         }

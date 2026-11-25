@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Builds the Arabic Spatial autocorrect model (HEXKeyboard/TypingModel/ar.hextm) from the
-Leipzig Corpora Collection's Arabic corpora (CC BY 4.0; Goldhahn, Eckart and Quasthoff 2012),
-in the format `build-typing-model.py` writes. Google Books Ngram has no Arabic.
+Leipzig Corpora Collection's Arabic corpora (CC BY 4.0; Goldhahn, Eckart and Quasthoff 2012)
+and as many words again of OPUS OpenSubtitles 2018 Arabic (Lison and Tiedemann 2016), in the
+format `build-typing-model.py` writes. Google Books Ngram has no Arabic. News and Wikipedia
+alone suggested formal words ("انتشار" before "أنت"); the subtitles are how people talk.
 
     python3 scripts/build-arabic-typing-model.py <workdir> HEXKeyboard/TypingModel/ar.hextm
 
-Downloads about 570 MB into <workdir> (cached, so a rerun reads them again) and needs about
-3 GB of memory for the word-pair counts. Deterministic for the same inputs.
+Downloads about 570 MB of Leipzig and the first 300 MB of the subtitles into <workdir>
+(cached, so a rerun reads them again) and needs about 3 GB of memory for the word-pair counts.
+Deterministic for the same inputs.
 
 Spelling: each sentence is NFC-normalised (a decomposed alef and hamza becomes أ), its
 tashkeel (fathatan to sukun, U+064B-U+065F), superscript alef (U+0670) and tatweel (U+0640)
@@ -24,6 +27,8 @@ builder = importlib.import_module("build-typing-model")
 
 CORPORA = ["ara_news_2022_1M", "ara_news_2020_1M", "ara_wikipedia_2021_1M"]
 URL = "https://downloads.wortschatz-leipzig.de/corpora/{}.tar.gz"
+SUBTITLES = "https://object.pouta.csc.fi/OPUS-OpenSubtitles/v2018/mono/ar.txt.gz"
+SUBTITLE_BYTES = 300_000_000
 MAX_WORDS = 150_000
 MIN_WORD = 3
 MIN_PAIR = 3
@@ -40,7 +45,7 @@ def words(sentence):
         yield token if WORD.fullmatch(token) and (len(token) > 1 or token == "و") else None
 
 
-def sentences(work):
+def news(work):
     for name in CORPORA:
         path = os.path.join(work, name + ".tar.gz")
         builder.fetch(URL.format(name), path)
@@ -50,11 +55,38 @@ def sentences(work):
                 yield line.decode("utf-8", "replace").rstrip("\n").split("\t", 1)[-1]
 
 
+def subtitles(work):
+    """The subtitle lines in the file's first SUBTITLE_BYTES, its last cut line left out."""
+    path = os.path.join(work, "opensubtitles-ar-head.txt.gz")
+    if not os.path.exists(path):
+        subprocess.run(["curl", "-sSfL", "--retry", "8", "-r", f"0-{SUBTITLE_BYTES - 1}", "-o", path + ".part", SUBTITLES], check=True)
+        os.replace(path + ".part", path)
+    proc = subprocess.Popen(["gzip", "-dc", path], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=1 << 20)
+    previous = None
+    for line in proc.stdout:
+        if previous is not None:
+            yield previous.decode("utf-8", "replace").rstrip("\n")
+        previous = line
+    proc.wait()
+
+
+def sentences(work, news_words):
+    """The news sentences, then subtitle lines until they hold as many words as the news."""
+    yield from news(work)
+    seen = 0
+    for line in subtitles(work):
+        if seen >= news_words:
+            return
+        seen += sum(1 for w in words(line) if w)
+        yield line
+
+
 def main(work, out_path):
     os.makedirs(work, exist_ok=True)
+    news_words = sum(1 for sentence in news(work) for w in words(sentence) if w)
     counts = collections.Counter()
     total = 0
-    for sentence in sentences(work):
+    for sentence in sentences(work, news_words):
         for w in words(sentence):
             total += 1
             if w:
@@ -64,7 +96,7 @@ def main(work, out_path):
     index = {w: i for i, w in enumerate(vocab)}
     n = len(vocab)
     pair_counts = collections.Counter()
-    for sentence in sentences(work):
+    for sentence in sentences(work, news_words):
         previous = None
         for w in words(sentence):
             i = index.get(w) if w else None
@@ -73,8 +105,7 @@ def main(work, out_path):
             previous = i
     listed = list(vocab)
     pairs = {f"{listed[k // n]} {listed[k % n]}".encode("utf-8"): c for k, c in pair_counts.items() if c >= MIN_PAIR}
-    builder.MIN_PAIR = MIN_PAIR
-    builder.write_model("ar", vocab, total, pairs, out_path)
+    builder.write_model("ar", vocab, total, pairs, out_path, min_pair=MIN_PAIR)
 
 
 if __name__ == "__main__":

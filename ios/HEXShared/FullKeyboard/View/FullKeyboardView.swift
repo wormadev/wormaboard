@@ -993,7 +993,8 @@ final class FullKeyboardView: UIView {
             clipboard: clipboardOffer,
             clipboardHistory: offersHistory,
             fullAccessHint: showsFullAccessHint && !model.hasFullAccess,
-            notice: dictationBlockNotice ?? allowPasteNotice ?? vocabularyNotice ?? stoppedNotice ?? translationNotice ?? modelNotice ?? typingConfigNotice
+            notice: dictationBlockNotice ?? allowPasteNotice ?? vocabularyNotice ?? stoppedNotice ?? translationNotice ?? modelNotice ?? typingConfigNotice,
+            rightToLeft: engine.language == .arabic
         )
     }
 
