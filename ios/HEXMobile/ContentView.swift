@@ -41,7 +41,12 @@ struct ContentView: View {
     @Binding var showSetup: Bool
     /// A settings page the keyboard asked for (`KeyboardLaunchRequest.translationSettings`).
     var openPage: Binding<SettingsPage?> = .constant(nil)
+    /// Goes up by one at each Open Hex from the keyboard's Hex key menu
+    /// (`KeyboardLaunchRequest.home`): Settings closes back to Home.
+    var homeRequests = 0
     @State private var setupMonitor = KeyboardSetupMonitor()
+    @AppStorage(DictationWaveform.key, store: UserDefaults(suiteName: KeyboardBridge.appGroup))
+    private var waveform: DictationWaveform = .braid
     @State private var keyboardSpeech = KeyboardSpeechPreparation()
     @State private var onboardingPage = OnboardingProgress.launchPage
     @State private var settingsPath = SettingsSnapshotFixture.initialPath
@@ -180,6 +185,9 @@ struct ContentView: View {
             settingsPath = [page]
             openPage.wrappedValue = nil
         }
+        .onChange(of: homeRequests) { _, _ in
+            settingsPath = []
+        }
         .tint(HexTheme.textBase)
         .sheet(isPresented: $showSetup) {
             SetupSheet(dictation: dictation, monitor: setupMonitor, keyboardSpeech: keyboardSpeech)
@@ -236,11 +244,12 @@ struct ContentView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.98)))
                 }
 
-                // Labs › Multilingual model: its download or load, beside dictation.
+                // Settings › Dictation › Model: Multilingual: its download or load, beside dictation.
                 MultilingualModelStatus(
                     download: dictation.multilingualDownload,
                     retry: { dictation.retryMultilingualParakeet() },
-                    turnOff: { dictation.turnOffMultilingualParakeet() }
+                    turnOff: { dictation.turnOffMultilingualParakeet() },
+                    useMobileData: { dictation.useMobileDataForMultilingualParakeet() }
                 )
 
                 SpeechModelHomeCard(download: KeyboardParakeetDownload.shared, open: {
@@ -441,10 +450,10 @@ struct ContentView: View {
             HexRecessedWell(isDark: true)
 
             // Permanently mounted so phosphor trails and inset springs never reset mid-session.
-            DotScopeView(
+            DictationWaveView(
                 phase: stageScopePhase,
-                tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 28.0, spacing: 3.5),
-                drawPlate: false,
+                leadingInset: CGFloat(leadInset),
+                trailingInset: CGFloat(trailInset),
                 loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
             )
             .clipShape(Capsule())
@@ -675,10 +684,10 @@ struct ContentView: View {
                             ZStack {
                                 HexRecessedWell(isDark: true)
 
-                                DotScopeView(
+                                DictationWaveView(
                                     phase: handoffScopePhase,
-                                    tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 30.0, spacing: 3.5),
-                                    drawPlate: false,
+                                    leadingInset: CGFloat(leadInset),
+                                    trailingInset: CGFloat(trailInset),
                                     loudnessProvider: { [weak dictation] in dictation?.loudnessDB ?? -120.0 }
                                 )
                                 .clipShape(Capsule())
@@ -781,8 +790,21 @@ struct ContentView: View {
                             .foregroundStyle(HexTheme.textFaint)
                             .opacity(showHomeSwipeCue ? 1 : 0)
 
-                        DotSwipeCueView(isActive: showHomeSwipeCue)
-                            .frame(width: geo.size.width, height: 21)
+                        Group {
+                            if waveform == .hex {
+                                DotSwipeCueView(isActive: showHomeSwipeCue)
+                            } else {
+                                // The waveform's transcribing motion sweeps right along the home bar.
+                                BraidScopeView(
+                                    waveform: waveform,
+                                    phase: showHomeSwipeCue ? .processing : .hidden,
+                                    leadingInset: 40,
+                                    trailingInset: 40,
+                                    loudnessProvider: { -120 }
+                                )
+                            }
+                        }
+                        .frame(width: geo.size.width, height: 21)
                     }
                     .allowsHitTesting(false)
                     .offset(y: bottomInset)

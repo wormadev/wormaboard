@@ -195,7 +195,64 @@ struct HexStatusDot: View {
     }
 }
 
-/// Hex's concentric-hexagon brand mark (`site/src/App.tsx`).
+/// The app icon's mark: the wormadev worm followed by a text cursor
+/// (`ios/HEXMobile/AppIcon.icon`), in the worm's own 107 x 66 units.
+enum WormaMark {
+    private static let width: CGFloat = 128
+    private static let cursorX: CGFloat = 121.2
+    private static let cursorWidth: CGFloat = 6.8
+    private static let cursorTop: CGFloat = -8.8
+    private static let cursorHeight: CGFloat = 84
+    private static let wormWidth: CGFloat = 107
+    private static let wormHeight: CGFloat = 66
+    private static let start = CGPoint(x: 90.72, y: 3.16)
+    private static let curves: [[CGFloat]] = [
+        [86.61, 8.34, 86.28, 15.54, 84.33, 21.70],
+        [81.46, 30.54, 74.96, 51.54, 64.13, 40.23],
+        [59.71, 35.54, 56.80, 28.96, 52.38, 24.33],
+        [47.48, 18.91, 41.73, 20.72, 37.70, 26.07],
+        [33.37, 31.37, 29.66, 38.31, 25.23, 43.69],
+        [16.52, 54.24, 9.99, 49.85, 2.59, 40.95],
+        [1.19, 39.48, 0.22, 38.88, 0.00, 39.58],
+        [-0.10, 42.51, 1.92, 46.19, 3.16, 49.19],
+        [6.52, 56.41, 12.04, 65.84, 19.41, 64.42],
+        [27.64, 62.58, 31.98, 54.32, 38.03, 49.17],
+        [43.14, 44.35, 47.95, 44.61, 52.57, 50.02],
+        [58.51, 56.78, 65.44, 68.47, 75.57, 64.16],
+        [87.51, 60.05, 111.48, 18.74, 105.05, 4.73],
+        [102.53, -0.75, 94.55, -1.62, 90.84, 3.04],
+    ]
+
+    /// The worm and its cursor, fitted and centred in `rect`.
+    static func paths(in rect: CGRect) -> (worm: CGPath, cursor: CGPath) {
+        let s = min(rect.width / width, rect.height / cursorHeight)
+        let origin = CGPoint(x: rect.midX - width * s / 2, y: rect.midY - cursorHeight * s / 2 - cursorTop * s)
+        let barWidth = max(1.2, cursorWidth * s)
+        let bar = CGRect(x: origin.x + cursorX * s, y: origin.y + cursorTop * s, width: barWidth, height: cursorHeight * s)
+        let corner = min(0.6 * s, barWidth / 2)
+        let cursor = CGPath(roundedRect: bar, cornerWidth: corner, cornerHeight: corner, transform: nil)
+        return (worm(scale: s, origin: origin), cursor)
+    }
+
+    /// The worm alone, fitted and centred in `rect`.
+    static func worm(in rect: CGRect) -> CGPath {
+        let s = min(rect.width / wormWidth, rect.height / wormHeight)
+        return worm(scale: s, origin: CGPoint(x: rect.midX - wormWidth * s / 2, y: rect.midY - wormHeight * s / 2))
+    }
+
+    private static func worm(scale s: CGFloat, origin: CGPoint) -> CGPath {
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: origin.x + x * s, y: origin.y + y * s) }
+        let path = CGMutablePath()
+        path.move(to: point(start.x, start.y))
+        for c in curves {
+            path.addCurve(to: point(c[4], c[5]), control1: point(c[0], c[1]), control2: point(c[2], c[3]))
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// The app's brand mark (`WormaMark`); `coreColor` tints the cursor.
 struct HexMarkView: View {
     var size: CGFloat = 20
     var color: Color = HexTheme.textBase
@@ -203,41 +260,72 @@ struct HexMarkView: View {
 
     var body: some View {
         Canvas { context, canvasSize in
-            let side = min(canvasSize.width, canvasSize.height)
-            let s = side / 64.0
-            let lineWidth = max(1.15, 4.5 * s)
-            let stroke = StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
-
-            func hexPath(_ points: [(CGFloat, CGFloat)]) -> Path {
-                var path = Path()
-                guard let first = points.first else { return path }
-                path.move(to: CGPoint(x: first.0 * s, y: first.1 * s))
-                for pt in points.dropFirst() {
-                    path.addLine(to: CGPoint(x: pt.0 * s, y: pt.1 * s))
-                }
-                path.closeSubpath()
-                return path
-            }
-
-            let outer = hexPath([
-                (32, 4), (57, 18.5), (57, 45.5),
-                (32, 60), (7, 45.5), (7, 18.5),
-            ])
-            let middle = hexPath([
-                (32, 15), (48, 24.25), (48, 39.75),
-                (32, 49), (16, 39.75), (16, 24.25),
-            ])
-            let core = hexPath([
-                (32, 24), (39.5, 28.25), (39.5, 36.75),
-                (32, 41), (24.5, 36.75), (24.5, 28.25),
-            ])
-
-            context.stroke(outer, with: .color(color), style: stroke)
-            context.stroke(middle, with: .color(color), style: stroke)
-            context.fill(core, with: .color(coreColor ?? color))
+            let mark = WormaMark.paths(in: CGRect(origin: .zero, size: canvasSize))
+            context.fill(Path(mark.worm), with: .color(color))
+            context.fill(Path(mark.cursor), with: .color(coreColor ?? color))
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+/// Which dictation waveform the app, keyboard and Live Activity draw (Settings › Dictation).
+nonisolated enum DictationWaveform: String, CaseIterable, Codable, Sendable {
+    case braid
+    case hex
+    case ribbon
+    case worm
+
+    static let key = "settings.dictationWaveform"
+
+    var label: String {
+        switch self {
+        case .braid: String(localized: "Braid")
+        case .hex: String(localized: "WormaBoard dots")
+        case .ribbon: String(localized: "Ribbon")
+        case .worm: String(localized: "Worm")
+        }
+    }
+
+    static func stored(in defaults: UserDefaults?) -> DictationWaveform {
+        defaults?.string(forKey: key).flatMap(DictationWaveform.init(rawValue:)) ?? .braid
+    }
+}
+
+/// The chosen waveform as one still frame, for WidgetKit / Live Activity surfaces, which
+/// render archived display lists rather than a running timeline.
+struct HexWaveBadge: View {
+    var waveform: DictationWaveform
+    var width: CGFloat
+    var height: CGFloat = 16
+    var cooling: Bool = false
+
+    var body: some View {
+        if waveform == .hex {
+            let pitch: CGFloat = width <= 30 ? 2.2 : 2.5
+            HexDotMatrixBadge(
+                columns: Int((width - 8) / pitch) + 1,
+                rows: max(5, Int((height - 8) / pitch) + 1),
+                pitch: pitch,
+                cooling: cooling
+            )
+        } else {
+            Canvas { context, size in
+                WaveStrokes.draw(
+                    waveform,
+                    in: &context,
+                    from: 1,
+                    to: size.width - 1,
+                    height: size.height,
+                    open: cooling ? 0.35 : 0.9,
+                    time: 0.55,
+                    knot: cooling ? 0.5 : nil,
+                    color: cooling ? HexTheme.agentBlue : HexTheme.warmPearl
+                )
+            }
+            .frame(width: width, height: height)
+            .accessibilityHidden(true)
+        }
     }
 }
 
@@ -289,5 +377,99 @@ struct HexDotMatrixBadge: View {
             height: CGFloat(rows - 1) * pitch + 8
         )
         .accessibilityHidden(true)
+    }
+}
+
+/// The stroke waveforms, after the wormadev mark's stroke (thin ends, full in the middle),
+/// shared by `BraidScopeView` and `HexWaveBadge`. `.hex` is the Metal dot scope instead.
+enum WaveStrokes {
+    /// `open` 0...1 is how far the line swings; `knot` (0...1 along the run) is where the
+    /// transcribing motion is: the braid's gathered knot, the ribbon's swell, the worm's head.
+    static func draw(
+        _ waveform: DictationWaveform,
+        in context: inout GraphicsContext,
+        from start: CGFloat,
+        to end: CGFloat,
+        height: CGFloat,
+        open: Double,
+        time: Double,
+        knot: Double?,
+        color: Color
+    ) {
+        guard end > start else { return }
+        let x = { (u: Double) in start + (end - start) * u }
+        let mid = height / 2
+        switch waveform {
+        case .braid, .hex:
+            for (sign, opacity) in [(1.0, 1.0), (-1.0, 0.45)] {
+                let points = (0...64).map { i -> CGPoint in
+                    let u = Double(i) / 64
+                    var amplitude = sin(.pi * u) * height * 0.3 * open
+                    if let knot {
+                        amplitude *= 0.35 + 0.65 * exp(-pow((u - knot) * 5, 2))
+                    }
+                    return CGPoint(x: x(u), y: mid + sign * amplitude * sin(u * .pi * 3.2 - time * 4))
+                }
+                context.fill(
+                    tapered(points) { u in 1.5 + sin(.pi * u) * height * 0.11 },
+                    with: .color(color.opacity(opacity))
+                )
+            }
+        case .ribbon:
+            let speed = knot == nil ? 5.0 : 2.5
+            let points = (0...80).map { i -> CGPoint in
+                let u = Double(i) / 80
+                var amplitude = sin(.pi * u) * height * 0.32 * open
+                if let knot {
+                    amplitude *= 0.5 + 0.5 * exp(-pow((u - knot) * 6, 2))
+                }
+                return CGPoint(x: x(u), y: mid + amplitude * sin(u * .pi * 4 - time * speed))
+            }
+            let swell = knot == nil ? 0.12 + 0.1 * open : 0.1
+            context.fill(
+                tapered(points) { u in 2 + sin(.pi * u) * height * swell },
+                with: .color(color)
+            )
+        case .worm:
+            let length = knot == nil ? 0.42 : 0.3
+            let head = knot.map { ($0 + 0.1) / 1.2 * (1 + length) } ?? 0.5 + length / 2
+            let speed = knot == nil ? 6.0 : 3.0
+            let points = (0...48).compactMap { i -> CGPoint? in
+                let u = head - length + length * Double(i) / 48
+                guard (0...1).contains(u) else { return nil }
+                let amplitude = height * 0.22 * max(open, 0.15)
+                return CGPoint(x: x(u), y: mid + amplitude * sin(u * .pi * 6 - time * speed))
+            }
+            guard points.count > 2 else { return }
+            context.fill(
+                tapered(points) { u in 2.5 + pow(u, 1.3) * height * 0.24 },
+                with: .color(color)
+            )
+            if let last = points.last {
+                let r = (2.5 + height * 0.24) / 2
+                context.fill(Path(ellipseIn: CGRect(x: last.x - r, y: last.y - r, width: r * 2, height: r * 2)), with: .color(color))
+            }
+        }
+    }
+
+    /// A filled outline around `points`, `width(u)` wide at each point.
+    private static func tapered(_ points: [CGPoint], width: (Double) -> Double) -> Path {
+        let last = points.count - 1
+        var left: [CGPoint] = []
+        var right: [CGPoint] = []
+        for i in 0...last {
+            let a = points[max(i - 1, 0)]
+            let b = points[min(i + 1, last)]
+            let length = max(hypot(b.x - a.x, b.y - a.y), 0.001)
+            let half = width(Double(i) / Double(last)) / 2
+            let nx = -(b.y - a.y) / length * half
+            let ny = (b.x - a.x) / length * half
+            left.append(CGPoint(x: points[i].x + nx, y: points[i].y + ny))
+            right.append(CGPoint(x: points[i].x - nx, y: points[i].y - ny))
+        }
+        var path = Path()
+        path.addLines(left + right.reversed())
+        path.closeSubpath()
+        return path
     }
 }

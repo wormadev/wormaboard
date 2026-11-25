@@ -1,7 +1,9 @@
+import SwiftUI
 import UIKit
 
 /// The Hex key right of space. Warm session: an orange core, and a hold records here.
-/// Otherwise the mark is faded with ↗, and a hold leaves for Hex to start one.
+/// Otherwise the plain mark: the keyboard dictates itself, says why it can't with Open Hex
+/// (iOS 26 and later), or before iOS 26 opens Hex to record.
 /// A tap dictates, a hold dictates until released (push to talk), and sliding opens the
 /// style menu (`HexKeyGesture`).
 @MainActor
@@ -10,6 +12,8 @@ final class HexKeyControl: UIControl {
     /// Sits in the suggestion strip instead of the bottom row (prototype).
     var inStrip = false { didSet { if inStrip != oldValue { setNeedsDisplay() } } }
     var isWarm = false { didSet { if isWarm != oldValue { setNeedsDisplay(); updateAccessibility() } } }
+    /// A tap opens Hex to record there (before iOS 26, where the keyboard can't dictate itself).
+    var opensHexToDictate = false { didSet { if opensHexToDictate != oldValue { updateAccessibility() } } }
     /// Dictations paste translated into this target (BCP 47): the key wears its code ("EN")
     /// in the corner, so a dictation never comes out in another language by surprise.
     var translatingTo: String? { didSet { if translatingTo != oldValue { setNeedsDisplay(); updateAccessibility() } } }
@@ -62,7 +66,7 @@ final class HexKeyControl: UIControl {
     }
 
     private func updateAccessibility() {
-        let label = isWarm ? "Dictate with WormaBoard" : "Open WormaBoard to dictate"
+        let label = opensHexToDictate ? "Open WormaBoard to dictate" : "Dictate with WormaBoard"
         accessibilityLabel = translatingTo.map { "\(label), \(TranslationPasteChoice.translatingLabel(target: $0))" } ?? label
         accessibilityHint = hasTray ? "Tap to dictate, hold to talk" : "Tap to dictate, hold to talk, slide for styles"
         accessibilityCustomActions = hasTray ? [] : [
@@ -156,28 +160,32 @@ final class HexKeyControl: UIControl {
                 radius: cornerRadius
             )
         } else if isHighlighted {
-            palette.keyPressedFill.setFill()
+            // In the strip the chip is on iOS's glass, not a key: the system's pressed grey.
+            palette.systemPressedFill.setFill()
             let chip = CGRect(x: cap.minX, y: markMidY - room / 2, width: cap.width, height: room)
             UIBezierPath(roundedRect: chip, cornerRadius: room / 2).fill()
         }
         let markSize: CGFloat = inStrip ? min(19, room) : min(19, cap.height * 0.56)
         let markRect = CGRect(x: cap.midX - markSize / 2, y: markMidY - markSize / 2, width: markSize, height: markSize)
         if isWarm {
-            HexMarkPath.draw(in: context, rect: markRect, color: palette.textBase, coreColor: palette.warmCore)
+            HexMarkPath.draw(in: context, rect: markRect, color: ink, coreColor: palette.warmCore)
         } else {
             // A tap dictates inside the keyboard now, so no ↗ "opens Hex" badge.
-            HexMarkPath.draw(in: context, rect: markRect, color: palette.textBase, coreColor: nil)
+            HexMarkPath.draw(in: context, rect: markRect, color: ink, coreColor: nil)
         }
         if let translatingTo {
             drawTranslationBadge(TranslationPasteChoice.badge(target: translatingTo), keycap: cap, mark: markRect)
         }
     }
 
+    /// The mark's colour: a key's label on its keycap, the glass's ink in the strip.
+    private var ink: UIColor { inStrip ? palette.textBase : palette.keyText }
+
     /// "EN" in a small capsule at the keycap's top trailing corner, over the mark's edge.
     private func drawTranslationBadge(_ code: String, keycap cap: CGRect, mark: CGRect) {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 8.5, weight: .bold),
-            .foregroundColor: palette.isDark ? UIColor.black : UIColor.white,
+            .foregroundColor: (inStrip ? palette.isDark : palette.keysAreDark) ? UIColor.black : UIColor.white,
         ]
         let size = (code as NSString).size(withAttributes: attributes)
         let height: CGFloat = 12
@@ -186,7 +194,7 @@ final class HexKeyControl: UIControl {
         let x = inStrip ? mark.maxX - width / 2 : min(cap.maxX - width - 2, mark.maxX - 3)
         let y = inStrip ? mark.minY - height / 2 : cap.minY + 2
         let badge = CGRect(x: x, y: y, width: width, height: height)
-        palette.textBase.setFill()
+        ink.setFill()
         UIBezierPath(roundedRect: badge, cornerRadius: height / 2).fill()
         (code as NSString).draw(
             at: CGPoint(x: badge.midX - size.width / 2, y: badge.midY - size.height / 2),
@@ -246,8 +254,8 @@ enum StripMotion {
     }
 }
 
-/// While recording, this replaces the suggestion strip only, so the keys stay put: a Dot
-/// Scope well that takes the rest of the strip, then ✕ and Done, ✓ where the Hex key was.
+/// While recording, this replaces the suggestion strip only, so the keys stay put: a braid
+/// well that takes the rest of the strip, then ✕ and Done, ✓ where the Hex key was.
 /// With the Hex key on the left it mirrors: ✓, ✕, then the well.
 @MainActor
 final class HexKeyRecordingPanel: UIView {
@@ -256,7 +264,11 @@ final class HexKeyRecordingPanel: UIView {
     var onCancel: (() -> Void)?
     var onCycleStyle: (() -> Void)?
 
-    let scope: DotScopeHostView
+    private let braid: BraidPanelState
+    /// Hex's Metal dot scope, when that's the waveform picked in Settings › Dictation.
+    private let dots: DotScopeHostView?
+    let scope: UIView
+    var scopePhase: DotScopePhase { braid.phase }
     private let styleButton = UIButton(type: .custom)
     private let well = UIView()
     private let cancelButton = PanelKeyButton()
@@ -271,19 +283,34 @@ final class HexKeyRecordingPanel: UIView {
     /// The Hex key sits on the left (Settings › Keyboard › Hex key): ✓ and ✕ lead.
     var hexOnLeading = false { didSet { if hexOnLeading != oldValue { setNeedsLayout() } } }
 
-    init(loudness: @escaping () -> Float) {
-        var tuning = DotScopeTuning.bar(leadingInset: 0, trailingInset: 0, fade: 24, spacing: 2.7)
-        tuning.height = Float(KeyboardMetrics.portrait.stripPillHeight)
-        tuning.transition = Float(StripMotion.settle)
-        // Cap drawables at 2 inside the keyboard extension to save ~2.2 MB of IOSurface RAM.
-        scope = DotScopeHostView(tuning: tuning, maximumDrawableCount: 2)
+    init(
+        loudness: @escaping () -> Float,
+        waveform: DictationWaveform = .stored(in: UserDefaults(suiteName: KeyboardBridge.appGroup))
+    ) {
+        braid = BraidPanelState(loudness: loudness, waveform: waveform)
+        if waveform == .hex {
+            var tuning = DotScopeTuning.bar(leadingInset: 0, trailingInset: 0, fade: 24, spacing: 2.7)
+            tuning.height = Float(KeyboardMetrics.portrait.stripPillHeight)
+            tuning.transition = Float(StripMotion.settle)
+            // Cap drawables at 2 inside the keyboard extension to save ~2.2 MB of IOSurface RAM.
+            let dots = DotScopeHostView(tuning: tuning, maximumDrawableCount: 2)
+            dots.drawPlate = false
+            dots.look = .strip
+            dots.loudnessProvider = loudness
+            dots.reduceMotion = StripMotion.reduced
+            dots.hostFades = true
+            dots.useDemoVoice = ProcessInfo.processInfo.arguments.contains("--snap-state")
+            self.dots = dots
+            scope = dots
+        } else {
+            let host = UIHostingController(rootView: BraidPanelScope(state: braid))
+            host.view.backgroundColor = .clear
+            host.safeAreaRegions = []
+            dots = nil
+            scope = host.view
+        }
         super.init(frame: .zero)
-        scope.drawPlate = false
-        scope.look = .strip
-        scope.loudnessProvider = loudness
-        scope.reduceMotion = StripMotion.reduced
-        scope.hostFades = true
-        scope.useDemoVoice = ProcessInfo.processInfo.arguments.contains("--snap-state")
+        scope.isUserInteractionEnabled = false
 
         styleButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
         styleButton.semanticContentAttribute = .forceRightToLeft
@@ -304,7 +331,7 @@ final class HexKeyRecordingPanel: UIView {
         doneButton.addTarget(self, action: #selector(done), for: .touchUpInside)
 
         doneSpinner.hidesWhenStopped = true
-        doneSpinner.color = palette.textBase
+        doneSpinner.color = palette.keyText
         doneSpinner.isUserInteractionEnabled = false
         for view in [styleButton, well, cancelButton, doneButton, doneSpinner] {
             addSubview(view)
@@ -316,8 +343,9 @@ final class HexKeyRecordingPanel: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     func tearDown() {
-        scope.phase = .hidden
-        scope.tearDown()
+        braid.phase = .hidden
+        dots?.phase = .hidden
+        dots?.tearDown()
     }
 
     func update(phase: DotScopePhase, style: DictationStyle) {
@@ -325,7 +353,8 @@ final class HexKeyRecordingPanel: UIView {
         let firstUpdate = currentPhase == nil
         currentPhase = phase
         showsSpinner = phase == .starting || phase == .processing
-        scope.phase = phase
+        braid.phase = phase
+        dots?.phase = phase
         // The scope, then two round buttons, ✕ and ✓; while starting (waiting for the first
         // audio buffer) and while transcribing, ✓'s spot shows the spinner so there's one place
         // to look and no checkmark before the mic is live, while ✕ still cancels.
@@ -426,10 +455,12 @@ final class HexKeyRecordingPanel: UIView {
 
     private func applyPalette() {
         styleButton.setTitleColor(palette.textMuted, for: .normal)
-        scope.isDark = palette.isDark
+        braid.color = Color(palette.textBase)
+        dots?.isDark = palette.isDark
         cancelButton.palette = palette
         doneButton.palette = palette
-        doneSpinner.color = palette.textBase
+        // On the Done key, in a key's label colour.
+        doneSpinner.color = palette.keyText
     }
 
     override func layoutSubviews() {
@@ -472,7 +503,6 @@ final class HexKeyRecordingPanel: UIView {
 
     func debugMotionSample() -> [String: Double] {
         func layer(_ view: UIView) -> CALayer { view.layer.presentation() ?? view.layer }
-        let pose = scope.debugPose
         return [
             "cancel": view(cancelButton),
             "cancelX": layer(cancelButton).frame.midX,
@@ -481,16 +511,34 @@ final class HexKeyRecordingPanel: UIView {
             "doneScale": Double(layer(doneButton).transform.m11),
             "spinner": doneSpinner.isAnimating ? view(doneSpinner) : 0,
             "doneSymbol": showsSpinner ? 0 : 1,
-            "scopeOpacity": Double(pose.opacity),
-            "scopeLive": Double(pose.live),
-            "scopeCool": Double(pose.cool),
-            "scopeGrid": Double(pose.grid),
-            "scopeGlow": Double(pose.glow),
         ]
     }
 
     private func view(_ v: UIView) -> Double {
         v.isHidden ? 0 : Double((v.layer.presentation() ?? v.layer).opacity)
+    }
+}
+
+/// What the recording panel's stroke waveform shows, set from UIKit.
+@MainActor
+@Observable
+final class BraidPanelState {
+    var phase: DotScopePhase = .hidden
+    var color: Color = .white
+    let loudness: () -> Float
+    let waveform: DictationWaveform
+
+    init(loudness: @escaping () -> Float, waveform: DictationWaveform) {
+        self.loudness = loudness
+        self.waveform = waveform
+    }
+}
+
+private struct BraidPanelScope: View {
+    let state: BraidPanelState
+
+    var body: some View {
+        BraidScopeView(waveform: state.waveform, phase: state.phase, color: state.color, loudnessProvider: state.loudness)
     }
 }
 
@@ -534,11 +582,17 @@ final class PanelKeyButton: UIControl {
     override func draw(_ rect: CGRect) {
         guard let context = UIGraphicsGetCurrentContext() else { return }
         if isHighlighted {
-            context.fillKeycap(bounds, fill: palette.keyPressedFill, radius: cornerRadius)
+            // A plain one (the emoji panel's ABC and delete) is on the glass, not a key.
+            context.fillKeycap(bounds, fill: isPlain ? palette.systemPressedFill : palette.keyPressedFill, radius: cornerRadius)
         } else if !isPlain {
             context.fillKeycap(bounds, fill: isPrimary ? palette.keyFill : palette.functionFill, radius: cornerRadius)
         }
-        let ink = isEnabled ? palette.textBase : palette.textMuted
+        // A label on a key's own fill takes the keys' label colour; on the glass, or the
+        // secondary fill over it, the glass's ink.
+        let onKey = !isPlain && (isHighlighted || isPrimary)
+        let ink = isEnabled
+            ? (onKey ? palette.keyText : palette.textBase)
+            : (onKey ? palette.keyTextMuted : palette.textMuted)
         if let symbol {
             let config = drawsLikeKeys
                 ? UIImage.SymbolConfiguration(pointSize: bounds.height < 34 ? 16 : 18, weight: .regular)
@@ -565,8 +619,10 @@ final class PanelKeyButton: UIControl {
 }
 
 /// Holding the Hex key: dictation styles, then the dictation language when there are choices,
-/// then Translate to <language> (on or off) and the target to translate into. The language
-/// page takes a language off with a long press and Remove, and adds one from More languages….
+/// then Translate to <language> (on or off) and the target to translate into, and last Open Hex,
+/// which opens the app at Home (a tap that says Open Hex, the one way the keyboard opens it).
+/// The language page takes a language off with a long press and Remove, and adds one from More
+/// languages….
 @MainActor
 final class HexStyleMenuView: UIView {
     enum Page { case styles, languages, moreLanguages, translation }
@@ -592,6 +648,8 @@ final class HexStyleMenuView: UIView {
     /// Translate to <language> switched on (true) or off.
     var onTranslationToggle: ((Bool) -> Void)?
     var onTranslationTarget: ((String) -> Void)?
+    /// The last row, Open Hex: shown while set.
+    var onOpenHex: (() -> Void)? { didSet { if (onOpenHex == nil) != (oldValue == nil) { rebuild() } } }
     var onDismiss: (() -> Void)?
     var onHoverChanged: (() -> Void)?
     /// The Hex key's keycap, in this view's coordinates; the panel opens above it.
@@ -713,6 +771,11 @@ final class HexStyleMenuView: UIView {
                         self?.show(page: .translation)
                     })
                 }
+            }
+            if onOpenHex != nil {
+                rows.append(makeRow(title: String(localized: "Open WormaBoard"), selected: false, showsTopDivider: true) { [weak self] in
+                    self?.onOpenHex?()
+                })
             }
         case .languages:
             let automatic = automaticLanguage.map {
@@ -936,7 +999,8 @@ final class HexStyleMenuView: UIView {
             let activeHover = isHighlighted || isSlideHovered
             let lit = isChosen || activeHover
             if lit {
-                let fill = activeHover ? palette.keyPressedFill : palette.selectFill
+                // The menu is on the system look, so its pressed row is the system's grey.
+                let fill = activeHover ? palette.systemPressedFill : palette.selectFill
                 fill.setFill()
                 UIBezierPath(roundedRect: bounds, cornerRadius: 8.5).fill()
             }

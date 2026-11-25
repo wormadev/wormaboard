@@ -15,9 +15,13 @@ import ly.anoma.hex.typing.Suggestion
 
 /** The keyboard's root view: the strip, then the keys or the Hex menu in their place. */
 internal class KeyboardView(context: Context, private val ime: HexKeyboard) : LinearLayout(context), KeyboardSurface {
-    private val feedback = LetterFeedback(this)
+    /** Labs › Keyboard › Key colors as these keys were built: another choice builds a new view. */
+    val paints = KeyPaints(context, ime.feedback.drawnKeyColor)
+    private val feedback = LetterFeedback(this, paints)
+    /** The rows' height these keys were built at (Settings › Keyboard › Height on this screen). */
+    private val size = KeySize.of(resources, ime.feedback.height)
     private val strip = StripView(context, ime, this)
-    private val keys = KeyPlaneView(context, ime, this, feedback)
+    private val keys = KeyPlaneView(context, ime, this, feedback, size)
     private val menu: SpeechMenu
     private var phase = SpeechPhase.Idle
     /** Where the key held for More characters was, so TalkBack's focus can go back to it. */
@@ -32,7 +36,12 @@ internal class KeyboardView(context: Context, private val ime: HexKeyboard) : Li
         // above it. Where the window already ends above the navigation bar (Android 12) it is 0.
         setOnApplyWindowInsetsListener { _, insets ->
             val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
-            setPadding(bars.left, 0, bars.right, bars.bottom)
+            if (paddingLeft != bars.left || paddingRight != bars.right || paddingBottom != bars.bottom) {
+                setPadding(bars.left, 0, bars.right, bars.bottom)
+                // Insets can arrive inside the layout pass that sized the window without them (a new view after
+                // a rotation): measure again after it, or the window keeps that height and clips the bottom row.
+                post { requestLayout() }
+            }
             insets
         }
         setBackgroundColor(context.getColor(R.color.keyboard))
@@ -42,6 +51,10 @@ internal class KeyboardView(context: Context, private val ime: HexKeyboard) : Li
         addView(menu, LayoutParams(-1, keys.menuHeight))
         status(SpeechPhase.Idle, context.getString(R.string.keyboard_hint_hold))
     }
+
+    /** Whether these keys are still the size Settings asks for: a new height needs a new view. */
+    fun sized(height: KeyboardHeight) = size.height == height
+    fun colored(color: KeyColor) = paints.color == color
 
     override fun showPage(page: KeyboardPage) {
         keys.showPage(page)
@@ -84,6 +97,8 @@ internal class KeyboardView(context: Context, private val ime: HexKeyboard) : Li
         strip.choosing = true; strip.menuOpened(); menu.home(); strip.update()
     }
     fun openLanguageMenu() { openMenu(); menu.language() }
+    /** The strip's Clipboard tool: the menu's Clipboard page, which going back closes. */
+    fun openClipboard() { openMenu(); if (menu.visibility == VISIBLE) menu.clipboardPage(direct = true) }
     fun openAccents(accents: List<String>, from: View) {
         openMenu(); if (menu.visibility != VISIBLE) return
         heldAt = IntArray(2).also(from::getLocationInWindow).let { intArrayOf(it[0] + from.width / 2, it[1] + from.height / 2) }
@@ -130,6 +145,8 @@ internal class KeyboardView(context: Context, private val ime: HexKeyboard) : Li
         }
         tap(context, ime.feedback.haptics, cue)
     }
+    /** Labs › Keyboard › Hex key on the left changed: the strip moves its Hex key to that end. */
+    fun hexKeySideChanged() = strip.placeHexKey()
     fun setLevel(value: Float) = strip.setLevel(value)
     fun cancelGestures() { strip.cancelGestures(); keys.cancelGestures() }
     /** The editor went away: the next one starts on the letters. */

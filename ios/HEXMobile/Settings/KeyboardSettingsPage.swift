@@ -72,6 +72,10 @@ struct KeyboardSettingsPage: View {
 
     private var settings: FullKeyboardSettings { FullKeyboardSettings() }
 
+    /// Hex is an iPhone app, so on an iPad its idiom says phone; the device's model doesn't.
+    /// There the keyboard has Apple's iPad rows: no number row, and key flicks instead.
+    private static let runsOnIPad = UIDevice.current.model.hasPrefix("iPad")
+
     private var fullKeyboard: Bool {
         _ = revision
         return settings.isEnabled
@@ -87,9 +91,10 @@ struct KeyboardSettingsPage: View {
         return settings.haptics
     }
 
+    /// The emoji key or the strip's emoji suggestions: either keeps the emoji history.
     private var emoji: Bool {
         _ = revision
-        return settings.emoji
+        return settings.emojiKey || (fullKeyboard && settings.emojiSuggestions)
     }
 
     private var emojiSuggestions: Bool {
@@ -215,11 +220,19 @@ struct KeyboardSettingsPage: View {
 
                     SettingsDivider()
 
-                    SettingsToggleRow(
-                        title: String(localized: "Number row"),
-                        detail: String(localized: "Shows 1 to 0 above the letters"),
-                        isOn: binding(\.numberRow)
-                    )
+                    if Self.runsOnIPad {
+                        SettingsToggleRow(
+                            title: String(localized: "Key flicks"),
+                            detail: String(localized: "Pull a key down to type the character above its letter"),
+                            isOn: binding(\.keyFlicks)
+                        )
+                    } else {
+                        SettingsToggleRow(
+                            title: String(localized: "Number row"),
+                            detail: String(localized: "Shows 1 to 0 above the letters"),
+                            isOn: binding(\.numberRow)
+                        )
+                    }
                 }
             }
 
@@ -323,18 +336,20 @@ struct KeyboardSettingsPage: View {
                 SettingsDivider()
 
                 SettingsToggleRow(
-                    title: String(localized: "Emoji"),
+                    title: String(localized: "Emoji key"),
                     detail: fullKeyboard
-                        ? String(localized: "An emoji key and its panel")
+                        ? String(localized: "Opens all emoji from the keyboard")
                         : String(localized: "An emoji key on the dictation bar"),
-                    isOn: binding(\.emoji)
+                    isOn: binding(\.emojiKey)
                 )
 
+                // The dictation bar has no strip to suggest in.
                 if fullKeyboard {
                     SettingsDivider()
+
                     SettingsToggleRow(
                         title: String(localized: "Emoji suggestions"),
-                        detail: String(localized: "Emoji for the word you type, in the suggestion bar"),
+                        detail: String(localized: "Suggests 😭 as you type cry"),
                         isOn: binding(\.emojiSuggestions)
                     )
                 }
@@ -344,7 +359,7 @@ struct KeyboardSettingsPage: View {
                     SkinToneRow()
                 }
 
-                if emoji || emojiSuggestions && fullKeyboard {
+                if emoji {
                     SettingsDivider()
                     Button {
                         confirmingClearEmoji = true

@@ -4,7 +4,7 @@ import UIKit
 /// Settings › Dictation language: Automatic, the first iPhone language Apple Speech
 /// transcribes, or any language `SpeechTranscriber` or `DictationTranscriber` has (before
 /// iOS 26, any language Apple's recognizer has on the iPhone: `OnDeviceSpeechLanguages`).
-/// Remove from keyboard takes a language off the keyboard's quick switch.
+/// Remove a quick-switch language takes a language off the keyboard's quick switch.
 struct DictationLanguageRow: View {
     @Bindable var dictation: DictationController
     @Environment(\.scenePhase) private var scenePhase
@@ -46,7 +46,7 @@ struct DictationLanguageRow: View {
                     }
                     if !keyboardChoices.isEmpty {
                         // The keyboard's quick switch: take a language off it here too.
-                        Menu("Remove from keyboard") {
+                        Menu("Remove a quick-switch language") {
                             ForEach(keyboardChoices, id: \.self) { id in
                                 Button(role: .destructive) {
                                     let settings = LanguageSettings()
@@ -80,7 +80,8 @@ struct DictationLanguageRow: View {
                 }
             }
             .padding(.horizontal, 16)
-            .frame(minHeight: 48)
+            .padding(.vertical, 10)
+            .frame(minHeight: 50)
             if listsOnDeviceLanguages {
                 Text("To add a language, turn on its keyboard and dictation in Settings › General › Keyboard.")
                     .font(.system(size: 12))

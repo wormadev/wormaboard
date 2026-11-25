@@ -114,7 +114,7 @@ struct OnboardingTopBar: View {
     }
 }
 
-/// A hexagon outline that fills as the model downloads, beside its percentage. The large one
+/// The worm's outline that fills as the model downloads, beside its percentage. The large one
 /// is Setting up Hex's; the small one sits in the top bar with the language.
 struct OnboardingProgressPill: View {
     let model: OnboardingModel
@@ -123,9 +123,9 @@ struct OnboardingProgressPill: View {
     var body: some View {
         HStack(spacing: large ? 10 : 8) {
             ZStack {
-                OnboardingHexagon()
+                OnboardingWorm()
                     .stroke(Color.white.opacity(0.18), lineWidth: 1.6)
-                OnboardingHexagon()
+                OnboardingWorm()
                     .trim(from: 0, to: model.isReady ? 1 : max(0.02, model.fraction))
                     .stroke(model.isReady ? HexTheme.success : HexTheme.textBase, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
             }
@@ -155,17 +155,9 @@ struct OnboardingProgressPill: View {
     }
 }
 
-struct OnboardingHexagon: Shape {
+struct OnboardingWorm: Shape {
     func path(in rect: CGRect) -> Path {
-        let r = min(rect.width, rect.height) / 2
-        let c = CGPoint(x: rect.midX, y: rect.midY)
-        var path = Path()
-        for i in 0...6 {
-            let angle = Double(i) * .pi / 3 - .pi / 2
-            let point = CGPoint(x: c.x + r * cos(angle), y: c.y + r * sin(angle))
-            if i == 0 { path.move(to: point) } else { path.addLine(to: point) }
-        }
-        return path
+        Path(WormaMark.worm(in: rect))
     }
 }
 

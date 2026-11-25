@@ -460,6 +460,7 @@ pub fn run(shutdown: &'static AtomicBool, listener: ListenerConfig, hidden: bool
                 shutdown,
                 (!setup_ready).then_some(recognition_start),
                 listener_failure,
+                indicator.clone(),
             )
         })?;
     // A closed window is only ordered out, and AppKit keeps it on the Space
@@ -516,10 +517,14 @@ pub fn run(shutdown: &'static AtomicBool, listener: ListenerConfig, hidden: bool
                     window.update(move |ui, _| crate::rune_ui::meeting_settings_saved(ui));
                 }
             },
-            move |corner| {
-                crate::app_settings::save_meeting_indicator_corner(corner);
-                window.update(move |ui, _| crate::rune_ui::meeting_settings_saved(ui));
+            {
+                let window = window.clone();
+                move |corner, display| {
+                    crate::app_settings::save_meeting_indicator_anchor(corner, display);
+                    window.update(move |ui, _| crate::rune_ui::meeting_settings_saved(ui));
+                }
             },
+            move |id| show(&window, Destination::Meetings(Some(id))),
         )
     };
     let hud = crate::rune_hud::install(&mut app);
@@ -941,6 +946,7 @@ impl Pump {
                     &published.settings,
                     &published.preparation,
                 );
+                crate::macos_rune::status_item::update_annotate(&published.settings);
                 crate::macos_rune::status_item::update_paste_last(&published.settings);
             }
             self.model_menu_at = now + MODEL_MENU_REFRESH;
@@ -987,6 +993,16 @@ impl Pump {
             StatusItemAction::CancelModelPreparation => {
                 let _ = self.runtime.send(Request::CancelModel);
                 self.model_menu_at = Instant::now();
+            }
+            StatusItemAction::ToggleAnnotate => {
+                #[cfg(hex_capture)]
+                {
+                    let (reply, _) = std::sync::mpsc::sync_channel(1);
+                    let _ = self.runtime.recognition(RecognitionControl::ScrawlCapture {
+                        action: crate::control::ScrawlCaptureAction::Toggle,
+                        reply,
+                    });
+                }
             }
             StatusItemAction::PasteLast => {
                 let _ = self
@@ -1168,7 +1184,7 @@ impl Pump {
                 self.meeting_state = MeetingMenuState::Idle;
             }
             ControllerEvent::Discarded(id) => {
-                tracing::info!(%id, "meeting had no speech; moved to the Trash");
+                tracing::info!(%id, "meeting discarded; moved to the Trash");
                 self.meeting_state = MeetingMenuState::Idle;
             }
             ControllerEvent::NotesProgress(_) | ControllerEvent::NotesFinished(_) => {}

@@ -36,7 +36,7 @@ extension DictationController {
         }
     }
 
-    /// Labs › Multilingual model (Parakeet) at launch: true when Parakeet Ultra takes
+    /// Settings › Dictation › Model: Multilingual at launch: true when Parakeet Ultra takes
     /// the dictation language and loads now, downloaded and compiled for this iOS (seconds).
     /// Otherwise Hex gets ready with the engine it uses without it, and the download or a
     /// first load runs beside it (`syncMultilingualParakeet`). With the experiment turned
@@ -46,16 +46,13 @@ extension DictationController {
         loads.noteLaunch()
         let settings = MultilingualParakeetSettings()
         guard settings.isEnabled else {
+            // English picked: a download left part-way goes; a complete one stays for a switch back.
             if settings.isTurnedOff {
-                ParakeetUltraModel.remove()
+                ParakeetUltraModel.removeUnlessComplete()
             }
             return false
         }
-        if !ParakeetUltraModel.isDownloaded() {
-            settings.isModelReady = false
-        }
         if loads.lastLoadWasInterrupted, settings.language() != nil {
-            settings.isModelReady = false
             multilingualDownload.fail(ParakeetUltraTranscriber.setAsideMessage)
         }
         guard Self.multilingualStep(
@@ -89,13 +86,21 @@ extension DictationController {
     }
 
     /// Starts Parakeet Ultra's download when the experiment wants it and it isn't on the
-    /// iPhone, whatever engine is getting ready meanwhile.
+    /// iPhone, whatever engine is getting ready meanwhile; off Wi-Fi without Use mobile data it
+    /// waits for Wi-Fi (`SpeechModelDownloadNetwork`).
     func startMultilingualDownloadIfWanted() {
         // Memory left only matters for a load, not a download.
         guard ParakeetUltraTranscriber.chosenLanguage(availableMemory: 0) != nil,
               !ParakeetUltraModel.isDownloaded() else { return }
-        MultilingualParakeetSettings().isModelReady = false
+        downloadNetwork.watch()
         multilingualDownload.start()
+    }
+
+    /// Use mobile data beside the multilingual model's "Downloads on Wi-Fi.": starts it now, on
+    /// any connection, until it is on the iPhone.
+    func useMobileDataForMultilingualParakeet() {
+        downloadNetwork.allowMobileData(for: .multilingual)
+        startMultilingualDownloadIfWanted()
     }
 
     /// Once an engine is ready, and once the download finishes: downloads Parakeet Ultra, or
@@ -133,18 +138,50 @@ extension DictationController {
         }
     }
 
-    /// Parakeet Ultra loaded: the keyboard opens Hex for its languages from now on.
+    /// Parakeet Ultra loaded: Hex dictates its languages with it from now on.
     func multilingualParakeetLoaded() {
-        MultilingualParakeetSettings().isModelReady = true
         multilingualDownload.settle()
+        keepOnlyThePickedSpeechModel()
+    }
+
+    /// Settings › Dictation › Model keeps only the picked model (`SpeechModelChoice.unpicked`):
+    /// once the picked one is downloaded and has loaded once, the other's files go, with its
+    /// "loaded once" and compile record, and the keyboard clears its compiled copies before its
+    /// next load. Whenever Hex comes to the front (launch included) and once Ultra loaded here.
+    func keepOnlyThePickedSpeechModel() {
+        let keyboard = KeyboardParakeetSettings()
+        let hexModel: KeyboardParakeetPlan.Model? = switch engine {
+        case .parakeetV2: .parakeetV2
+        case .parakeetUltra: .parakeetUltra
+        case .undecided, .appleSpeech, .onDeviceRecognizer: nil
+        }
+        guard let removed = SpeechModelChoice.unpicked(
+            picked: .current,
+            englishDownloaded: KeyboardParakeetDownload.shared.isDownloaded,
+            englishLoaded: keyboard.hasLoadedOnce(multilingual: false) || (engine == .parakeetV2 && isModelReady),
+            multilingualDownloaded: ParakeetUltraModel.isDownloaded(),
+            multilingualLoaded: keyboard.hasLoadedOnce(multilingual: true) || ParakeetUltraTranscriber.isCompiled,
+            hexDictatesWith: hexModel
+        ) else { return }
+        switch removed {
+        case .parakeetV2:
+            try? FileManager.default.removeItem(at: ParakeetTranscriber.cacheDirectory)
+            ParakeetCompileRecord().forget()
+        case .parakeetUltra:
+            ParakeetUltraModel.remove()
+        }
+        keyboard.setLoadedOnce(false, multilingual: removed.isMultilingual)
+        if keyboard.keyboardState != nil, keyboard.keyboardStateIsMultilingual == removed.isMultilingual {
+            keyboard.setKeyboardState(nil)
+        }
+        keyboard.purgesCompiled = true
+        print("speech model: kept the picked one, removed \(removed)")
     }
 
     /// Parakeet Ultra didn't load. Missing files download again; anything else sets it aside
     /// (`ParakeetLoadGuard`) until Try again, so Hex doesn't try at every launch.
     func multilingualParakeetFailedToLoad(_ error: Error) {
-        let settings = MultilingualParakeetSettings()
-        settings.isModelReady = false
-        guard settings.isEnabled, !(error is CancellationError) else {
+        guard MultilingualParakeetSettings().isEnabled, !(error is CancellationError) else {
             multilingualDownload.settle()
             return
         }
@@ -167,12 +204,12 @@ extension DictationController {
         if ParakeetUltraModel.isDownloaded() {
             syncMultilingualParakeet()
         } else if ParakeetUltraTranscriber.chosenLanguage(availableMemory: 0) != nil {
-            MultilingualParakeetSettings().isModelReady = false
+            downloadNetwork.watch()
             multilingualDownload.restart()
         }
     }
 
-    /// Turn off beside the multilingual model's status, as the switch in Labs does.
+    /// Use English beside the multilingual model's status, as Settings › Dictation › Model does.
     func turnOffMultilingualParakeet() {
         MultilingualParakeetSettings().isEnabled = false
         multilingualParakeetChanged()
@@ -211,7 +248,7 @@ extension DictationController {
     }
 
     static func defaultTranscriber() async -> any LocalTranscribing {
-        // Labs › Multilingual model (Parakeet), for its languages once it's downloaded and
+        // Settings › Dictation › Model: Multilingual, for its languages once it's downloaded and
         // compiled; until then (and off) the engine Hex uses without it.
         if let language = ParakeetUltraTranscriber.chosenLanguage(),
            multilingualStep(

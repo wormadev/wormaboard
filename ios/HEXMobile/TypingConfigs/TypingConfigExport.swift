@@ -166,7 +166,7 @@ enum TypingConfigExport {
                 "autocorrect": keyboardSettings.autocorrect,
                 "spatialAutocorrect": keyboardSettings.spatialAutocorrect,
                 "swipeTyping": keyboardSettings.swipeTyping,
-                "emoji": keyboardSettings.emoji,
+                "emoji": keyboardSettings.emojiKey,
                 "key_popups": keyboardSettings.keyPopups,
                 "haptics": keyboardSettings.haptics,
                 "learnHowIType": TypingJournalSettings().isEnabled,

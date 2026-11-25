@@ -304,7 +304,7 @@ enum SettingsSnapshotFixture {
         keyboard.suggestSwearWords = on
         keyboard.keyPopups = true
         keyboard.haptics = true
-        keyboard.emoji = true
+        keyboard.emojiKey = true
         keyboard.emojiSuggestions = true
         keyboard.swipeTyping = true
         keyboard.swipeMoreLanguages = on
@@ -335,6 +335,6 @@ enum SettingsSnapshotFixture {
         VoiceIsolationSettings().isEnabled = on
         AdaptiveTouchSettings().isEnabled = on
         // Settings scenes skip preparing a model, so this only draws the switch.
-        MultilingualParakeetSettings().isEnabled = on
+        MultilingualParakeetSettings().isEnabled = on || scene.contains("-multilingual-")
     }
 }

@@ -426,86 +426,10 @@ enum KeyboardSetupCopy {
     static let fullAccessPath = String(localized: "Allow Full Access: Settings › Apps › WormaBoard › Keyboards")
 }
 
-/// Metal-free stand-in for the resting Dot Scope bar. Mounting it instead of
-/// `DotScopeView` keeps the keyboard extension's launch path off the GPU: no
-/// device, command queue, render pipelines, `CAMetalLayer`, display link, or
-/// idle simulation steps before the first frame.
-private struct KeyboardRestingDotBar: View {
-    let isDark: Bool
-    let leadingInset: CGFloat
-    let trailingInset: CGFloat
-
-    private static let pitch: CGFloat = 3.5
-    private static let rows = 11
-    private static let fade: CGFloat = 26
-    private static let braidCycles: Double = 2.1
-    private static let restingAmplitude: Double = 0.9
-
-    var body: some View {
-        let lead = Double(max(0, leadingInset))
-        let trail = Double(max(0, trailingInset))
-        let tint: (red: Double, green: Double, blue: Double) = isDark
-            ? (red: 0.93, green: 0.91, blue: 0.86)
-            : (red: 0.55, green: 0.46, blue: 0.33)
-        return Canvas { context, size in
-            let pitch = Double(Self.pitch)
-            let firstX = lead + 3
-            let lastX = Double(size.width) - trail - 3
-            guard lastX - firstX > pitch * 2, size.height > 8 else { return }
-
-            let columns = max(3, Int(((lastX - firstX) / pitch).rounded(.down)) + 1)
-            let midY = Double(size.height) * 0.5
-            let halfRows = Double(Self.rows - 1) * 0.5
-
-            for column in 0..<columns {
-                let x = firstX + Double(column) * pitch
-                let xn = Double(column) / Double(max(1, columns - 1))
-                let fadeIn = min(1.0, max(0.0, (x - lead) / Double(Self.fade)))
-                let fadeOut = min(1.0, max(0.0, (Double(size.width) - trail - x) / Double(Self.fade)))
-                let edge = min(fadeIn, fadeOut)
-                guard edge > 0.004 else { continue }
-
-                // The live scope flattens to a faint mirrored braid at rest.
-                let wobble = sin(2.0 * .pi * Self.braidCycles * xn - 0.6) * Self.restingAmplitude
-                let upper = midY - wobble
-                let lower = midY + wobble
-
-                for row in 0..<Self.rows {
-                    let y = midY + (Double(row) - halfRows) * pitch
-                    let litUpper = exp(-pow(y - upper, 2) / 2.2)
-                    let litLower = exp(-pow(y - lower, 2) / 2.2)
-                    let power = min(1.0, 1.0 - (1.0 - litUpper) * (1.0 - litLower))
-                    let alpha = (0.05 + 0.40 * power) * edge
-                    guard alpha > 0.01 else { continue }
-                    let radius = (0.16 + 0.21 * power) * pitch
-                    context.fill(
-                        Path(
-                            ellipseIn: CGRect(
-                                x: x - radius,
-                                y: y - radius,
-                                width: radius * 2,
-                                height: radius * 2
-                            )
-                        ),
-                        with: .color(Color(red: tint.red, green: tint.green, blue: tint.blue, opacity: alpha))
-                    )
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityHidden(true)
-    }
-}
-
 struct KeyboardSurfaceView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject var model: KeyboardViewModel
-    /// The keyboard extension sets this so its process never builds the Metal
-    /// scope before a stage needs it. The app's docked keyboard preview keeps
-    /// the live scope mounted at rest.
-    var defersDotScopeUntilActive = false
-
     /// Push to talk on the well: the press, on the Hex key's state machine.
     @State private var hold = HexKeyGesture()
     @State private var holdTimer: Task<Void, Never>?
@@ -534,6 +458,9 @@ struct KeyboardSurfaceView: View {
             isHosted: isHostedExtension
         )
     }
+
+    @AppStorage(DictationWaveform.key, store: UserDefaults(suiteName: KeyboardBridge.appGroup))
+    private var waveform: DictationWaveform = .braid
 
     private var isStageActive: Bool {
         model.stagePhase == .starting || model.stagePhase == .recording || model.stagePhase == .transcribing
@@ -597,10 +524,13 @@ struct KeyboardSurfaceView: View {
                 switch model.route {
                 case .setUp:
                     model.onOpenURL?(KeyboardLaunchRequest.setup.url)
+                case .warm:
+                    // As Dictate, which shows only while nothing records.
+                    if !isStageActive { model.onDictateTap?() }
                 case .inKeyboard:
                     model.onLocalDictateTap?()
-                case .warm, .needsModel, .opensHex:
-                    model.onOpenURL?(model.coldStartURL)
+                case .needsModel, .opensHex:
+                    model.dictateWhereUnavailable()
                 }
             } label: {
                 HexMarkView(
@@ -612,7 +542,7 @@ struct KeyboardSurfaceView: View {
                 .topBarHitTarget(alignment: .leading)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open WormaBoard")
+            .accessibilityLabel(hexMarkLabel)
 
             // The mark's tap area reaches past its pill into this group's slot: the
             // outdent keeps the badge and the status where they were.
@@ -632,21 +562,96 @@ struct KeyboardSurfaceView: View {
                 Spacer(minLength: 4)
             }
 
-            // The translation note takes the bar's width for its few seconds.
-            if model.showsLanguageSwitch || model.showsTranslationSwitch, model.translationNote == nil {
+            // A note (the translation's, or why a dictation tap can't dictate here) takes the
+            // bar's width with Open Hex and ✕ for its few seconds.
+            if let note = barNote {
+                noteActions(note, palette: p)
+            } else if model.showsLanguageSwitch || model.showsTranslationSwitch {
                 languageTrigger(palette: p)
             }
 
-            styleTrigger(palette: p)
-                .hexTrayReveal(model.hasFullAccess && model.translationNote == nil, reduceMotion: reduceMotion, offsetY: 0)
+            if barNote == nil {
+                styleTrigger(palette: p)
+                    .hexTrayReveal(model.hasFullAccess, reduceMotion: reduceMotion, offsetY: 0)
+            }
         }
         .frame(height: TopBarMetrics.height)
+    }
+
+    /// What the Hex mark does, for VoiceOver: dictate as Dictate does, set up, or (before iOS 26
+    /// where the keyboard can't dictate) open Hex to dictate.
+    private var hexMarkLabel: String {
+        if model.route == .setUp { return String(localized: "Set up WormaBoard") }
+        return model.dictationTapOpensHex ? String(localized: "Open WormaBoard") : String(localized: "Dictate")
+    }
+
+    private enum BarNote {
+        case translation
+        case dictationBlock
+    }
+
+    private var barNote: BarNote? {
+        switch model.statusSlot {
+        case .translationNote: .translation
+        case .dictationBlock: .dictationBlock
+        default: nil
+        }
+    }
+
+    /// The note's only controls: Open Hex, the one part that opens Hex (where Hex can help),
+    /// and ✕, which puts the note away. A tap on the words does nothing.
+    private func noteActions(_ note: BarNote, palette p: KeyboardChromePalette) -> some View {
+        HStack(spacing: 6) {
+            if note == .translation || model.dictationBlock?.opensHex == true {
+                openHexChip(note, palette: p)
+            }
+
+            Button {
+                model.onKeyFeedback?()
+                switch note {
+                case .translation: model.onDismissTranslationNote?()
+                case .dictationBlock: model.dismissDictationBlock()
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(p.textMuted)
+                    .frame(width: 26, height: 26)
+                    .background(p.chipIdleFill, in: Circle())
+                    .padding(.trailing, TopBarMetrics.sideInset)
+                    .topBarHitTarget(alignment: .trailing)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Dismiss")
+        }
+        .layoutPriority(1)
+    }
+
+    private func openHexChip(_ note: BarNote, palette p: KeyboardChromePalette) -> some View {
+        Button {
+            model.onKeyFeedback?()
+            switch note {
+            case .translation: model.onOpenURL?(KeyboardLaunchRequest.translationSettings.url)
+            case .dictationBlock: model.openHexForDictationBlock()
+            }
+        } label: {
+            Text("Open WormaBoard")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(p.textBase)
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 11)
+                .frame(height: 26)
+                .background(p.chipActiveFill, in: Capsule())
+        }
+        .buttonStyle(TopBarChipButtonStyle())
+        .accessibilityHint(note == .translation ? Text("Opens WormaBoard's Settings") : Text("Opens WormaBoard to dictate there"))
     }
 
     /// A dictation that didn't go in by itself, as the full keyboard's strip offers it: the
     /// bar is the only keyboard on an iPad, and without this a late one was out of reach.
     private var showsPasteDictation: Bool {
-        model.hasFullAccess && model.offeredDictation != nil && !isStageActive && model.translationNote == nil
+        model.hasFullAccess && model.offeredDictation != nil && !isStageActive && barNote == nil
     }
 
     private func pasteDictationChip(palette p: KeyboardChromePalette) -> some View {
@@ -706,6 +711,11 @@ struct KeyboardSurfaceView: View {
         } else {
             nil
         }
+        let blockSlot: KeyboardDictationBlock? = if case .dictationBlock(let block) = slot {
+            block
+        } else {
+            nil
+        }
 
         return ZStack(alignment: .leading) {
             HStack(spacing: 6) {
@@ -761,29 +771,35 @@ struct KeyboardSurfaceView: View {
                 }
             }
             .hexTrayReveal(noteSlot != nil, reduceMotion: reduceMotion, offsetY: 2)
+
+            // Why a dictation tap can't dictate here; Open Hex and ✕ sit at the bar's end.
+            Group {
+                if let blockSlot {
+                    Text(blockSlot.line)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(p.textBase)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            .hexTrayReveal(blockSlot != nil, reduceMotion: reduceMotion, offsetY: 2)
         }
     }
 
-    /// "Couldn't translate, pasted as spoken" over its fix; a tap opens Hex's Settings › Dictation.
+    /// "Couldn't translate, pasted as spoken" over its fix. Only Open Hex at the bar's end opens
+    /// Hex's Settings › Dictation; a tap on these words does nothing.
     private func translationNote(_ note: TranslationFailure, palette p: KeyboardChromePalette) -> some View {
-        Button {
-            model.onOpenURL?(KeyboardLaunchRequest.translationSettings.url)
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(TranslationFailure.note)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(p.textBase)
-                Text(note.fix)
-                    .font(.system(size: 11))
-                    .foregroundStyle(p.textMuted)
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .contentShape(Rectangle())
+        VStack(alignment: .leading, spacing: 0) {
+            Text(TranslationFailure.note)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(p.textBase)
+            Text(note.fix)
+                .font(.system(size: 11))
+                .foregroundStyle(p.textMuted)
         }
-        .buttonStyle(.plain)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens WormaBoard's Settings")
     }
 
     private func styleTrigger(palette p: KeyboardChromePalette) -> some View {
@@ -1071,11 +1087,11 @@ struct KeyboardSurfaceView: View {
     private var idleTriggerSpec: (icon: String, title: String, width: CGFloat) {
         switch model.route {
         case .setUp:
-            return ("arrow.up.forward.app.fill", "Set up WormaBoard", 112)
+            return ("arrow.up.forward.app.fill", String(localized: "Set up WormaBoard"), 112)
         case .needsModel:
-            return ("mic.fill", "Set up", 88)
+            return ("mic.fill", String(localized: "Set up"), 88)
         case .warm, .inKeyboard, .opensHex:
-            return ("mic.fill", "Dictate", 94)
+            return ("mic.fill", String(localized: "Dictate"), 94)
         }
     }
 
@@ -1101,7 +1117,8 @@ struct KeyboardSurfaceView: View {
         return ZStack {
             HexRecessedWell(isDark: p.isDark)
 
-            if defersDotScopeUntilActive && !isStageActive {
+            // Hex's Metal scope mounts only for a stage; at rest its dots are drawn flat.
+            if waveform == .hex && !isStageActive {
                 KeyboardRestingDotBar(
                     isDark: p.isDark,
                     leadingInset: CGFloat(leadInset),
@@ -1110,10 +1127,11 @@ struct KeyboardSurfaceView: View {
                 .clipShape(Capsule())
                 .allowsHitTesting(false)
             } else {
-                DotScopeView(
+                DictationWaveView(
                     phase: model.dotScopePhase,
-                    tuning: .bar(leadingInset: leadInset, trailingInset: trailInset, fade: 28.0, spacing: 3.5),
-                    drawPlate: false,
+                    leadingInset: CGFloat(leadInset),
+                    trailingInset: CGFloat(trailInset),
+                    color: p.textBase,
                     loudnessProvider: { [weak model] in model?.liveLoudnessDB ?? -62.0 }
                 )
                 .clipShape(Capsule())
@@ -1288,7 +1306,7 @@ struct KeyboardSurfaceView: View {
         case .inKeyboard:
             model.onLocalDictateTap?()
         case .needsModel, .opensHex:
-            model.onOpenURL?(model.coldStartURL)
+            model.dictateWhereUnavailable()
         }
     }
 
@@ -1404,5 +1422,76 @@ struct KeyboardSurfaceView: View {
     private func returnInk(_ p: KeyboardChromePalette) -> Color {
         if !model.returnKeyEnabled { return p.returnDisabledInk }
         return model.returnKey.isAction ? .white : p.textBase
+    }
+}
+
+/// Metal-free stand-in for the resting Dot Scope bar. Mounting it instead of
+/// `DotScopeView` keeps the keyboard extension's launch path off the GPU: no
+/// device, command queue, render pipelines, `CAMetalLayer`, display link, or
+/// idle simulation steps before the first frame.
+private struct KeyboardRestingDotBar: View {
+    let isDark: Bool
+    let leadingInset: CGFloat
+    let trailingInset: CGFloat
+
+    private static let pitch: CGFloat = 3.5
+    private static let rows = 11
+    private static let fade: CGFloat = 26
+    private static let braidCycles: Double = 2.1
+    private static let restingAmplitude: Double = 0.9
+
+    var body: some View {
+        let lead = Double(max(0, leadingInset))
+        let trail = Double(max(0, trailingInset))
+        let tint: (red: Double, green: Double, blue: Double) = isDark
+            ? (red: 0.93, green: 0.91, blue: 0.86)
+            : (red: 0.55, green: 0.46, blue: 0.33)
+        return Canvas { context, size in
+            let pitch = Double(Self.pitch)
+            let firstX = lead + 3
+            let lastX = Double(size.width) - trail - 3
+            guard lastX - firstX > pitch * 2, size.height > 8 else { return }
+
+            let columns = max(3, Int(((lastX - firstX) / pitch).rounded(.down)) + 1)
+            let midY = Double(size.height) * 0.5
+            let halfRows = Double(Self.rows - 1) * 0.5
+
+            for column in 0..<columns {
+                let x = firstX + Double(column) * pitch
+                let xn = Double(column) / Double(max(1, columns - 1))
+                let fadeIn = min(1.0, max(0.0, (x - lead) / Double(Self.fade)))
+                let fadeOut = min(1.0, max(0.0, (Double(size.width) - trail - x) / Double(Self.fade)))
+                let edge = min(fadeIn, fadeOut)
+                guard edge > 0.004 else { continue }
+
+                // The live scope flattens to a faint mirrored braid at rest.
+                let wobble = sin(2.0 * .pi * Self.braidCycles * xn - 0.6) * Self.restingAmplitude
+                let upper = midY - wobble
+                let lower = midY + wobble
+
+                for row in 0..<Self.rows {
+                    let y = midY + (Double(row) - halfRows) * pitch
+                    let litUpper = exp(-pow(y - upper, 2) / 2.2)
+                    let litLower = exp(-pow(y - lower, 2) / 2.2)
+                    let power = min(1.0, 1.0 - (1.0 - litUpper) * (1.0 - litLower))
+                    let alpha = (0.05 + 0.40 * power) * edge
+                    guard alpha > 0.01 else { continue }
+                    let radius = (0.16 + 0.21 * power) * pitch
+                    context.fill(
+                        Path(
+                            ellipseIn: CGRect(
+                                x: x - radius,
+                                y: y - radius,
+                                width: radius * 2,
+                                height: radius * 2
+                            )
+                        ),
+                        with: .color(Color(red: tint.red, green: tint.green, blue: tint.blue, opacity: alpha))
+                    )
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityHidden(true)
     }
 }
