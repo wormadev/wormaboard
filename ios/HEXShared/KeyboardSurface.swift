@@ -524,10 +524,13 @@ struct KeyboardSurfaceView: View {
                 switch model.route {
                 case .setUp:
                     model.onOpenURL?(KeyboardLaunchRequest.setup.url)
+                case .warm:
+                    // As Dictate, which shows only while nothing records.
+                    if !isStageActive { model.onDictateTap?() }
                 case .inKeyboard:
                     model.onLocalDictateTap?()
-                case .warm, .needsModel, .opensHex:
-                    model.onOpenURL?(model.coldStartURL)
+                case .needsModel, .opensHex:
+                    model.dictateWhereUnavailable()
                 }
             } label: {
                 HexMarkView(
@@ -539,7 +542,7 @@ struct KeyboardSurfaceView: View {
                 .topBarHitTarget(alignment: .leading)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open WormaBoard")
+            .accessibilityLabel(hexMarkLabel)
 
             // The mark's tap area reaches past its pill into this group's slot: the
             // outdent keeps the badge and the status where they were.
@@ -559,21 +562,96 @@ struct KeyboardSurfaceView: View {
                 Spacer(minLength: 4)
             }
 
-            // The translation note takes the bar's width for its few seconds.
-            if model.showsLanguageSwitch || model.showsTranslationSwitch, model.translationNote == nil {
+            // A note (the translation's, or why a dictation tap can't dictate here) takes the
+            // bar's width with Open Hex and ✕ for its few seconds.
+            if let note = barNote {
+                noteActions(note, palette: p)
+            } else if model.showsLanguageSwitch || model.showsTranslationSwitch {
                 languageTrigger(palette: p)
             }
 
-            styleTrigger(palette: p)
-                .hexTrayReveal(model.hasFullAccess && model.translationNote == nil, reduceMotion: reduceMotion, offsetY: 0)
+            if barNote == nil {
+                styleTrigger(palette: p)
+                    .hexTrayReveal(model.hasFullAccess, reduceMotion: reduceMotion, offsetY: 0)
+            }
         }
         .frame(height: TopBarMetrics.height)
+    }
+
+    /// What the Hex mark does, for VoiceOver: dictate as Dictate does, set up, or (before iOS 26
+    /// where the keyboard can't dictate) open Hex to dictate.
+    private var hexMarkLabel: String {
+        if model.route == .setUp { return String(localized: "Set up WormaBoard") }
+        return model.dictationTapOpensHex ? String(localized: "Open WormaBoard") : String(localized: "Dictate")
+    }
+
+    private enum BarNote {
+        case translation
+        case dictationBlock
+    }
+
+    private var barNote: BarNote? {
+        switch model.statusSlot {
+        case .translationNote: .translation
+        case .dictationBlock: .dictationBlock
+        default: nil
+        }
+    }
+
+    /// The note's only controls: Open Hex, the one part that opens Hex (where Hex can help),
+    /// and ✕, which puts the note away. A tap on the words does nothing.
+    private func noteActions(_ note: BarNote, palette p: KeyboardChromePalette) -> some View {
+        HStack(spacing: 6) {
+            if note == .translation || model.dictationBlock?.opensHex == true {
+                openHexChip(note, palette: p)
+            }
+
+            Button {
+                model.onKeyFeedback?()
+                switch note {
+                case .translation: model.onDismissTranslationNote?()
+                case .dictationBlock: model.dismissDictationBlock()
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(p.textMuted)
+                    .frame(width: 26, height: 26)
+                    .background(p.chipIdleFill, in: Circle())
+                    .padding(.trailing, TopBarMetrics.sideInset)
+                    .topBarHitTarget(alignment: .trailing)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Dismiss")
+        }
+        .layoutPriority(1)
+    }
+
+    private func openHexChip(_ note: BarNote, palette p: KeyboardChromePalette) -> some View {
+        Button {
+            model.onKeyFeedback?()
+            switch note {
+            case .translation: model.onOpenURL?(KeyboardLaunchRequest.translationSettings.url)
+            case .dictationBlock: model.openHexForDictationBlock()
+            }
+        } label: {
+            Text("Open Hex")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(p.textBase)
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 11)
+                .frame(height: 26)
+                .background(p.chipActiveFill, in: Capsule())
+        }
+        .buttonStyle(TopBarChipButtonStyle())
+        .accessibilityHint(note == .translation ? Text("Opens Hex's Settings") : Text("Opens Hex to dictate there"))
     }
 
     /// A dictation that didn't go in by itself, as the full keyboard's strip offers it: the
     /// bar is the only keyboard on an iPad, and without this a late one was out of reach.
     private var showsPasteDictation: Bool {
-        model.hasFullAccess && model.offeredDictation != nil && !isStageActive && model.translationNote == nil
+        model.hasFullAccess && model.offeredDictation != nil && !isStageActive && barNote == nil
     }
 
     private func pasteDictationChip(palette p: KeyboardChromePalette) -> some View {
@@ -633,6 +711,11 @@ struct KeyboardSurfaceView: View {
         } else {
             nil
         }
+        let blockSlot: KeyboardDictationBlock? = if case .dictationBlock(let block) = slot {
+            block
+        } else {
+            nil
+        }
 
         return ZStack(alignment: .leading) {
             HStack(spacing: 6) {
@@ -688,29 +771,35 @@ struct KeyboardSurfaceView: View {
                 }
             }
             .hexTrayReveal(noteSlot != nil, reduceMotion: reduceMotion, offsetY: 2)
+
+            // Why a dictation tap can't dictate here; Open Hex and ✕ sit at the bar's end.
+            Group {
+                if let blockSlot {
+                    Text(blockSlot.line)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(p.textBase)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            .hexTrayReveal(blockSlot != nil, reduceMotion: reduceMotion, offsetY: 2)
         }
     }
 
-    /// "Couldn't translate, pasted as spoken" over its fix; a tap opens Hex's Settings › Dictation.
+    /// "Couldn't translate, pasted as spoken" over its fix. Only Open Hex at the bar's end opens
+    /// Hex's Settings › Dictation; a tap on these words does nothing.
     private func translationNote(_ note: TranslationFailure, palette p: KeyboardChromePalette) -> some View {
-        Button {
-            model.onOpenURL?(KeyboardLaunchRequest.translationSettings.url)
-        } label: {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(TranslationFailure.note)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(p.textBase)
-                Text(note.fix)
-                    .font(.system(size: 11))
-                    .foregroundStyle(p.textMuted)
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .contentShape(Rectangle())
+        VStack(alignment: .leading, spacing: 0) {
+            Text(TranslationFailure.note)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(p.textBase)
+            Text(note.fix)
+                .font(.system(size: 11))
+                .foregroundStyle(p.textMuted)
         }
-        .buttonStyle(.plain)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens WormaBoard's Settings")
     }
 
     private func styleTrigger(palette p: KeyboardChromePalette) -> some View {
@@ -998,11 +1087,11 @@ struct KeyboardSurfaceView: View {
     private var idleTriggerSpec: (icon: String, title: String, width: CGFloat) {
         switch model.route {
         case .setUp:
-            return ("arrow.up.forward.app.fill", "Set up WormaBoard", 112)
+            return ("arrow.up.forward.app.fill", String(localized: "Set up WormaBoard"), 112)
         case .needsModel:
-            return ("mic.fill", "Set up", 88)
+            return ("mic.fill", String(localized: "Set up"), 88)
         case .warm, .inKeyboard, .opensHex:
-            return ("mic.fill", "Dictate", 94)
+            return ("mic.fill", String(localized: "Dictate"), 94)
         }
     }
 
@@ -1217,7 +1306,7 @@ struct KeyboardSurfaceView: View {
         case .inKeyboard:
             model.onLocalDictateTap?()
         case .needsModel, .opensHex:
-            model.onOpenURL?(model.coldStartURL)
+            model.dictateWhereUnavailable()
         }
     }
 

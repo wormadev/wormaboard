@@ -195,6 +195,19 @@ pub(super) const KEYS: &[Key] = &[
          external keyboard (with labs.second_dictation_shortcut; Linux and Windows need a key); \
          none (the default) turns it off",
     ),
+    optional(
+        "model_switch_hotkey",
+        Kind::Shortcut(HotkeySlot::ModelSwitch),
+        "Labs: the shortcut that swaps dictation to the other speech model and language, \
+         and back (with labs.model_switch_shortcut and model_switch_other); none (the \
+         default) turns it off",
+    ),
+    optional(
+        "model_switch_other",
+        Kind::Json,
+        "Labs: the model and language the model switch shortcut swaps to, as \
+         {\"model\": ..., \"language\": ...}; none (the default) has no other model",
+    ),
     key(
         "extra_dictation_hotkeys",
         Kind::Json,
@@ -469,6 +482,11 @@ pub(super) const KEYS: &[Key] = &[
         "Labs: second_dictation_hotkey dictates like the dictation shortcut",
     ),
     key(
+        "labs.model_switch_shortcut",
+        Kind::Bool,
+        "Labs: model_switch_hotkey swaps the dictation model with model_switch_other, and back",
+    ),
+    key(
         "labs.more_dictation_shortcuts",
         Kind::Bool,
         "Labs: up to four more dictation shortcuts, each with its own binding and activation \
@@ -589,6 +607,11 @@ pub(super) const KEYS: &[Key] = &[
         "Labs: a Caps Lock press starts and stops dictation hands-free, and its light shows when Hex records and transcribes; Caps Lock stays off so typing is unchanged (macOS)",
     ),
     key(
+        "labs.middle_mouse_dictation",
+        Kind::Bool,
+        "Labs: holding the middle mouse button for half a second starts a hands-free dictation and the next long press finishes it; clicks still reach the app, and Escape cancels a hands-free dictation and stays out of the app (macOS)",
+    ),
+    key(
         "labs.caps_lock_light",
         Kind::Choice(&["steady", "slow_blink"]),
         "Labs: whether the Caps Lock light stays solid or blinks slowly while recording (macOS)",
@@ -620,6 +643,11 @@ pub(super) const KEYS: &[Key] = &[
             max: crate::app_settings::HUD_BOTTOM_GAP_MAX as u64,
         },
         "Points the dictation HUD sits above the Dock or the screen's bottom edge at the Bottom position while Labs: HUD height is on; 24 by default, and 0 to 400 (macOS)",
+    ),
+    key(
+        "labs.indicator_follows_mouse",
+        Kind::Bool,
+        "Labs: while a dictation records and processes, the recording indicator sits just below the mouse pointer, or above it near the screen's bottom, and stays inside the screen; Hidden still hides it, and turning it off restores the Top or Bottom position (macOS)",
     ),
     key(
         "labs.skip_pauses",
@@ -700,6 +728,11 @@ pub(super) const KEYS: &[Key] = &[
         "labs.meeting_microphone_mute",
         Kind::Bool,
         "Labs: while a meeting records, Mute microphone leaves Hex's microphone out of the recording and Unmute microphone puts it back; the call's own audio keeps recording and transcribing (macOS)",
+    ),
+    key(
+        "labs.meeting_indicator_display",
+        Kind::Bool,
+        "Labs: the meeting recording indicator stays on the display it was dragged to, in the corner nearest where it was let go, instead of only the primary display (macOS and Windows)",
     ),
     key(
         "labs.output_fixes",
@@ -802,6 +835,12 @@ pub(super) const KEYS: &[Key] = &[
          shortcut were pressed again",
     ),
     key(
+        "labs.confirm_long_cancels",
+        Kind::Bool,
+        "Labs: once a dictation has recorded for 10 seconds, the first cancel press keeps \
+         recording and asks for a second within 3 seconds",
+    ),
+    key(
         "labs.stop_phrase_text",
         Kind::Text,
         "Labs: the phrase that finishes a hands-free dictation, at least two words and six \
@@ -845,6 +884,16 @@ pub(super) const KEYS: &[Key] = &[
          is on; polished by default",
     ),
     key(
+        "labs.meeting_audio_source",
+        Kind::Bool,
+        "Labs: a meeting's computer audio records one app or one output device instead of every output",
+    ),
+    key(
+        "labs.meeting_audio_source_choice",
+        Kind::Json,
+        "Labs: which source labs.meeting_audio_source records, as \"all\", {\"app\":{id,name}}, or {\"output\":{id,name}}; all by default",
+    ),
+    key(
         "meetings.enabled",
         Kind::Bool,
         "Labs: Meetings (beta), call detection, recording, and transcripts",
@@ -875,9 +924,14 @@ pub(super) const KEYS: &[Key] = &[
         "Screen corner of the meeting recording indicator",
     ),
     optional(
+        "meetings.recording_indicator_display",
+        Kind::Text,
+        "The display the meeting recording indicator rests on, named the way the OS names it; none is the primary display",
+    ),
+    optional(
         "meetings.retention",
         Kind::Choice(&["day", "week", "month", "forever"]),
-        "How long finished meetings are kept before they move to the Trash; none keeps new meetings 24 hours and older ones until you choose",
+        "How long finished meetings are kept before they move to the Trash; none keeps new meetings 7 days and older ones until you choose",
     ),
     optional(
         "meetings.audio_retention",
@@ -1030,7 +1084,7 @@ pub(super) const CAPTURE_KEYS: &[Key] = &[
     optional(
         "capture.folder",
         Kind::Path,
-        "Folder for new captures; none uses Scrawl's captures folder",
+        "Folder for new captures; none uses the annotations folder in Hex's application data",
     ),
     optional(
         "capture.media_days",
@@ -1101,6 +1155,7 @@ pub(super) const NEEDS: &[(&str, &str)] = &[
     ("labs.live_chapters", "meetings"),
     ("labs.stop_any_call_recording", "meetings"),
     ("labs.meeting_microphone_mute", "meetings"),
+    ("labs.meeting_indicator_display", "meetings"),
     ("experimental.hex_microphone", "fun"),
     ("typed_text_hotkey", "typed_text"),
     ("show_dock_icon", "dock_icon"),

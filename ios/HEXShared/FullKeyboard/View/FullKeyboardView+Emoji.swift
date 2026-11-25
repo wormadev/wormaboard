@@ -1,32 +1,33 @@
 import QuartzCore
 import UIKit
 
-/// Settings › Keyboard › Emoji in the full keyboard: the emoji key, its panel, the emoji search
-/// (the letter keys type into it while the results sit above), and an emoji in the empty
-/// strip for the word just finished ("pizza " offers 🍕).
+/// Settings › Keyboard › Emoji key and Emoji suggestions in the full keyboard: the emoji key,
+/// its panel, the emoji search (the letter keys type into it while the results sit above), and,
+/// on their own switch, the strip's emoji for the word typed or just finished ("pizza " offers
+/// 🍕). With the key off there is no way into the panel; the suggestions don't need it.
 ///
 /// The index (`EmojiLibrary`, a memory-mapped file and about 0.7 MB of offsets) loads on
 /// the first emoji key press or finished word and stays while the keyboard runs, apart
 /// from memory warnings; the panel, its grid and the search go when the panel closes.
 extension FullKeyboardView {
     var emojiEnabled: Bool {
-        emojiOverride ?? FullKeyboardSettings().emoji
+        emojiOverride ?? FullKeyboardSettings().emojiKey
     }
 
-    /// The strip's emoji (Settings › Keyboard › Emoji suggestions), with or without the key.
-    var showsStripEmoji: Bool {
-        (emojiOverride ?? FullKeyboardSettings().emojiSuggestions) && fieldTakesEmoji
+    var emojiSuggestionsEnabled: Bool {
+        emojiSuggestionsOverride ?? emojiOverride ?? FullKeyboardSettings().emojiSuggestions
     }
 
-    /// Text fields that take any text: not web addresses, email addresses or ASCII-only fields.
-    private var fieldTakesEmoji: Bool {
-        let document = routedTarget.document
-        guard case .keys(let kind, _) = KeyboardFieldRouting.route(for: document.keyboardType), kind.takesWords else { return false }
-        return document.keyboardType != .asciiCapable
-    }
-
+    /// Emoji in text fields that take any text: not web addresses, email addresses or
+    /// ASCII-only fields. The key and the strip's suggestions each follow their own switch.
     func refreshEmojiKey() {
-        let shows = emojiEnabled && fieldTakesEmoji
+        let document = routedTarget.document
+        let takesEmoji: Bool = {
+            guard case .keys(let kind, _) = KeyboardFieldRouting.route(for: document.keyboardType), kind.takesWords else { return false }
+            return document.keyboardType != .asciiCapable
+        }()
+        showsEmojiSuggestions = emojiSuggestionsEnabled && takesEmoji
+        let shows = emojiEnabled && takesEmoji
         guard engine.showsEmoji != shows else { return }
         engine.showsEmoji = shows
         plane.setNeedsDisplay()
@@ -152,7 +153,7 @@ extension FullKeyboardView {
     /// it always does) when the experiment is off, the field keeps emoji or autocorrect away,
     /// no token is being typed, or none matches.
     func emojiShortcodeSuggestions() -> [KeyboardSuggestion]? {
-        guard emojiShortcodesEnabled, showsStripEmoji, !routedTarget.isSearching,
+        guard emojiShortcodesEnabled, showsEmojiSuggestions, !routedTarget.isSearching,
               emojiPanel == nil, allowsEmojiShortcodes,
               let before = engine.typingContext ?? engine.textBefore,
               let token = EmojiShortcode.token(before: before) else { return nil }
@@ -200,7 +201,7 @@ extension FullKeyboardView {
 
     /// The engine's closing ":" hook: a name typed in full (":pizza") types its emoji instead.
     func emojiShortcodeReplacement(before text: String?) -> EmojiShortcode.Replacement? {
-        guard emojiShortcodesEnabled, showsStripEmoji, !routedTarget.isSearching,
+        guard emojiShortcodesEnabled, showsEmojiSuggestions, !routedTarget.isSearching,
               emojiPanel == nil, allowsEmojiShortcodes,
               let text, EmojiShortcode.token(before: text) != nil,
               let library = loadEmojiLibrary() else { return nil }
@@ -343,7 +344,7 @@ extension FullKeyboardView {
 
     /// Up to three emoji for the word just finished, when the strip would be empty.
     func emojiForFinishedWord() -> [KeyboardSuggestion] {
-        guard showsStripEmoji, emojiPanel == nil, !routedTarget.isSearching,
+        guard showsEmojiSuggestions, emojiPanel == nil, !routedTarget.isSearching,
               engine.target.autocorrectionType != .no else { return [] }
         let before = routedTarget.document.documentContextBeforeInput
         guard let before, before.hasSuffix(" "), !before.hasSuffix("  ") else { return [] }
@@ -383,7 +384,7 @@ extension FullKeyboardView {
     /// shows its readings). Nil leaves the strip as it is. A tap puts the emoji in the word's
     /// place (`FullKeyboardEngine.acceptEmoji`).
     func withTypedWordEmoji(_ suggestions: [KeyboardSuggestion]) -> [KeyboardSuggestion]? {
-        guard showsStripEmoji, emojiPanel == nil, !routedTarget.isSearching, allowsEmojiShortcodes,
+        guard showsEmojiSuggestions, emojiPanel == nil, !routedTarget.isSearching, allowsEmojiShortcodes,
               !suggestions.contains(where: { $0.kind == .swiped }),
               let token = AutocorrectEngine.currentToken(in: engine.typingContext ?? engine.textBefore),
               token.count >= 2, token.allSatisfy(\.isLetter),

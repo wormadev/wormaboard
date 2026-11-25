@@ -123,6 +123,19 @@
       "title": "Switch model with keyboard language"
     },
     {
+      "added": "2026-11-24",
+      "group": "models",
+      "groupTitle": "Models",
+      "id": "model-switch-shortcut",
+      "oses": [
+        "macos",
+        "windows",
+        "linux"
+      ],
+      "summary": "One shortcut swaps dictation to another model and language, and pressing it again swaps back",
+      "title": "Model switch shortcut"
+    },
+    {
       "added": "2026-10-30",
       "group": "shortcuts",
       "groupTitle": "Shortcuts",
@@ -905,6 +918,17 @@
       "title": "HUD height"
     },
     {
+      "added": "2026-11-25",
+      "group": "dictation",
+      "groupTitle": "Dictation",
+      "id": "indicator-follows-mouse",
+      "oses": [
+        "macos"
+      ],
+      "summary": "Show the dictation indicator next to your mouse pointer instead of at the top or bottom of the screen",
+      "title": "Indicator follows mouse"
+    },
+    {
       "added": "2026-11-22",
       "group": "dictation",
       "groupTitle": "Dictation",
@@ -951,6 +975,55 @@
       ],
       "summary": "Adds a mute button to meeting recordings. Hex keeps recording the call's audio but leaves out your microphone until you unmute.",
       "title": "Mute the microphone while recording"
+    },
+    {
+      "added": "2026-11-24",
+      "group": "meetings",
+      "groupTitle": "Meetings",
+      "id": "meeting-indicator-display",
+      "oses": [
+        "macos",
+        "windows"
+      ],
+      "summary": "Drag the meeting recording indicator to another display and it stays there",
+      "title": "Indicator on any display"
+    },
+    {
+      "added": "2026-11-24",
+      "group": "meetings",
+      "groupTitle": "Meetings",
+      "id": "meeting-audio-source",
+      "oses": [
+        "macos",
+        "windows",
+        "linux"
+      ],
+      "summary": "Record one app or one output device in meetings instead of all computer audio",
+      "title": "Choose meeting audio"
+    },
+    {
+      "added": "2026-11-25",
+      "group": "dictation",
+      "groupTitle": "Dictation",
+      "id": "confirm-long-cancels",
+      "oses": [
+        "macos",
+        "windows",
+        "linux"
+      ],
+      "summary": "After 10 seconds, cancelling a dictation takes two presses, so one slip keeps your words",
+      "title": "Confirm long cancels"
+    },
+    {
+      "added": "2026-11-25",
+      "group": "shortcuts",
+      "groupTitle": "Shortcuts",
+      "id": "middle-mouse-dictation",
+      "oses": [
+        "macos"
+      ],
+      "summary": "Hold the middle mouse button for half a second to start dictating hands-free, and again to finish. Escape cancels",
+      "title": "Middle mouse dictation"
     }
   ]
 }

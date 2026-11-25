@@ -60,6 +60,13 @@ targets:
             LSHandlerRank: Owner
             LSItemContentTypes:
               - anomaly.hex.typing-config
+          # Hex words files (docs/specs/hex-words.md): AirDrop, Files and Open in Hex hand them
+          # over, and the review sheet reads them (HexInbox).
+          - CFBundleTypeName: Hex words file
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Owner
+            LSItemContentTypes:
+              - anomaly.hex.words
         LSSupportsOpeningDocumentsInPlace: true
         UTExportedTypeDeclarations:
           - UTTypeIdentifier: anomaly.hex.typing-config
@@ -71,6 +78,15 @@ targets:
                 - mhexconfig
               public.mime-type:
                 - application/vnd.anomaly.hex-typing-config
+          - UTTypeIdentifier: anomaly.hex.words
+            UTTypeDescription: Hex words file
+            UTTypeConformsTo:
+              - public.json
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - hexwords
+              public.mime-type:
+                - application/vnd.anomaly.hex-words+json
         CFBundleURLTypes:
           - CFBundleTypeRole: Editor
             CFBundleURLName: anomaly.hex.mobile.keyboard-session
@@ -186,6 +202,10 @@ targets:
     sources:
       - HEXMobileTests
       - path: ../tests/fixtures/vocabulary/audio/term-hex-1.wav
+        buildPhase: resources
+      # The Hex words file's shared cases, read in place (HexWordsSharedCasesTests).
+      - path: ../tests/fixtures/hex-words
+        type: folder
         buildPhase: resources
     dependencies:
       - target: HEXMobile

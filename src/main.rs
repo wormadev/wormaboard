@@ -32,6 +32,8 @@ mod caps_lock_dictation;
 mod capture_host;
 #[cfg(hex_capture)]
 mod capture_zip;
+#[cfg(target_os = "macos")]
+mod codesign;
 mod continuation;
 #[cfg_attr(any(target_os = "linux", target_os = "windows"), allow(dead_code))]
 mod control;
@@ -59,6 +61,8 @@ mod macos_rune;
 mod meeting;
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 mod microphone_activity;
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+mod middle_mouse_dictation;
 mod net;
 #[cfg(target_os = "macos")]
 mod parakeet;
@@ -495,6 +499,7 @@ fn main() -> Result<()> {
                     ..Default::default()
                 },
                 &SHUTDOWN,
+                None,
                 None,
             )
             .map(|_| ())

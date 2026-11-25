@@ -11,6 +11,7 @@ import android.util.Log
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.sqrt
+import kotlinx.coroutines.flow.MutableStateFlow
 
 internal enum class SpeechPhase { Idle, Opening, Listening, Transcribing }
 
@@ -57,23 +58,71 @@ internal class SpeechEdges(private val rate: Int = 16_000) {
 /** Names a dictation's decode to whisper.cpp, in this process (Home and the keyboard share the model). */
 private val jobs = AtomicLong()
 
+/** Where a dictation was made, for Labs › Diagnostics' last dictation. */
+internal enum class DictationPlace { Keyboard, Home, QuickSettings }
+
+/** The speech model when ✓ was tapped: loaded before the dictation, loaded while the person spoke, still loading
+ * (ready [DictationTimes.modelReadyMs] after ✓), loaded by the decode itself after ✓, or not known. */
+internal enum class ModelAtTick { Loaded, LoadedWhileSpeaking, Loading, LoadedAfter, Unknown }
+
+/** [ModelAtTick] from the times (System.nanoTime) of ✓ ([tick]) and of the model's load ahead of the dictation
+ * ([prepared], 0 when it never finished), whether that load read the model ([prepareLoaded]), and whether the
+ * decode had to load it ([decodeLoaded]). */
+internal fun modelAtTick(tick: Long, prepared: Long, prepareLoaded: Boolean, decodeLoaded: Boolean) = when {
+    decodeLoaded -> ModelAtTick.LoadedAfter
+    prepared == 0L -> ModelAtTick.Unknown
+    prepareLoaded && tick != 0L && prepared > tick -> ModelAtTick.Loading
+    prepareLoaded -> ModelAtTick.LoadedWhileSpeaking
+    else -> ModelAtTick.Loaded
+}
+
+/** The last dictation that reached a speech model, for Labs › Diagnostics: durations only, never what was said or typed.
+ * Times are ms after ✓ (after recording stopped when it stopped at 1 minute, [tick] false); [insertedMs] is null
+ * when no text went in. [timings] are whisper.cpp's (Whisper.timings; null when today's model didn't run, since the
+ * faster model gives no split), [cpuMs] the process's processor time during the decode (-1: unreadable), [ran] the
+ * model that wrote the text, [threads] the threads it ran on (0: not known) and [choice] the language Labs › Automatic
+ * listens for the language chose (null with the lab off). */
+internal class DictationTimes(val place: DictationPlace, val recordedMs: Long, val keptMs: Long, val model: ModelAtTick,
+                              val modelReadyMs: Long, val tick: Boolean, val stoppedMs: Long, val decodeStartedMs: Long,
+                              val decodeEndedMs: Long, val insertedMs: Long?, val cpuMs: Long, val timings: LongArray?,
+                              val ran: RanOn = RanOn.Standard, val threads: Int = 0, val choice: LanguageChoice? = null)
+
+/** Held in memory only, so it goes when Hex's process ends; Home and the keyboard share the process. */
+internal val lastDictation = MutableStateFlow<DictationTimes?>(null)
+
 // The IME calls start/finish/cancel on the main thread. One worker records, another transcribes,
 // so a dictation can start while the one before is still transcribing (as desktop Hex queues
 // them); results are inserted in the order they were spoken. Every posted result belongs to its
 // original ticket, including failures.
 internal class MicCapture(
     private val recognizer: Recognizer,
+    private val place: DictationPlace,
     private val update: (SpeechPhase, String?) -> Unit,
     private val meter: (Float) -> Unit,
-    private val insert: (String, SpeechOptions) -> Unit,
+    /** The text, what was heard, the options it was written with and the field number [start] was given. */
+    private val insert: (String, String, SpeechOptions, Int) -> Unit,
 ) {
-    private class Ticket(val options: SpeechOptions) {
+    private class Ticket(val options: SpeechOptions, val field: Int) {
         val job = jobs.incrementAndGet()
         @Volatile var finish = false
         @Volatile var cancelled = false
+        /** The keyboard's field went away: its notes aren't shown in the next one. */
+        var left = false
         var done = false
         var note: String? = null
         var text: String? = null
+        /** What the model heard, before formatting: Labs › Learn from my fixes follows the raw words. */
+        var heard: String? = null
+        /** [options] in the language Labs › Automatic listens for the language chose for it, once decoded. */
+        var written: SpeechOptions? = null
+        // Labs › Diagnostics' last dictation: System.nanoTime of each step (0: not reached) and sample counts.
+        @Volatile var tickAt = 0L
+        var preparedAt = 0L
+        var prepareLoaded = false
+        var stoppedAt = 0L
+        var recorded = 0
+        var kept = 0
+        var spent: SpeechModel.Spent? = null
     }
     private val main = Handler(Looper.getMainLooper())
     private val recorder = Executors.newSingleThreadExecutor { Thread(it, "Hex dictation") }
@@ -89,14 +138,17 @@ internal class MicCapture(
     /** Whether a new dictation can start: nothing holds the microphone. */
     val canStart get() = active == null
 
-    fun start(options: SpeechOptions) {
+    /** [field]: the keyboard's number for the field it is spoken in, handed back with the text. */
+    fun start(options: SpeechOptions, field: Int = 0) {
         if (active != null) return
-        val ticket = Ticket(options)
+        val ticket = Ticket(options, field)
         active = ticket
         publish(SpeechPhase.Opening)
         // The model loads while the person speaks, not after they let go.
         transcriber.execute {
-            try { if (!ticket.cancelled) recognizer.prepare() } catch (_: Throwable) {}
+            try {
+                if (!ticket.cancelled) { ticket.prepareLoaded = recognizer.prepare(ticket.options); ticket.preparedAt = System.nanoTime() }
+            } catch (_: Throwable) {}
         }
         recorder.execute {
             try {
@@ -109,8 +161,11 @@ internal class MicCapture(
         }
     }
 
+    /** ✓, a hold's release, or the keyboard hiding with its field still there: the microphone stops now and what
+     * was heard is transcribed. */
     fun finish() {
         val ticket = active ?: return
+        if (ticket.tickAt == 0L) ticket.tickAt = System.nanoTime()
         ticket.finish = true
         publish(SpeechPhase.Transcribing)
     }
@@ -126,8 +181,14 @@ internal class MicCapture(
         } else cancel()
     }
 
-    /** Leaving the field: nothing recording or transcribing may reach another editor. A decode in progress
-     * stops too, or the next dictation's load and decode would wait for it. */
+    /** The keyboard's field went away: a recording stops as with ✓ and is still transcribed, and nothing of it is shown
+     * in the next field; [insert] gets each text with its old field number, so the keyboard keeps it rather than type it. */
+    fun leave() {
+        queue.forEach { it.left = true }
+        active?.let { it.left = true; finish() }
+    }
+
+    /** Nothing recording or transcribing goes in: Next keyboard, Home or the Quick Settings sheet closing. A decode in progress stops too, or the next dictation's load and decode would wait for it. */
     fun cancel() {
         active?.cancelled = true
         active = null
@@ -151,18 +212,36 @@ internal class MicCapture(
     }
 
     /** A dictation ends: recording stopped with nothing to transcribe, or its text is ready. */
-    private fun complete(ticket: Ticket, note: String? = null, text: String? = null) = main.post {
+    private fun complete(ticket: Ticket, note: String? = null, text: String? = null, heard: String? = null,
+                         written: SpeechOptions? = null) = main.post {
         if (active === ticket) active = null
         if (ticket.cancelled) { publish(current()); return@post }
-        ticket.done = true; ticket.note = note; ticket.text = text
+        ticket.done = true; ticket.note = note; ticket.text = text; ticket.heard = heard; ticket.written = written
         if (ticket !in queue) queue.addLast(ticket)
         var shown: String? = null
         while (queue.firstOrNull()?.done == true) {
             val next = queue.removeFirst()
-            shown = next.note ?: shown
-            next.text?.let { insert(it, next.options) }
+            if (!next.left) shown = next.note ?: shown
+            next.text?.let { insert(it, next.heard ?: it, next.written ?: next.options, next.field) }
+            next.spent?.let {
+                val times = durations(next, it, if (next.text != null) System.nanoTime() else 0L)
+                lastDictation.value = times
+                // Labs › Pick the English model for this phone: numbers only, and never at a dictation's cost.
+                try { recognizer.timed(times, next.options) } catch (_: Exception) {}
+            }
         }
         publish(current(), shown)
+    }
+
+    /** [ticket]'s durations once its text went in at [inserted] (0: no text). Arithmetic only. */
+    private fun durations(ticket: Ticket, spent: SpeechModel.Spent, inserted: Long): DictationTimes {
+        val base = if (ticket.tickAt != 0L) ticket.tickAt else ticket.stoppedAt
+        fun ms(at: Long) = (at - base) / 1_000_000
+        return DictationTimes(place, ticket.recorded * 1000L / 16_000, ticket.kept * 1000L / 16_000,
+            modelAtTick(ticket.tickAt, ticket.preparedAt, ticket.prepareLoaded, spent.loaded),
+            if (ticket.preparedAt != 0L) ms(ticket.preparedAt) else 0,
+            ticket.tickAt != 0L, ms(ticket.stoppedAt), ms(spent.startedAt), ms(spent.endedAt),
+            if (inserted != 0L) ms(inserted) else null, spent.cpuMs, spent.timings, spent.ran, spent.threads, spent.choice)
     }
 
     /** Recording stopped with audio to transcribe: queue it behind earlier dictations. [note] goes with its text. */
@@ -176,14 +255,15 @@ internal class MicCapture(
             decoding = ticket
             try {
                 if (ticket.cancelled) return@execute
-                val options = ticket.options
-                val raw = recognizer.decode(pcm, count, options.spoken.code, options.translate,
-                    options.vocabulary.takeIf { it.isNotEmpty() }?.joinToString(", "), ticket.job)
+                val heard = recognizer.decode(pcm, count, ticket.options, ticket.job)
+                ticket.spent = recognizer.spent(ticket.job)
                 if (ticket.cancelled) return@execute
-                when (val text = raw?.let { SpokenText.format(it, options) }) {
+                // Labs › Automatic listens for the language: formatted and inserted in the language it was written in.
+                val options = heard.spoken?.let(ticket.options::writtenIn) ?: ticket.options
+                when (val text = heard.text?.let { SpokenText.format(it, options) }) {
                     null -> complete(ticket, "Couldn’t transcribe. Try again.")
                     "" -> complete(ticket, "No speech heard")
-                    else -> complete(ticket, note, text)
+                    else -> complete(ticket, dictationNote(note, heard.note), text, heard.text, options)
                 }
             } catch (_: UnsatisfiedLinkError) {
                 complete(ticket, "Speech model unavailable")
@@ -242,6 +322,8 @@ internal class MicCapture(
                 if (record.recordingState == AudioRecord.RECORDSTATE_RECORDING) record.stop()
             } finally { record.release() }
         }
+        ticket.stoppedAt = System.nanoTime()
+        ticket.recorded = count
         val span = speechSpan(edges.first, edges.last, count, rate)
         // Only with "setprop log.tag.HexSpeech DEBUG": how much audio arrived, never the audio or its words.
         if (Log.isLoggable(LOG_TAG, Log.DEBUG)) Log.d(LOG_TAG, "captured $count samples, $voiced voiced, kept ${span.first}..${span.last + 1}")
@@ -252,6 +334,7 @@ internal class MicCapture(
         }
         // Whisper hears the speech and its margins, at least 1.1 s (zeros after it, as before).
         val kept = span.last + 1 - span.first
+        ticket.kept = kept
         if (span.first > 0) pcm.copyInto(pcm, 0, span.first, span.last + 1)
         val padded = maxOf(kept, rate + rate / 10)
         pcm.fill(0, kept, padded)

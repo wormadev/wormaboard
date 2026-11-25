@@ -214,6 +214,10 @@ pub struct LabsSettings {
     /// Whether that light stays solid or blinks slowly while recording
     /// (macOS).
     pub caps_lock_light: CapsLockLight,
+    /// Holding the middle mouse button for half a second starts a hands-free
+    /// dictation and the next long press finishes it; clicks still reach the
+    /// app, and Escape cancels any hands-free dictation (macOS).
+    pub middle_mouse_dictation: bool,
     /// The main window is forced light or dark instead of following the OS
     /// (Labs › Appearance).
     pub appearance: bool,
@@ -232,6 +236,11 @@ pub struct LabsSettings {
     /// The gap in points above the Dock while `hud_height` is on; a saved
     /// value above [`HUD_BOTTOM_GAP_MAX`] is clamped at placement.
     pub hud_bottom_gap: u16,
+    /// While a dictation records and processes, the HUD sits just below the
+    /// pointer (above it near the screen's bottom), on the pointer's screen
+    /// and inside its visible frame, instead of at the Top or Bottom position;
+    /// Hidden still hides it (macOS, Labs › Indicator follows mouse).
+    pub indicator_follows_mouse: bool,
     /// Dictation's microphone opens through Apple's voice processing, so
     /// Control Center's Mic Mode can offer Voice Isolation (macOS, Labs ›
     /// Voice isolation).
@@ -261,6 +270,16 @@ pub struct LabsSettings {
     /// the call's own audio keeps recording and transcribing (macOS; Labs ›
     /// Mute the microphone while recording).
     pub meeting_microphone_mute: bool,
+    /// The meeting recording indicator stays on the display it was dragged
+    /// to, instead of only the primary display (macOS and Windows).
+    pub meeting_indicator_display: bool,
+    /// A meeting's computer audio records one app or one output device
+    /// instead of every output (every OS; Labs › Choose meeting audio).
+    pub meeting_audio_source: bool,
+    /// Which app or output that is while `meeting_audio_source` is on. A
+    /// malformed saved value is dropped by the settings loader, so this
+    /// reads as all computer audio.
+    pub meeting_audio_source_choice: crate::meeting::audio_source::SourceChoice,
     /// With `labs.annotate_replay` on, keeps a rolling 15 s display buffer via `SCClipBufferingOutput` (macOS 27+).
     pub annotate_replay: bool,
     /// An OpenCode service running in the default WSL distribution is used
@@ -307,6 +326,9 @@ pub struct LabsSettings {
     /// A dictation mode's speech model and language follow the foreground
     /// application (macOS and Windows).
     pub app_model_switching: bool,
+    /// `model_switch_hotkey` swaps the dictation selection with the saved
+    /// other model and language, and back.
+    pub model_switch_shortcut: bool,
     /// The menu bar lists the next calendar meetings, each a local start and
     /// end time and title; choosing one with a call link opens it (macOS,
     /// with Meetings on and a calendar connected).
@@ -340,6 +362,9 @@ pub struct LabsSettings {
     /// field returns to its default.
     #[serde(deserialize_with = "deserialize_phrase")]
     pub stop_phrase_text: String,
+    /// Once a dictation has recorded for 10 seconds, its cancel shortcut asks
+    /// for a second press before it throws the recording away (#2837).
+    pub confirm_long_cancels: bool,
     /// Every normal dictation is signed with `signature_text` on its own line
     /// at the end (every OS).
     pub signature: bool,
@@ -535,6 +560,7 @@ impl Default for LabsSettings {
             hide_menu_bar_icon: false,
             caps_lock_dictation: false,
             caps_lock_light: CapsLockLight::Steady,
+            middle_mouse_dictation: false,
             appearance: false,
             appearance_theme: AppearanceTheme::System,
             gnome_clipboard_restore: false,
@@ -542,6 +568,7 @@ impl Default for LabsSettings {
             notch_indicator: false,
             hud_height: false,
             hud_bottom_gap: HUD_BOTTOM_GAP_DEFAULT,
+            indicator_follows_mouse: false,
             voice_isolation: false,
             annotate_replay: false,
             opencode_in_wsl: false,
@@ -558,6 +585,7 @@ impl Default for LabsSettings {
             api_timestamps: false,
             speakers_only: false,
             app_model_switching: false,
+            model_switch_shortcut: false,
             calendar_menu: false,
             calendar_bulk_select: false,
             pause_menu: false,
@@ -567,6 +595,7 @@ impl Default for LabsSettings {
             dictation_style_choice: DictationStyle::Polished,
             stop_phrase: false,
             stop_phrase_text: crate::dictation::stop_phrase::DEFAULT_PHRASE.to_owned(),
+            confirm_long_cancels: false,
             signature: false,
             signature_text: crate::dictation::signature::DEFAULT_TEXT.to_owned(),
             clipboard_phrase: false,
@@ -582,6 +611,9 @@ impl Default for LabsSettings {
             transcript_edits: false,
             stop_any_call_recording: false,
             meeting_microphone_mute: false,
+            meeting_indicator_display: false,
+            meeting_audio_source: false,
+            meeting_audio_source_choice: crate::meeting::audio_source::SourceChoice::All,
             groups: std::collections::BTreeMap::new(),
             stop_when_call_ends: None,
             meeting_descriptive_filenames: None,

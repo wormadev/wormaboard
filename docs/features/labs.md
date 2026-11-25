@@ -67,6 +67,9 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 │                                        saying the phrase at the end of a hands-free dictation finishes it, as if the
 │                                        shortcut were pressed again, and the phrase never reaches the pasted text;
 │                                        needs a speech model that streams on a GPU, as Live text does
+├── Confirm long cancels no labs.confirm_long_cancels        (every OS) once a dictation has recorded 10 s, its cancel shortcut's first press
+│                                        keeps recording and shows "Press again to discard this dictation" beside the HUD
+│                                        for 3 s; a second press inside that window cancels as before (#2837)
 ├── Failure notices no    labs.failure_notices                   when a dictation fails, its explanation sits beside the HUD for about 6 s, or until the next capture starts
 ├── Live typing     no    labs.live_typing                       (Linux Wayland) provisional words as an underlined input-method preedit in the focused field; the final text is committed there instead of pasted; on a compositor that offers no input method (GNOME) its card is disabled with a note and `hex labs` says so
 ├── Appearance      no    labs.appearance + labs.appearance_theme (system/light/dark, default system)  the main window is forced light or dark instead of following the system; the dictation HUD (including its onboarding and Sounds previews) and meeting recording pill remain dark. Other overlays follow the OS. On Windows the title bar follows too, through its background and light/dark mode; Windows 10 has no caption colour, so DWM keeps its own light or dark caption background (builds before 19041 keep the OS caption) while its text and buttons follow
@@ -76,6 +79,9 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 ├── Rewrite reads nearby text no labs.cursor_context (macOS) the mode's OpenCode rewrite reads the focused text element's text around the caret as context for names, terms, and where the result lands; password fields skipped
 ├── Switch model with keyboard language  no  keyboard_model_switching.enabled  (macOS, Windows, X11)
 │                                        the input source picks its mapped model (#216); General shows the mappings while on
+├── Model switch shortcut no labs.model_switch_shortcut + model_switch_hotkey + model_switch_other
+│                                        one key swaps the dictation model and language with a saved other one, and back
+│                                        (installed only); General shows its recorder and Other model row while on
 ├── Mouse shortcuts no    labs.mouse_shortcuts         (macOS)   mouse buttons record as shortcuts (#209)
 ├── Also pause the browser no pause_browser_media      (macOS)   pause a playing tab too, with Pause media (#301); General shows its permission row
 ├── Share dictation shortcut no share_dictation_shortcut (Windows) apps such as Discord see the shortcut too (#176)
@@ -148,6 +154,7 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 ├── Terminal paste shortcut no labs.terminal_paste_shortcut + terminal_paste_hotkey (Windows, Linux)
 │                                        another shortcut dictates like the main one and always pastes with Ctrl+Shift+V; General shows its recorder while on
 ├── Caps Lock dictation no labs.caps_lock_dictation + labs.caps_lock_light (macOS)   a Caps Lock press starts and stops hands-free dictation; its light waits for the microphone, then shows recording (steady or slow blink), processing, and off
+├── Middle mouse dictation no labs.middle_mouse_dictation (macOS) holding the middle button 500 ms starts a hands-free dictation and the next long press finishes it; clicks still reach the app; Escape cancels any hands-free dictation and stays out of the app (#2838)
 ├── Smart spacing   no    labs.smart_spacing           (macOS)   a dictation pasted right after a word gets one leading space (#632)
 ├── Left and right keys no labs.sided_modifier_chords (macOS) the recorder keeps each modifier's side in a modifier-only chord: R⌘ R⌥ (#710)
 ├── Tap or hold      no    labs.tap_or_hold             (macOS, Linux) in Toggle mode, a press held past 300 ms dictates until it lifts; a short tap still locks (#711, #1144)
@@ -275,6 +282,14 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 │                                        // a_raised_bottom_gap_works_on_a_display_below_the_primary,
 │                                        // a_huge_bottom_gap_keeps_the_plate_inside_the_visible_frame,
 │                                        // a_bottom_gap_never_drops_the_window_below_the_visible_bottom (rune_hud/hud_placement.rs)
+├── Indicator follows mouse no labs.indicator_follows_mouse (macOS) while a dictation records and processes, the HUD's plate sits centred
+│                                        28 pt below the pointer (12 pt above it where the visible frame has no room below),
+│                                        on the pointer's screen, kept inside its visible frame and the window inside its frame;
+│                                        it takes the Top and Bottom positions, the notch indicator, and HUD Lab's placements;
+│                                        live text hangs beside it; Hidden still hides it; off, placement is exactly as before
+│                                        // checks: the_plate_follows_the_pointer_below_it_and_flips_above_near_the_bottom,
+│                                        // the_following_plate_stays_on_the_visible_screen_and_the_window_on_its_display
+│                                        // (rune_hud/hud_placement.rs)
 ├── Import audio    no    labs.meeting_import           (macOS)   Meetings offers Import audio…: a WAV, M4A, MP3, AIFF, or CAF
 │                                        file is decoded locally, transcribed with the selected model, saved as a normal
 │                                        meeting (Speaker turns), exported as Markdown, and given notes as a finished recording
@@ -305,6 +320,17 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 │                                        stay put. Unmute microphone puts it back, and turning the lab off restores it
 │                                        at once without stopping, clearing the switch so turning it back on does not
 │                                        re-mute (see meetings.md)
+├── Indicator on any display no labs.meeting_indicator_display (macOS, Windows) dragging the meeting recording
+│                                        capsule (or a panel capsule) and letting go over another display lands it in
+│                                        that display's nearest corner, and every capsule shows there from then on,
+│                                        with `meetings.recording_indicator_display` keeping the OS's own name for it;
+│                                        a display that is gone falls back to the primary one, and off, every capsule
+│                                        stays on the primary display in the saved corner (see meetings.md)
+├── Choose meeting audio no labs.meeting_audio_source + labs.meeting_audio_source_choice (all by default, every OS)
+│                                        Meetings › Settings offers Computer audio: all computer audio, one output device,
+│                                        or one app; a chosen source that isn't there records silence until it returns,
+│                                        a chosen source never falls back to all audio, and another choice applies
+│                                        mid-recording (see meetings.md)
 ├── Restore clipboard on GNOME no labs.gnome_clipboard_restore (Linux) on a Wayland desktop without data-control (GNOME), a paste snapshots and restores
 │                                        the clipboard through XWayland, only while this user's Xwayland already runs; never starts it (#1111)
 ├── Transform typed text no labs.typed_text + typed_text_hotkey (Linux) Settings › Output shows a Typed text section whose shortcut is unbound by
@@ -1156,6 +1182,32 @@ in [control/settings.rs](../../src/control/settings.rs);
 dictation with the lab on, and a request against a live model; the Labs page
 goldens were regenerated for the new card.
 
+Confirm long cancels (`confirm-long-cancels`, every OS, #2837): a long
+dictation is no longer lost to one stray press of its cancel shortcut. Each
+OS's shortcut machine (macOS `DictationHotkey`, Windows' hook state, Linux's
+`ShortcutState`) keeps a `dictation::cancel_confirm::CancelConfirm` that learns
+when its capture starts and ends, and asks it before acting on a cancel press.
+
+```ts
+Cancel shortcut while a dictation records       // labs.confirm_long_cancels
+├── Lab off, or under 10 s recorded -> cancels at once, as before
+├── 10 s or more, first press -> keeps recording; the key stays Hex's (the app
+│   in front never sees it); the live-text plate says "Press again to discard
+│   this dictation" for 3 s, even with Failure notices off
+├── Second press within 3 s -> cancels: cancel tone, nothing pasted; the notice goes
+├── A press after the 3 s -> asks again
+└── hex dictation cancel, lost input, a suspended tap -> cancel at once, never ask
+```
+
+It covers Toggle's cancel shortcut on every OS, and on macOS also an extra
+dictation shortcut's cancel, Caps Lock dictation's Escape, and Hold's Escape
+past the hold threshold. Checks: the policy's tests in
+[cancel_confirm.rs](../../src/dictation/cancel_confirm.rs) and
+`a_long_toggled_recording_needs_a_second_cancel`
+([linux/input.rs](../../src/linux/input.rs)). The macOS and Windows wiring was
+not compiled or run from this Linux checkout, and no OS was tried with a real
+keyboard.
+
 Stop phrase (`stop-phrase`, every OS): while a hands-free dictation records,
 saying a configurable phrase at the end of your speech finishes it as if the
 shortcut were pressed again (the Toggle press, or the press that ends a locked
@@ -1847,6 +1899,68 @@ real Mac with an external keyboard, a real Linux X11 or Wayland shortcut press,
 or the recorder row's rendering; the Labs page goldens show the new row counted
 on Linux, macOS, and Windows.
 
+Model switch shortcut (`model-switch-shortcut`, every OS): one key that
+swaps the dictation model and language with a saved other one, and back, for
+dictating in two languages or with two models without opening Settings. While
+on, General shows a "Model switch shortcut" recorder and an "Other model" row
+under Shortcut, the same installed-model picker the keyboard-language rows use
+(`model_switch_other`). The recorder is clearable and refused when it shares a
+key with another Hex shortcut; every OS needs a key in it, because every OS
+matches it as a key press. `AppSettings::active_model_switch_hotkey` is the
+gate: the toggle on, an other model saved, a binding, and no overlap, so off
+saves nothing and matches nothing.
+
+A press while idle asks the app that owns model preparation for a swap
+(`transcription::other_model::request`); a press while a capture records or a
+dictation transcribes is ignored, and on macOS and Windows the capture keeps
+recording and still finishes. The owner plans the swap
+(`other_model::planned`): the saved choice must pass
+`KeyboardModelChoice::validate` (so Apple Speech and an unsupported language
+are refused), it must differ from the selection already running (the same
+choice is a no-op, with no reload), the model that runs now must be the one
+Hex would switch back to (a missing import refuses the switch instead of
+falling back to another model), and that model must itself be one the switch
+can save as the other (Apple Speech refuses, so swapping away from it can't be
+one-way). It then checks the target is installed and starts the same
+installed-only preparation the picker, the menu bar, and `hex model use` use.
+Only when that preparation loads are `transcription` and `model_switch_other`
+saved together, in one write; a failed preparation keeps the active model and
+the saved selection. A newer choice cancels an uncommitted swap and waits for
+its model load to exit before starting its own, so two models never load at
+once. A switch never cancels another preparation (a download or Enable's
+check): it is refused and that work continues. A refused or missing Other model changes nothing, logs why,
+and shows the reason in Settings, and beside the HUD when Labs › Failure
+notices is on (through the interface's translations), with no sound. Hex never
+downloads for it. A successful swap only logs the model: the HUD's one-line
+notice is the failure path, and Hex has no success notice to reuse.
+
+On macOS the bound key reaches `HotkeyAction::ModelSwitch` beside Paste Last's
+(`suppression::model_switch_action`) and the runtime's preparation; with
+secure input on, the same chord is a Carbon hotkey
+(`suppression::secure_input`). Windows registers it as its own hook trigger,
+swallows it while a capture records, and its host prepares and commits the
+swap. Linux adds `Shortcut::ModelSwitch` to the one reducer, with the portal
+id `model-switch`, an X11 grab, and a GNOME custom shortcut running `hex model
+switch` where there is no portal. `hex model switch` runs the same owner path
+from a terminal, in the running Hex, and is refused with `busy` while Hex
+records. Checks: `a_plan_moves_to_the_other_model_and_back`,
+`the_same_model_is_a_no_op`, `an_invalid_choice_and_a_lab_that_is_off_are_refused`,
+`a_current_model_that_cannot_run_refuses_the_switch`,
+`a_current_model_that_could_not_be_the_other_choice_refuses_the_switch`, and
+`the_shortcut_needs_its_lab_an_other_model_and_its_own_keys` in
+[transcription/other_model.rs](../../src/transcription/other_model.rs);
+`a_newer_choice_waits_for_the_swap_it_supersedes` and
+`a_switch_never_cancels_another_preparation` in
+[linux/app.rs](../../src/linux/app.rs);
+`a_model_switch_swap_saves_both_selections` in
+[app_settings/persistence/tests.rs](../../src/app_settings/persistence/tests.rs);
+`a_switch_press_never_strands_a_capture` in
+[suppression/tests.rs](../../src/suppression/tests.rs) (macOS);
+`the_model_switch_key_never_ends_a_modifier_only_capture` in
+[windows/input.rs](../../src/windows/input.rs) (cross-compiled only).
+Not yet observed: a real shortcut press on any OS, a real portal grant or X11
+grab, or a switch while a Windows hook runs.
+
 More dictation shortcuts (`more-dictation-shortcuts`, macOS): up to four
 more shortcuts that each dictate like the main one, each with its own
 activation mode, for a keyboard with more keys to spare. While on, General
@@ -2044,6 +2158,61 @@ lock reset. Checks:
 with the lab on — no hardware run of the Caps Lock LED, the lock reset, the
 blink, Escape cancellation, or the off/quit cleanup. The `mac-labs` and
 `mac-labs-link` goldens were regenerated on Linux with the new row.
+
+Middle mouse dictation (`middle-mouse-dictation`, issue 2838, macOS): while
+on, holding the middle mouse button for 500 ms toggles a hands-free
+dictation. It is a narrower gesture than Labs › Mouse shortcuts: it needs no
+binding and leaves the dictation shortcut and its activation mode alone.
+
+```ts
+Labs › Middle mouse dictation on                     // labs.middle_mouse_dictation
+├── middle button held 500 ms, idle -> hands-free capture starts while the button is still down
+├── middle button held 500 ms, a hands-free capture running -> finishes and pastes normally
+├── a click shorter than 500 ms -> nothing; every middle click, long or short, still reaches the app
+├── a middle-button drag past 4 points (panning, autoscroll) -> the app's; that press never toggles dictation
+├── started by the mouse -> the dictation shortcut's next press finishes it too
+├── locked by the shortcut (Toggle, double tap, `hex dictation start`) or Caps Lock -> a long press finishes it, keeping that capture's output (Dictate without processing stays raw)
+├── a held press, a pending double tap (the dictation shortcut's or another's), Annotate recording -> a long press does nothing
+├── Escape while any hands-free capture records -> cancels, and the tap keeps Escape from the app (a terminal included), in every shortcut mode; with Labs › Confirm long cancels on, a capture past 10 s asks for a second Escape first
+├── the middle button bound as a shortcut (Labs › Mouse shortcuts) -> the gesture leaves it to that shortcut
+└── lab off -> no gesture, and Escape follows the usual cancel rules
+```
+
+The event tap ([suppression.rs](../../src/suppression.rs)) reports each
+middle-button press, drag, and release to
+[middle_mouse_dictation.rs](../../src/middle_mouse_dictation.rs) while the lab
+is on and never consumes them; a drag more than 4 points (`DRAG_SLOP`, from
+`CGEventGetLocation`) from where the press went down cancels that press. The listener
+([recognition.rs](../../src/recognition.rs)) asks on each pass (at most 20 ms
+apart) whether the held press just reached 500 ms, rechecks that the button
+still reads as down, and hands it to `Hotkeys::middle_mouse_press`
+([recognition/hotkeys.rs](../../src/recognition/hotkeys.rs)): finish the
+machine that records hands-free, or lock the dictation shortcut's machine as
+`hex dictation start` does. Escape is
+`DictationHotkey::set_escape_cancels_lock`
+([suppression/hotkey.rs](../../src/suppression/hotkey.rs)), set on every
+shortcut machine while the lab is on; `takes_escape` follows it, so the tap
+policy keeps that Escape from the app. Checks:
+`a_press_becomes_long_once_after_half_a_second`,
+`a_short_click_never_becomes_long`,
+`a_new_press_replaces_one_whose_release_was_missed`, and
+`a_dragged_press_never_becomes_long` in
+[middle_mouse_dictation.rs](../../src/middle_mouse_dictation.rs);
+`a_middle_mouse_capture_finishes_with_the_dictation_shortcut`,
+`a_middle_mouse_press_finishes_a_hands_free_capture_it_did_not_start`,
+`a_middle_mouse_press_leaves_a_held_capture_alone`,
+`a_middle_mouse_press_leaves_a_pending_double_tap_alone`, and
+`escape_cancels_a_hands_free_capture_only_with_middle_mouse_dictation` in
+[recognition.rs](../../src/recognition.rs), and
+`escape_on_a_long_hands_free_capture_asks_first_with_confirm_long_cancels`
+in [suppression/tests.rs](../../src/suppression/tests.rs) (macOS only; never
+built or run on a Mac: they were only type-checked by `cargo clippy` for
+`aarch64-apple-darwin` from Linux, against a downloaded SDK with stubbed
+Swift tooling and no transcription library);
+`the_middle_mouse_dictation_lab_is_a_macos_shortcuts_lab_off_by_default` in
+[labs.rs](../../src/labs.rs). Not yet observed: a real Mac with the lab on,
+a physical middle button, or Escape kept from a terminal. Its row is macOS
+builds only, so Linux renders of macOS scenes and their goldens leave it out.
 
 Smart spacing (`smart-spacing`, issue 632, macOS): while on, a dictation
 pasted right after typed text gets one leading space, so words don't merge
@@ -3135,6 +3304,31 @@ have no row, `hex labs on hud-height` doesn't know it there, and
 `hud_height_is_its_own_bit_and_off_by_default` in
 [labs.rs](../../src/labs.rs). Not yet observed: a real dictation at a
 raised gap on a Mac, and the card's controls with every language.
+
+Indicator follows mouse (`indicator-follows-mouse`, macOS only, #2839):
+for people who look where their pointer is rather than at the top or bottom
+of the screen. While on, `Hud::place_on_pointer_screen` in
+[rune_hud/macos.rs](../../src/rune_hud/macos.rs) reads `NSEvent.mouseLocation`
+and places the HUD with `hud_placement::near_pointer`: the plate centred
+under the pointer, its top `POINTER_BELOW` (28 pt) below the hotspot, or its
+bottom `POINTER_ABOVE` (12 pt) above it where the visible frame has no room
+below. The plate is clamped inside the pointer screen's `visibleFrame` (clear
+of the menu bar and the Dock) and the window inside the screen's frame, so its
+shadow padding never crosses onto a neighbouring display; where the window
+can't follow, `Layout.center` moves the plate inside it. The pump places a
+shown HUD every frame while it animates (recording and processing), and an
+unchanged placement is skipped, so the HUD follows the pointer, across
+displays too, and stays click-through and unfocused as before. It takes any
+shown position, the notch indicator, and HUD Lab's placements; live text
+hangs beside the plate (`beside_plate`); Hidden still hides it (the live text
+then sits under the menu bar as before); and turning it off restores the Top
+or Bottom placement from the next frame. Linux and Windows have no row.
+Checks:
+`the_plate_follows_the_pointer_below_it_and_flips_above_near_the_bottom` and
+`the_following_plate_stays_on_the_visible_screen_and_the_window_on_its_display`
+in [rune_hud/hud_placement.rs](../../src/rune_hud/hud_placement.rs). Not yet
+observed: a real dictation with the lab on, on one display or several. The row
+renders only in macOS builds, so no golden changes.
 
 Screenshots (`screenshots`, macOS only, group Annotate): for people who
 miss CleanShot's ⌘⇧4. While on, the shortcut (`screenshots.hotkey`,
@@ -4281,6 +4475,110 @@ vocabulary list itself (rewriting and search), and Linux's Terminal paste.
   ([capture.rs](../../src/meeting/capture.rs)); not observed on a real Mac call,
   and the menu bar, capsule, and pane controls are macOS-only code this Linux
   build never compiled.
+- Indicator on any display (macOS and Windows, with Meetings on): letting go
+  of a dragged meeting capsule over another display lands it in that
+  display's corner nearest where the throw would come to rest, and every
+  capsule shows there from then on. A capsule's release already measured
+  the primary display only (`primary_screen_size` in
+  [screen.rs](../../src/rune_ui/meeting_capsules/screen.rs)); on, the release
+  measures the display under the pointer instead (`screen::release`), pins
+  the window to it with Rune's `DisplayTarget::Native`
+  (`placement::place_on`), and the drag's corner is measured on that
+  display's own size, so the pill's side and the panel's edges stay right
+  there. Landing on another display jumps rather than gliding, since a glide
+  is measured within one display; landing on the same display glides as
+  before, and a pointer that is on no display at all (a failed read, or a gap
+  between two displays) keeps the display it was dragged on. An accepted
+  offer hands its own corner and display to the recording pill rather than the
+  saved anchor, so a drag that has not reached settings yet still lands the
+  pill where its window is. `meetings.recording_indicator_display` keeps the
+  landed display as the OS names it (`\\.\DISPLAY2` from the monitor's own
+  device name on Windows, the `CGDirectDisplayID` on macOS), next to
+  `meetings.recording_indicator_corner`, and is left out of `settings.json`
+  while it is the primary display. A saved display that is no longer
+  connected places the capsule on the primary display without clearing the
+  setting, which is also what Rune does with a native display id it cannot
+  find. Off, the capsules are put back on the primary display explicitly
+  (`screen::placed_target`), so turning the lab off mid-session brings a
+  pinned capsule back instead of leaving it there while every release
+  measures the primary display, and the saved display has no effect on where
+  a capsule shows or lands; every release and every show then takes exactly
+  the primary-display path it took before. Checks:
+  `the_meeting_indicator_display_lab_is_a_desktop_meetings_lab_off_by_default`
+  ([labs.rs](../../src/labs.rs)),
+  `a_saved_file_without_the_indicator_display_stays_on_the_primary`
+  ([meetings.rs](../../src/app_settings/meetings.rs)), and the tests in
+  [screen.rs](../../src/rune_ui/meeting_capsules/screen.rs):
+  `a_release_on_the_display_it_was_dragged_on_keeps_its_corner`,
+  `a_release_over_another_display_jumps_to_its_nearest_corner`,
+  `a_pointer_on_no_display_lands_where_it_was_dragged`,
+  `a_saved_display_that_is_gone_measures_the_primary_one`,
+  `a_saved_display_that_is_gone_is_the_primary_target` (a saved but
+  disconnected id resolves to the primary display),
+  `the_display_lab_off_puts_a_capsule_back_on_the_primary_display`, and
+  `a_display_holds_the_pointer_by_its_whole_frame`; plus
+  `the_display_lab_lands_a_release_on_the_pointer_s_display` and
+  `without_the_display_lab_a_release_keeps_the_primary_display`
+  ([meeting_capsules.rs](../../src/rune_ui/meeting_capsules.rs)). **Not
+  verified on real multi-monitor hardware on either OS, and the macOS and
+  Windows halves were not compiled**: this Linux host has no macOS SDK, and
+  Hex's C dependencies need `ml64.exe` for `x86_64-pc-windows-msvc`, though
+  `cargo check --target x86_64-pc-windows-msvc -p scrawl-capture` did check
+  the monitor helper's new device name. A native Wayland capsule still has no
+  display to measure, which is why Linux does not list the card.
+- Choose meeting audio (every OS, with Meetings on): **Computer audio** in
+  Meetings › Settings chooses what a recording's system track hears: all
+  computer audio (the default), one output device, or one app. Its toggle is
+  `labs.meeting_audio_source` (off by default) and the choice is
+  `labs.meeting_audio_source_choice` (`"all"`,
+  `{"app":{"id","name"}}`, or `{"output":{"id","name"}}`). Off, the choice is
+  ignored and every output records exactly as before; on with All computer
+  audio, it does too. The row lists all computer audio first, then each output
+  a meeting can capture, then each app playing now, and it never falls back to
+  every output once a source is chosen: an app that isn't playing, or a device
+  that was unplugged, records silence and keeps its place on the timeline until
+  it returns. A malformed saved value loads as all computer audio, and a saved
+  app or device missing from the list stays the shown choice with "not
+  playing now" or "not connected". Listing runs off the window thread
+  ([rune_ui/meetings/audio_source.rs](../../src/rune_ui/meetings/audio_source.rs)),
+  and a change applies mid-recording: every source compares the choice it
+  opened with on its 2 s route check and reopens with the new one.
+  - macOS taps the app's Core Audio process objects, every one of them, so a
+    helper that starts playing is heard without rebuilding the tap, or the
+    chosen device's UID through its own aggregate; ScreenCaptureKit is never
+    used for a chosen source, and a chosen app or output needs System Audio
+    Recording consent even when Screen Recording is on.
+  - Windows opens that endpoint's cpal loopback, or WASAPI process loopback
+    of the app's process-tree roots; the pane climbs from a playing session
+    only to a known helper (a WebView2 helper, or the browser's own child
+    sharing its executable) that started first, so new Teams'
+    `msedgewebview2.exe` children list and capture as `ms-teams.exe` and an
+    app Chrome, Terminal, Steam or Hex launched is its own app.
+  - Linux runs one `pw-record` per running output stream of the app, adding
+    and removing them in place so an extra stream mid-call is heard without a
+    gap, or one for the chosen sink.
+  Checks:
+  `the_choose_meeting_audio_lab_ships_on_every_os_and_is_off_by_default`
+  ([labs.rs](../../src/labs.rs)),
+  `the_lab_gate_keeps_all_computer_audio_while_off` and the choice's serde
+  tests ([meeting/audio_source.rs](../../src/meeting/audio_source.rs)),
+  `a_choice_records_only_its_own_source`,
+  `an_apps_streams_are_added_and_removed_without_reopening_the_source`,
+  `a_capture_targets_its_own_sink_and_the_fallback_keeps_the_default`, and
+  `an_exited_monitor_is_restarted_while_its_sink_keeps_its_name`
+  ([meeting/linux.rs](../../src/meeting/linux.rs)),
+  `running_output_streams_name_their_apps_and_node_targets` and
+  `hex_own_playback_is_never_an_app_to_choose`
+  ([microphone_activity/linux.rs](../../src/microphone_activity/linux.rs)),
+  `a_chosen_meeting_app_taps_every_one_of_its_processes` and
+  `an_audio_session_belongs_to_its_top_most_ancestor_outside_the_shell`
+  ([microphone_activity.rs](../../src/microphone_activity.rs),
+  [microphone_activity/windows.rs](../../src/microphone_activity/windows.rs)),
+  `an_invalid_meeting_audio_source_choice_loads_all_computer_audio`
+  ([app_settings/persistence/tests.rs](../../src/app_settings/persistence/tests.rs)),
+  and `meeting_audio_source_lists_all_audio_and_keeps_a_missing_choice_visible`
+  ([rune_ui/tests/panes.rs](../../src/rune_ui/tests/panes.rs)); not observed on a
+  real PipeWire session or on macOS or Windows hardware.
 - Import audio (macOS): Meetings offers **Import audio…** beside Start
   recording. A local WAV, M4A, MP3, AIFF, or CAF file is decoded to 16 kHz
   mono float WAV by the AVFoundation bridge, then transcribed with the

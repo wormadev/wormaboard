@@ -10,6 +10,8 @@ struct HEXMobileApp: App {
     @State private var showSetup = SettingsSnapshotFixture.showsSetupSheet
     @State private var openPage: SettingsPage?
     @State private var typingConfigs = TypingConfigInbox.shared
+    /// Counts the keyboard's Open Hex taps from the Hex key menu: each one shows Home.
+    @State private var homeRequests = 0
 
     init() {
         FullKeyboardSettings().applyLaunchArguments()
@@ -23,6 +25,7 @@ struct HEXMobileApp: App {
         KeyboardParakeetSettings().applyLaunchArguments()
         SettingsSnapshotFixture.applyDefaults()
         UNUserNotificationCenter.current().delegate = TypingConfigNotificationDelegate.shared
+        HexInbox.sweep()
     }
 
     private static var initialOpenedFromKeyboard: Bool {
@@ -50,7 +53,8 @@ struct HEXMobileApp: App {
                     dictation: dictation,
                     openedFromKeyboard: $openedFromKeyboard,
                     showSetup: $showSetup,
-                    openPage: $openPage
+                    openPage: $openPage,
+                    homeRequests: homeRequests
                 )
                 .onOpenURL { url in
                     // A typing config (`.mhexconfig`) from Files or a share sheet: its own sheet.
@@ -65,6 +69,8 @@ struct HEXMobileApp: App {
                         TypingConfigWatch.shared.openCompare()
                         return
                     }
+                    // A Hex words file from AirDrop, Files or Open in Hex: its review sheet.
+                    if HexInbox.open(url) { return }
                     guard let request = KeyboardLaunchRequest(url: url) else { return }
                     if case .setup = request {
                         openedFromKeyboard = false
@@ -72,6 +78,10 @@ struct HEXMobileApp: App {
                     } else if case .translationSettings = request {
                         openedFromKeyboard = false
                         openPage = .dictation
+                    } else if case .home = request {
+                        openedFromKeyboard = false
+                        showSetup = false
+                        homeRequests += 1
                     } else if case .pasteSettings = request {
                         openedFromKeyboard = false
                         openPage = .keyboard

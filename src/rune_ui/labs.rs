@@ -49,12 +49,7 @@ pub(super) fn main_panes(ui: &Ui) -> Vec<Pane> {
     }
     panes.push(Pane::History);
     #[cfg(hex_capture)]
-    let optional = [
-        Pane::Captures,
-        Pane::Meetings,
-        Pane::Annotate,
-        Pane::VoiceFilter,
-    ];
+    let optional = [Pane::Meetings, Pane::Annotate, Pane::VoiceFilter];
     #[cfg(not(hex_capture))]
     let optional = [Pane::Meetings, Pane::VoiceFilter];
     panes.extend(optional.into_iter().filter(|pane| pane.shown(ui)));
@@ -687,6 +682,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
     rows.push(row(Feature::FasterLiveText, None));
     rows.push(row(Feature::FailureNotices, None));
     rows.push(row(Feature::StopPhrase, None));
+    rows.push(row(Feature::ConfirmLongCancels, None));
     if caps.os == super::platform::Os::Linux && ui.platform.wayland {
         let live_typing = row(Feature::LiveTyping, Some(&KEYBOARD));
         // An organization's lock and its note already say why the switch is
@@ -709,6 +705,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
     rows.push(row(Feature::Appearance, Some(&PANEL)));
     if caps.meetings {
         rows.push(row(Feature::LiveChapters, None));
+        rows.push(row(Feature::MeetingAudioSource, None));
         rows.push(row(Feature::StopAnyCallRecording, None));
         // macOS's menu bar, capsule, and Meetings pane offer the switch.
         if cfg!(target_os = "macos") {
@@ -723,6 +720,11 @@ fn rows(ui: &Ui) -> Vec<Row> {
         }
         if Feature::MeetingImport.on_this_os() {
             rows.push(row(Feature::MeetingImport, None));
+        }
+        // macOS and Windows place a capsule on a native display; a native
+        // Wayland capsule has no display to measure at all.
+        if Feature::MeetingIndicatorDisplay.on_this_os() {
+            rows.push(row(Feature::MeetingIndicatorDisplay, None));
         }
         rows.push(row(Feature::TranscriptEdits, None));
     }
@@ -741,6 +743,8 @@ fn rows(ui: &Ui) -> Vec<Row> {
     if caps.keyboard_model_switching {
         rows.push(row(Feature::KeyboardModelSwitching, Some(&KEYBOARD)));
     }
+    // One key swaps the dictation model with the other saved one, and back.
+    rows.push(row(Feature::ModelSwitchShortcut, Some(&KEYBOARD)));
     // Every OS's paster can leave a dictation on the clipboard; only macOS's
     // and Windows' can skip the paste.
     rows.push(row(Feature::KeepOnClipboard, None));
@@ -777,6 +781,8 @@ fn rows(ui: &Ui) -> Vec<Row> {
         if cfg!(target_os = "macos") {
             // Up to four more, each with its own activation mode.
             rows.push(row(Feature::MoreDictationShortcuts, Some(&KEYBOARD)));
+            // The event tap times a held middle button.
+            rows.push(row(Feature::MiddleMouseDictation, Some(&MOUSE)));
             // Reads the text before the cursor through macOS Accessibility.
             rows.push(row(Feature::SmartSpacing, None));
             // macOS's recorder reads each modifier key's side.
@@ -795,6 +801,8 @@ fn rows(ui: &Ui) -> Vec<Row> {
             rows.push(row(Feature::NotchIndicator, Some(&WAVE)));
             // macOS's HUD reads its bottom gap from the saved setting.
             rows.push(row(Feature::HudHeight, Some(&PANEL)));
+            // macOS's HUD reads the pointer from NSEvent as it places itself.
+            rows.push(row(Feature::IndicatorFollowsMouse, Some(&WAVE)));
             // Hex's session tap takes the shortcut; ScreenCaptureKit shoots.
             #[cfg(hex_capture)]
             rows.push(row(Feature::Screenshots, Some(&CAMERA)));
@@ -1045,6 +1053,7 @@ fn row_key(lab: Lab) -> &'static str {
         Feature::LearnFromCorrections => "lab-learn-from-corrections",
         Feature::TerminalPaste => "lab-terminal-paste",
         Feature::KeyboardModelSwitching => "lab-keyboard-model-switching",
+        Feature::ModelSwitchShortcut => "lab-model-switch-shortcut",
         Feature::MouseShortcuts => "lab-mouse-shortcuts",
         Feature::PauseBrowser => "lab-pause-browser",
         Feature::ShareShortcut => "lab-share-shortcut",
@@ -1110,8 +1119,10 @@ fn row_key(lab: Lab) -> &'static str {
         Feature::VoicePrompt => "lab-voice-prompt",
         Feature::CursorContext => "lab-cursor-context",
         Feature::StopPhrase => "lab-stop-phrase",
+        Feature::ConfirmLongCancels => "lab-confirm-long-cancels",
         Feature::Signature => "lab-signature",
         Feature::HudHeight => "lab-hud-height",
+        Feature::IndicatorFollowsMouse => "lab-indicator-follows-mouse",
         Feature::VoiceIsolation => "lab-voice-isolation",
         Feature::HoldThroughKeys => "lab-hold-through-keys",
         Feature::ModesEditor => "lab-modes-editor",
@@ -1122,6 +1133,9 @@ fn row_key(lab: Lab) -> &'static str {
         Feature::StopAnyCallRecording => "lab-stop-any-call-recording",
         Feature::ClipboardPhrase => "lab-clipboard-phrase",
         Feature::MeetingMicrophoneMute => "lab-meeting-microphone-mute",
+        Feature::MeetingIndicatorDisplay => "lab-meeting-indicator-display",
+        Feature::MeetingAudioSource => "lab-meeting-audio-source",
+        Feature::MiddleMouseDictation => "lab-middle-mouse-dictation",
     }
 }
 

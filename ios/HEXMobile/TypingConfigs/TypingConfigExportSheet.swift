@@ -103,7 +103,7 @@ struct TypingConfigExportSheet: View {
             do {
                 let built = try await TypingConfigExport.build(days: chosenDays)
                 building = false
-                ShareSheet.present([built.url]) {
+                ShareSheet.present([built.url]) { _ in
                     TypingConfigExport.discard(built)
                     dismiss()
                 }
