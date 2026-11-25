@@ -112,6 +112,8 @@ struct DictationSettingsPage: View {
                 .padding(.horizontal, 16)
                 .frame(minHeight: 48)
 
+                SettingsDivider()
+
                 HStack(spacing: 12) {
                     SettingsRowLabel(title: String(localized: "Waveform"))
                     Spacer(minLength: 8)
