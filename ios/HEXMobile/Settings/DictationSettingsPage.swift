@@ -57,6 +57,8 @@ struct DictationSettingsPage: View {
     private let keyboardParakeetFits = KeyboardParakeetSettings.fits()
     /// Keep mic warm stays on the page once picked, even Off where it would hide.
     @State private var keepsWarmRow = false
+    @AppStorage(DictationWaveform.key, store: UserDefaults(suiteName: KeyboardBridge.appGroup))
+    private var waveform: DictationWaveform = .braid
 
     private var showsStyleFormatting: Bool {
         dictation.style != .verbatim
@@ -105,6 +107,28 @@ struct DictationSettingsPage: View {
                         }
                     } label: {
                         SettingsMenuValue(value: dictation.style.label)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .frame(minHeight: 48)
+
+                HStack(spacing: 12) {
+                    SettingsRowLabel(title: String(localized: "Waveform"))
+                    Spacer(minLength: 8)
+                    Menu {
+                        ForEach(DictationWaveform.allCases, id: \.self) { candidate in
+                            Button {
+                                waveform = candidate
+                            } label: {
+                                if waveform == candidate {
+                                    Label(candidate.label, systemImage: "checkmark")
+                                } else {
+                                    Text(candidate.label)
+                                }
+                            }
+                        }
+                    } label: {
+                        SettingsMenuValue(value: waveform.label)
                     }
                 }
                 .padding(.horizontal, 16)

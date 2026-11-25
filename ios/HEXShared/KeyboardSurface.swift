@@ -459,6 +459,9 @@ struct KeyboardSurfaceView: View {
         )
     }
 
+    @AppStorage(DictationWaveform.key, store: UserDefaults(suiteName: KeyboardBridge.appGroup))
+    private var waveform: DictationWaveform = .braid
+
     private var isStageActive: Bool {
         model.stagePhase == .starting || model.stagePhase == .recording || model.stagePhase == .transcribing
     }
@@ -1025,15 +1028,26 @@ struct KeyboardSurfaceView: View {
         return ZStack {
             HexRecessedWell(isDark: p.isDark)
 
-            BraidScopeView(
-                phase: model.dotScopePhase,
-                leadingInset: CGFloat(leadInset),
-                trailingInset: CGFloat(trailInset),
-                color: p.textBase,
-                loudnessProvider: { [weak model] in model?.liveLoudnessDB ?? -62.0 }
-            )
-            .clipShape(Capsule())
-            .allowsHitTesting(false)
+            // Hex's Metal scope mounts only for a stage; at rest its dots are drawn flat.
+            if waveform == .hex && !isStageActive {
+                KeyboardRestingDotBar(
+                    isDark: p.isDark,
+                    leadingInset: CGFloat(leadInset),
+                    trailingInset: CGFloat(trailInset)
+                )
+                .clipShape(Capsule())
+                .allowsHitTesting(false)
+            } else {
+                DictationWaveView(
+                    phase: model.dotScopePhase,
+                    leadingInset: CGFloat(leadInset),
+                    trailingInset: CGFloat(trailInset),
+                    color: p.textBase,
+                    loudnessProvider: { [weak model] in model?.liveLoudnessDB ?? -62.0 }
+                )
+                .clipShape(Capsule())
+                .allowsHitTesting(false)
+            }
 
             // Recording peer controls (`✕`, starting spinner, and `Done`), always mounted so enter/exit springs stay continuous.
             HStack(spacing: 8) {
@@ -1319,5 +1333,76 @@ struct KeyboardSurfaceView: View {
     private func returnInk(_ p: KeyboardChromePalette) -> Color {
         if !model.returnKeyEnabled { return p.returnDisabledInk }
         return model.returnKey.isAction ? .white : p.textBase
+    }
+}
+
+/// Metal-free stand-in for the resting Dot Scope bar. Mounting it instead of
+/// `DotScopeView` keeps the keyboard extension's launch path off the GPU: no
+/// device, command queue, render pipelines, `CAMetalLayer`, display link, or
+/// idle simulation steps before the first frame.
+private struct KeyboardRestingDotBar: View {
+    let isDark: Bool
+    let leadingInset: CGFloat
+    let trailingInset: CGFloat
+
+    private static let pitch: CGFloat = 3.5
+    private static let rows = 11
+    private static let fade: CGFloat = 26
+    private static let braidCycles: Double = 2.1
+    private static let restingAmplitude: Double = 0.9
+
+    var body: some View {
+        let lead = Double(max(0, leadingInset))
+        let trail = Double(max(0, trailingInset))
+        let tint: (red: Double, green: Double, blue: Double) = isDark
+            ? (red: 0.93, green: 0.91, blue: 0.86)
+            : (red: 0.55, green: 0.46, blue: 0.33)
+        return Canvas { context, size in
+            let pitch = Double(Self.pitch)
+            let firstX = lead + 3
+            let lastX = Double(size.width) - trail - 3
+            guard lastX - firstX > pitch * 2, size.height > 8 else { return }
+
+            let columns = max(3, Int(((lastX - firstX) / pitch).rounded(.down)) + 1)
+            let midY = Double(size.height) * 0.5
+            let halfRows = Double(Self.rows - 1) * 0.5
+
+            for column in 0..<columns {
+                let x = firstX + Double(column) * pitch
+                let xn = Double(column) / Double(max(1, columns - 1))
+                let fadeIn = min(1.0, max(0.0, (x - lead) / Double(Self.fade)))
+                let fadeOut = min(1.0, max(0.0, (Double(size.width) - trail - x) / Double(Self.fade)))
+                let edge = min(fadeIn, fadeOut)
+                guard edge > 0.004 else { continue }
+
+                // The live scope flattens to a faint mirrored braid at rest.
+                let wobble = sin(2.0 * .pi * Self.braidCycles * xn - 0.6) * Self.restingAmplitude
+                let upper = midY - wobble
+                let lower = midY + wobble
+
+                for row in 0..<Self.rows {
+                    let y = midY + (Double(row) - halfRows) * pitch
+                    let litUpper = exp(-pow(y - upper, 2) / 2.2)
+                    let litLower = exp(-pow(y - lower, 2) / 2.2)
+                    let power = min(1.0, 1.0 - (1.0 - litUpper) * (1.0 - litLower))
+                    let alpha = (0.05 + 0.40 * power) * edge
+                    guard alpha > 0.01 else { continue }
+                    let radius = (0.16 + 0.21 * power) * pitch
+                    context.fill(
+                        Path(
+                            ellipseIn: CGRect(
+                                x: x - radius,
+                                y: y - radius,
+                                width: radius * 2,
+                                height: radius * 2
+                            )
+                        ),
+                        with: .color(Color(red: tint.red, green: tint.green, blue: tint.blue, opacity: alpha))
+                    )
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityHidden(true)
     }
 }

@@ -18,7 +18,8 @@ final class LiveActivityCoordinator {
         let state = HexDictationActivityAttributes.ContentState(
             stage: .recording,
             startedAt: startedAt,
-            subtitle: "Recording on this iPhone"
+            subtitle: "Recording on this iPhone",
+            waveform: .stored(in: UserDefaults(suiteName: KeyboardBridge.appGroup))
         )
         if let id = currentActivityID, Self.isActive(id) {
             Task.detached {
@@ -45,7 +46,8 @@ final class LiveActivityCoordinator {
         let state = HexDictationActivityAttributes.ContentState(
             stage: .transcribing,
             startedAt: startedAt,
-            subtitle: "Transcribing locally…"
+            subtitle: "Transcribing locally…",
+            waveform: .stored(in: UserDefaults(suiteName: KeyboardBridge.appGroup))
         )
         Task.detached {
             await Self.updateActivity(id: id, state: state, staleDate: Date().addingTimeInterval(30))
@@ -63,7 +65,8 @@ final class LiveActivityCoordinator {
         let state = HexDictationActivityAttributes.ContentState(
             stage: .copied,
             startedAt: Date(),
-            subtitle: "Copied to clipboard"
+            subtitle: "Copied to clipboard",
+            waveform: .stored(in: UserDefaults(suiteName: KeyboardBridge.appGroup))
         )
         runEnding {
             await Self.endActivities(ids: others)
@@ -140,7 +143,8 @@ final class LiveActivityCoordinator {
         let state = HexDictationActivityAttributes.ContentState(
             stage: .copied,
             startedAt: Date(),
-            subtitle: "Done"
+            subtitle: "Done",
+            waveform: .stored(in: UserDefaults(suiteName: KeyboardBridge.appGroup))
         )
         for activity in Activity<HexDictationActivityAttributes>.activities where ids.contains(activity.id) {
             await activity.end(

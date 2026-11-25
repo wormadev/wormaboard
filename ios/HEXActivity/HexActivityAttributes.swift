@@ -13,6 +13,8 @@ nonisolated struct HexDictationActivityAttributes: ActivityAttributes {
         var stage: Stage
         var startedAt: Date
         var subtitle: String
+        /// Settings › Dictation's waveform; nil (an older app) draws the braid.
+        var waveform: DictationWaveform?
     }
 
     var sessionID: String
