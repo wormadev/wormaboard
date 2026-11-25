@@ -80,6 +80,8 @@ final class KeyboardStripView: UIView {
     private let undoChip = UIButton(type: .custom)
     private let slotButtons: [SlotButton] = [SlotButton(), SlotButton(), SlotButton()]
     private var currentSuggestions: [KeyboardSuggestion] = []
+    /// Arabic: the slots run right to left, the word you typed on the right, as Apple's bar.
+    private var rightToLeft = false
     private var showsUndo = false
     private var statusText: String?
     private var clipboard: KeyboardClipboardOffer?
@@ -231,14 +233,17 @@ final class KeyboardStripView: UIView {
         clipboard: KeyboardClipboardOffer? = nil,
         clipboardHistory: Bool = false,
         fullAccessHint: Bool = false,
-        notice: KeyboardStripNotice? = nil
+        notice: KeyboardStripNotice? = nil,
+        rightToLeft: Bool = false
     ) {
         let changed = suggestions != currentSuggestions || showsUndo != self.showsUndo
+            || rightToLeft != self.rightToLeft
             || statusText != self.statusText || clipboard != self.clipboard
             || clipboardHistory != self.clipboardHistory
             || fullAccessHint != showsFullAccessHint || notice != self.notice
         guard changed else { return }
         currentSuggestions = suggestions
+        self.rightToLeft = rightToLeft
         self.showsUndo = showsUndo
         self.statusText = statusText
         self.clipboard = clipboard
@@ -292,7 +297,7 @@ final class KeyboardStripView: UIView {
             slotButtons.forEach { $0.configure(with: nil, palette: palette, animated: animated) }
         } else {
             show(statusLabel, false)
-            let slots = Self.slots(for: suggestions)
+            let slots = Self.slots(for: suggestions, rightToLeft: rightToLeft)
             for (idx, button) in slotButtons.enumerated() {
                 let item = slots.firstIndex(of: idx).map { suggestions[$0] }
                 button.configure(with: item, palette: palette, animated: animated)
@@ -338,10 +343,11 @@ final class KeyboardStripView: UIView {
     private static let chipScale: CGFloat = 0.96
 
     /// Which slot shows each suggestion: in order, except a lone emoji, swiped word or reading
-    /// of one, which takes the centre. A revert keeps the left slot.
-    static func slots(for suggestions: [KeyboardSuggestion]) -> [Int] {
+    /// of one, which takes the centre. A revert keeps the left slot (the right one right to left).
+    static func slots(for suggestions: [KeyboardSuggestion], rightToLeft: Bool = false) -> [Int] {
         if suggestions.count == 1, ![.keepLiteral, .secondary, .revert].contains(suggestions[0].kind) { return [1] }
-        return Array(suggestions.indices.prefix(3))
+        let slots = Array(suggestions.indices.prefix(3))
+        return rightToLeft ? slots.map { 2 - $0 } : slots
     }
 
     /// Clipboard chips replace the empty strip; suggestions and status win.
@@ -433,7 +439,7 @@ final class KeyboardStripView: UIView {
         undoChip.configuration = chip
         fullAccessHintView?.palette = palette
         noticeView?.palette = palette
-        for (item, slot) in Self.slots(for: currentSuggestions).enumerated() {
+        for (item, slot) in Self.slots(for: currentSuggestions, rightToLeft: rightToLeft).enumerated() {
             slotButtons[slot].configure(with: currentSuggestions[item], palette: palette, animated: false)
         }
         updateDividers(animated: false)
@@ -517,12 +523,12 @@ final class KeyboardStripView: UIView {
         let reverting = currentSuggestions.first?.kind == .revert
         let lineH: CGFloat = min(24, bounds.height - 2, chipHeight ?? .infinity, 2 * contentCenterY)
         let y = contentCenterY - lineH / 2
-        let slots = Self.slots(for: currentSuggestions)
+        let slots = Self.slots(for: currentSuggestions, rightToLeft: rightToLeft)
         let filled = Set(slots)
         let bubbled: Set<Int> = appleBar ? Set(zip(currentSuggestions, slots).filter { $0.0.willAutoReplace || $0.0.kind == .revert }.map(\.1)) : []
         var frames = none
         for (index, slot) in currentSlotFrames.prefix(2).enumerated()
-        where slot.maxX < bounds.width - 1 && filled.contains(index) && filled.contains(index + 1) && !(reverting && index == 0)
+        where slot.maxX < bounds.width - 1 && filled.contains(index) && filled.contains(index + 1) && !(reverting && index == (rightToLeft ? 1 : 0))
             && !bubbled.contains(index) && !bubbled.contains(index + 1) {
             frames[index] = CGRect(x: slot.maxX - 1, y: y, width: 1, height: lineH)
         }
@@ -580,13 +586,13 @@ final class KeyboardStripView: UIView {
     }
 
     @objc private func handleSlotTap(_ sender: SlotButton) {
-        guard let item = Self.slots(for: currentSuggestions).firstIndex(of: sender.tag) else { return }
+        guard let item = Self.slots(for: currentSuggestions, rightToLeft: rightToLeft).firstIndex(of: sender.tag) else { return }
         onSelectSuggestion?(currentSuggestions[item])
     }
 
     @objc private func handleSlotHold(_ recognizer: UILongPressGestureRecognizer) {
         guard recognizer.state == .began, let slot = recognizer.view?.tag,
-              let item = Self.slots(for: currentSuggestions).firstIndex(of: slot) else { return }
+              let item = Self.slots(for: currentSuggestions, rightToLeft: rightToLeft).firstIndex(of: slot) else { return }
         onHoldSuggestion?(currentSuggestions[item])
     }
 
@@ -680,6 +686,8 @@ final class KeyboardStripView: UIView {
         static let maxStagger: CFTimeInterval = 0.025
         static let staggerSpan: CFTimeInterval = 0.08
         static let rise: CGFloat = 6
+        /// A joined word's crossfade to the next (Apple's Arabic bar: one or two frames at 30 fps).
+        static let joinedSwap: CFTimeInterval = 0.06
         static let pillIn: CFTimeInterval = 0.15
         static let pillOut: CFTimeInterval = 0.12
 
@@ -721,6 +729,22 @@ final class KeyboardStripView: UIView {
             }
             guard old?.displayText != suggestion?.displayText || old?.kind == .emoji && suggestion?.kind != .emoji else { return startTicking() }
             let target = suggestion.map(layout)
+            // Joined words (Arabic) swap in place on a quick crossfade, as Apple's bar does as you
+            // type: rolling a whole word in and out on every key jumped about.
+            if Self.shapesAcrossLetters(old?.displayText ?? "") || Self.shapesAcrossLetters(suggestion?.displayText ?? "") {
+                let x = wordX.value(t)
+                for i in glyphs.indices {
+                    if glyphs[i].fixedX == nil { glyphs[i].fixedX = x + glyphs[i].offset }
+                    glyphs[i].leaving = true
+                    glyphs[i].tween.retarget(to: 0, y: glyphs[i].tween.value(t).y, at: t, length: Self.joinedSwap)
+                }
+                wordX = .at(target?.origin.x ?? x)
+                for var glyph in target?.glyphs ?? [] {
+                    glyph.tween = Tween(a0: 0, a1: 1, start: t, length: Self.joinedSwap)
+                    glyphs.append(glyph)
+                }
+                return startTicking()
+            }
             let current = glyphs.filter { !$0.leaving }
             // Letters both words start with stay, unless a bubble came or went (its ink changes).
             // A joined word (Arabic) is one glyph, so it never shares letters: keeping its old

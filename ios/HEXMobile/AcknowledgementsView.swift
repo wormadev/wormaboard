@@ -139,6 +139,15 @@ struct AcknowledgementsView: View {
             the Leipzig Corpora Collection: From 100 to 200 Languages. LREC 2012.
             """
         ),
+        Entry(
+            title: "OpenSubtitles",
+            body: """
+            As many words again of everyday Arabic come from the OpenSubtitles 2018 corpus \
+            (opensubtitles.org), as compiled by OPUS (opus.nlpl.eu). P. Lison and J. Tiedemann: \
+            OpenSubtitles2016: Extracting Large Parallel Corpora from Movie and TV Subtitles. \
+            LREC 2016.
+            """
+        ),
     ]
 
     /// The entries the app shows: Polish's once the keyboard bundles its model (`pl.hextm`).

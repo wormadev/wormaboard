@@ -50,6 +50,11 @@ The app shows these under Settings › Acknowledgements (`HEXMobile/Acknowledgem
   keeps the 150,000 commonest. D. Goldhahn, T. Eckart and U. Quasthoff: Building Large
   Monolingual Dictionaries at the Leipzig Corpora Collection: From 100 to 200 Languages
   (LREC 2012).
+- **OpenSubtitles:** as many words again of everyday Arabic come from the OpenSubtitles 2018
+  corpus (<https://www.opensubtitles.org>) as compiled by OPUS (<https://opus.nlpl.eu>), the
+  first 300 MB of its Arabic monolingual text (`scripts/build-arabic-typing-model.py`).
+  P. Lison and J. Tiedemann: OpenSubtitles2016: Extracting Large Parallel Corpora from Movie
+  and TV Subtitles (LREC 2016).
 - **RLA-ES:** Spanish words are checked against RLA-ES, the Spanish spelling dictionaries
   for LibreOffice by Santiago Bosio and contributors (Spain and Mexico), used under the
   [Mozilla Public License 1.1](https://www.mozilla.org/en-US/MPL/1.1/)

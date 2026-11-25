@@ -185,8 +185,25 @@ nonisolated final class TypingDecoderModel: @unchecked Sendable {
     /// Complete a short prefix with the word frequencies, backed by the previous word's
     /// bigrams when available. Word indices and each bigram row have the same sort order:
     /// walk only the matching prefix range, creating strings only for contenders.
-    func completions(of prefix: String, after previous: String?, allowing: (String) -> Bool) -> [String] {
-        guard let codes = encode(prefix), (1...3).contains(codes.count) else { return [] }
+    func completions(of prefix: String, after previous: String?, longest: Int = 3, allowing: (String) -> Bool) -> [String] {
+        rankedCompletions(of: prefix, after: previous, longest: longest, allowing: allowing).map(\.text)
+    }
+
+    /// The likeliest two completions of `prefix` and of its `respellings` together, the likeliest
+    /// two overall; a respelling may also be the whole word. Arabic respells a word-initial ا as
+    /// أ, إ and آ, which most people leave off ("انا" offers "أنا").
+    func completions(of prefix: String, respellings: [String], after previous: String?, longest: Int, allowing: (String) -> Bool) -> [String] {
+        (rankedCompletions(of: prefix, after: previous, longest: longest, allowing: allowing)
+            + respellings.flatMap { rankedCompletions(of: $0, after: previous, longest: longest, exact: true, allowing: allowing) })
+            .sorted { $0.rank < $1.rank }
+            .prefix(2)
+            .map(\.text)
+    }
+
+    private func rankedCompletions(
+        of prefix: String, after previous: String?, longest: Int, exact: Bool = false, allowing: (String) -> Bool
+    ) -> [(rank: Int, text: String)] {
+        guard let codes = encode(prefix), (1...longest).contains(codes.count) else { return [] }
         var lo = 0, hi = wordCount
         for (depth, code) in codes.enumerated() {
             (lo, hi) = narrow(lo, hi, depth: depth, byte: Int(code))
@@ -214,7 +231,7 @@ nonisolated final class TypingDecoderModel: @unchecked Sendable {
                 next = link < end ? follower(link) : hi
             }
             let rank = cost * 256 + unigram
-            guard length(i) > codes.count, length(i) <= codes.count + 8,
+            guard length(i) > codes.count || exact && length(i) == codes.count, length(i) <= codes.count + 8,
                   best.count < 2 || rank < best[1].rank else { continue }
             let text = word(i)
             guard allowing(text) else { continue }
@@ -222,7 +239,7 @@ nonisolated final class TypingDecoderModel: @unchecked Sendable {
             best.insert((rank, text), at: at)
             if best.count > 2 { best.removeLast() }
         }
-        return best.map(\.text)
+        return best
     }
 
     @inline(__always) private func follower(_ link: Int) -> Int {

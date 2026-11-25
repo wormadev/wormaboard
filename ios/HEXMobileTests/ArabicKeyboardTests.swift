@@ -40,6 +40,7 @@ final class ArabicKeyboardTests: XCTestCase {
         XCTAssertEqual(rows[1].last?.frame.maxX ?? 0, rows[0].last?.frame.maxX ?? 0, accuracy: 0.5)
         let delete = try? XCTUnwrap(layout.key(.delete))
         XCTAssertGreaterThan(delete?.frame.minX ?? 0, rows[2].last?.frame.maxX ?? .infinity, "delete ends row 3")
+        XCTAssertEqual(delete?.frame.width ?? 0, layout.modifierWidth, accuracy: 0.5, "delete as wide as English's")
         XCTAssertEqual(KeyboardLanguage.arabic.letterLayouts, [.own, .arabicPC])
         XCTAssertFalse(KeyboardLanguage.arabic.isLatin, "never a bilingual partner of a Latin layout")
     }
@@ -193,8 +194,27 @@ final class ArabicKeyboardTests: XCTestCase {
             XCTAssertNotNil(model.index(of: word), word)
         }
         XCTAssertTrue(model.hasPair("السلام", "عليكم"))
-        XCTAssertTrue(model.nextWords(after: "عليكم", allowing: { _ in true }).contains("ورحمة"))
+        XCTAssertTrue(model.hasPair("عليكم", "ورحمة"))
+        XCTAssertTrue(model.nextWords(after: "كيف", allowing: { _ in true }).contains("حالك"), "everyday words, from the subtitles")
         XCTAssertTrue(model.completions(of: "شكر", after: nil, allowing: { _ in true }).contains("شكرا"))
+    }
+
+    /// Long prefixes complete from the model too, and a word-initial ا also reads as أ, إ and آ,
+    /// the whole respelled word included ("انا" offers "أنا").
+    func testModelCompletesLongPrefixesAndBareAlef() throws {
+        let model = try model()
+        XCTAssertTrue(model.completions(of: "مرحب", after: nil, longest: 24, allowing: { _ in true }).contains("مرحبا"))
+        XCTAssertEqual(model.completions(of: "مرحب", after: nil, allowing: { _ in true }), [], "other languages stop at three letters")
+        let respellings = ["أ", "إ", "آ"].map { $0 + "نا" }
+        XCTAssertEqual(model.completions(of: "انا", respellings: respellings, after: nil, longest: 24, allowing: { _ in true }).first, "أنا")
+    }
+
+    /// Apple's Arabic bar runs right to left: what you typed on the right, the best word left of it.
+    func testStripSlotsRunRightToLeftForArabic() {
+        let words = ["“مرحب”", "مرحبا", "مرحبة"].map { KeyboardSuggestion(displayText: $0, replacement: $0, kind: .secondary) }
+        XCTAssertEqual(KeyboardStripView.slots(for: words), [0, 1, 2])
+        XCTAssertEqual(KeyboardStripView.slots(for: words, rightToLeft: true), [2, 1, 0])
+        XCTAssertEqual(KeyboardStripView.slots(for: Array(words.prefix(2)), rightToLeft: true), [2, 1])
     }
 
     /// The simulator's Arabic dictionary doesn't load ("Lexicon creation for ar failed"), so a

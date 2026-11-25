@@ -1072,11 +1072,13 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
         // long for full-size shift and delete (Russian's nine) narrows them to fit instead, as
         // Apple's Russian keyboard does; every other layout keeps them at `modW`.
         let middle = rows[2]
-        // Arabic – PC's delete is one of its row's ten columns.
+        // Arabic – PC's delete is one of its row's ten columns. Arabic has no shift, so its delete
+        // alone takes the room left beside the letters.
+        let row3Modifiers: CGFloat = language == .arabic ? 1 : 2
         let row3ModW = layer == .letters
             ? language.offered(letters) == .arabicPC
                 ? lw
-                : min(modW, (innerWidth - 2 * m.side - CGFloat(middle.count) * lw - CGFloat(middle.count + 1) * m.gap) / 2)
+                : min(modW, (innerWidth - 2 * m.side - CGFloat(middle.count) * lw - CGFloat(middle.count + 1) * m.gap) / row3Modifiers)
             : modW
         if !dvorak {
             switch layer {
