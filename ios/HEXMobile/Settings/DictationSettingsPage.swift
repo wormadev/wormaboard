@@ -155,7 +155,8 @@ struct DictationSettingsPage: View {
                 }
                 .frame(height: 44)
                 .padding(.horizontal, 16)
-                .padding(.bottom, 10)
+                .padding(.top, 2)
+                .padding(.bottom, 16)
 
                 DictationLanguageRow(dictation: dictation)
 
