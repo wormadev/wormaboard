@@ -96,9 +96,9 @@ final class DictationSSOTTests: XCTestCase {
         }
         XCTAssertNil(KeyboardDictationBlock.resolve(route: .opensHex(nil), language: nil, osMajorVersion: 18))
         XCTAssertEqual(KeyboardDictationBlock.resolve(route: .opensHex(.speechModel), language: nil, osMajorVersion: 27), .speechModel(language: "en-US"))
-        XCTAssertEqual(KeyboardDictationBlock.speechModel(language: "en-US").line, "Download English in Hex to dictate")
+        XCTAssertEqual(KeyboardDictationBlock.speechModel(language: "en-US").line, "Download English in WormaBoard to dictate")
         XCTAssertEqual(KeyboardDictationBlock.memory.line, "Not enough memory to dictate here")
-        XCTAssertEqual(KeyboardDictationBlock.setUp.line, "Finish setting up Hex to dictate")
+        XCTAssertEqual(KeyboardDictationBlock.setUp.line, "Finish setting up WormaBoard to dictate")
         // Apple has no model for it here: downloading in Hex can't help, so no Open Hex.
         XCTAssertEqual(KeyboardDictationBlock.languageUnavailable(language: "mt-MT").line, "Maltese isn't available on this iPhone yet")
         XCTAssertFalse(KeyboardDictationBlock.languageUnavailable(language: "mt-MT").opensHex)

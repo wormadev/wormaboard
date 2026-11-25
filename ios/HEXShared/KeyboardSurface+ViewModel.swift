@@ -63,13 +63,13 @@ nonisolated enum KeyboardDictationBlock: Equatable, Sendable {
     var line: String {
         switch self {
         case .speechModel(let language):
-            String(localized: "Download \(SpeechModelUnavailable.interfaceName(language)) in Hex to dictate")
+            String(localized: "Download \(SpeechModelUnavailable.interfaceName(language)) in WormaBoard to dictate")
         case .languageUnavailable(let language):
             String(localized: "\(SpeechModelUnavailable.interfaceName(language)) isn't available on this iPhone yet")
         case .memory:
             String(localized: "Not enough memory to dictate here")
         case .setUp:
-            String(localized: "Finish setting up Hex to dictate")
+            String(localized: "Finish setting up WormaBoard to dictate")
         }
     }
 

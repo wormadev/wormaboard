@@ -55,7 +55,7 @@ struct HexWordsReviewSheet: View {
     private var content: some View {
         switch result {
         case nil:
-            paragraph(String(localized: "Hex couldn’t open that file."))
+            paragraph(String(localized: "WormaBoard couldn’t open that file."))
             buttons(primary: String(localized: "Done")) { dismiss() }
         case .refused(let reason):
             paragraph(Self.sentence(for: reason))
@@ -111,13 +111,13 @@ struct HexWordsReviewSheet: View {
             note(String(localized: "Made by \(HexWordsText.display(claim)), as the file says"))
         }
         if file.isNewerVersion {
-            note(String(localized: "Made by a newer Hex. Anything this version doesn’t know is left out."))
+            note(String(localized: "Made by a newer WormaBoard. Anything this version doesn’t know is left out."))
         }
         if !customVocabularyWasOn {
             SettingsCard {
                 SettingsToggleRow(
                     title: String(localized: "Turn on Custom vocabulary"),
-                    detail: String(localized: "Off, the words are added but Hex doesn’t use them until you turn it on."),
+                    detail: String(localized: "Off, the words are added but WormaBoard doesn’t use them until you turn it on."),
                     isOn: $turnsOnVocabulary
                 )
             }
@@ -315,14 +315,14 @@ struct HexWordsReviewSheet: View {
 
     static func sentence(for refusal: HexWordsRefusal) -> String {
         switch refusal {
-        case .tooLarge: String(localized: "Hex didn’t open this file: it’s larger than 8 MB.")
-        case .notUTF8: String(localized: "Hex didn’t open this file: it isn’t text Hex can read.")
-        case .empty: String(localized: "Hex didn’t open this file: it’s empty.")
-        case .tooDeep: String(localized: "Hex didn’t open this file: it’s nested too deeply to be a words file.")
-        case .duplicateKey: String(localized: "Hex didn’t open this file: it names the same field twice.")
-        case .notJSON: String(localized: "Hex didn’t open this file: it’s damaged or isn’t a words file.")
-        case .notAnObject, .notHexWords: String(localized: "Hex didn’t open this file: it isn’t a Hex words file.")
-        case .badVersion: String(localized: "Hex didn’t open this file: its version isn’t one Hex understands.")
+        case .tooLarge: String(localized: "WormaBoard didn’t open this file: it’s larger than 8 MB.")
+        case .notUTF8: String(localized: "WormaBoard didn’t open this file: it isn’t text WormaBoard can read.")
+        case .empty: String(localized: "WormaBoard didn’t open this file: it’s empty.")
+        case .tooDeep: String(localized: "WormaBoard didn’t open this file: it’s nested too deeply to be a words file.")
+        case .duplicateKey: String(localized: "WormaBoard didn’t open this file: it names the same field twice.")
+        case .notJSON: String(localized: "WormaBoard didn’t open this file: it’s damaged or isn’t a words file.")
+        case .notAnObject, .notHexWords: String(localized: "WormaBoard didn’t open this file: it isn’t a WormaBoard words file.")
+        case .badVersion: String(localized: "WormaBoard didn’t open this file: its version isn’t one WormaBoard understands.")
         }
     }
 
@@ -344,7 +344,7 @@ struct HexWordsReviewSheet: View {
         case .badPart: String(localized: "a part that isn’t a list")
         case .badEntry: String(localized: "entries of the wrong shape")
         case .badField: String(localized: "fields of the wrong shape")
-        case .unknownField: String(localized: "fields this Hex doesn’t know")
+        case .unknownField: String(localized: "fields this WormaBoard doesn’t know")
         case .hiddenCharacters: String(localized: "hidden characters")
         case .noLetters: String(localized: "no letters or digits")
         case .tooLong: String(localized: "longer than the limit")

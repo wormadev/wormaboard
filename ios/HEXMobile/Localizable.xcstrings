@@ -2735,12 +2735,12 @@
         }
       }
     },
-    "Dictate once with the Hex keyboard, then check back here." : {
+    "Dictate once with the WormaBoard keyboard, then check back here." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "先用 Hex 键盘听写一次，再回来这里查看。"
+            "value" : "先用 WormaBoard 键盘听写一次，再回来这里查看。"
           }
         }
       }
@@ -7037,16 +7037,6 @@
         }
       }
     },
-    "Hex sends nothing unless you tap Send in Send feedback. Then it sends your message and the pictures you kept, your email if you add one, and details about Hex and this iPhone to Anomaly's feedback inbox. With an email, Hex also sends a random install ID so your reports stay together. Your dictations, what you type, and what Hex learned are never included." : {
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "除非你在“发送反馈”中轻点“发送”，否则 Hex 不会发送任何内容。轻点后，它会把你的留言和保留的图片、你填写的邮箱（如有），以及 Hex 和这台 iPhone 的相关信息发送到 Anomaly 的反馈收件箱。填写邮箱时，Hex 还会发送一个随机安装 ID，把你的反馈归在一起。你的听写、输入的内容以及 Hex 学到的内容都不会包含在内。"
-          }
-        }
-      }
-    },
     "WormaBoard sends nothing unless you tap Send in Send feedback. Then it sends your message and the pictures you kept, your email if you add one, and details about WormaBoard and this iPhone to Anomaly's feedback inbox. With an email, WormaBoard also sends a random install ID so your reports stay together. Your dictations, what you type, and what WormaBoard learned are never included." : {
       "localizations" : {
         "zh-Hans" : {
@@ -7117,12 +7107,12 @@
         }
       }
     },
-    "Download %@ in Hex to dictate" : {
+    "Download %@ in WormaBoard to dictate" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在 Hex 中下载%@语音后即可听写"
+            "value" : "在 WormaBoard 中下载%@语音后即可听写"
           }
         }
       }
@@ -7137,22 +7127,22 @@
         }
       }
     },
-    "Finish setting up Hex to dictate" : {
+    "Finish setting up WormaBoard to dictate" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "完成 Hex 设置后即可听写"
+            "value" : "完成 WormaBoard 设置后即可听写"
           }
         }
       }
     },
-    "Opens Hex to dictate there" : {
+    "Opens WormaBoard to dictate there" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打开 Hex，在那里听写"
+            "value" : "打开 WormaBoard，在那里听写"
           }
         }
       }
@@ -7257,12 +7247,12 @@
         }
       }
     },
-    "25 languages, even mixed in one sentence: %@. A %@ download on Wi-Fi. Hex dictates them with it too." : {
+    "25 languages, even mixed in one sentence: %@. A %@ download on Wi-Fi. WormaBoard dictates them with it too." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "支持 25 种语言，一句话里混着说也行：%1$@。连接 Wi-Fi 后下载 %2$@。Hex 自己听写这些语言时也会使用它。"
+            "value" : "支持 25 种语言，一句话里混着说也行：%1$@。连接 Wi-Fi 后下载 %2$@。WormaBoard 自己听写这些语言时也会使用它。"
           }
         }
       }
@@ -7317,12 +7307,12 @@
         }
       }
     },
-    "Made by a newer Hex. Anything this version doesn’t know is left out." : {
+    "Made by a newer WormaBoard. Anything this version doesn’t know is left out." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "由较新版本的 Hex 创建。此版本不认识的内容会被略过。"
+            "value" : "由较新版本的 WormaBoard 创建。此版本不认识的内容会被略过。"
           }
         }
       }
@@ -7337,12 +7327,12 @@
         }
       }
     },
-    "Off, the words are added but Hex doesn’t use them until you turn it on." : {
+    "Off, the words are added but WormaBoard doesn’t use them until you turn it on." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关闭时，词汇仍会添加，但在你打开之前 Hex 不会使用它们。"
+            "value" : "关闭时，词汇仍会添加，但在你打开之前 WormaBoard 不会使用它们。"
           }
         }
       }
@@ -7497,82 +7487,82 @@
         }
       }
     },
-    "Hex didn’t open this file: it’s larger than 8 MB." : {
+    "WormaBoard didn’t open this file: it’s larger than 8 MB." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 没有打开此文件：文件大于 8 MB。"
+            "value" : "WormaBoard 没有打开此文件：文件大于 8 MB。"
           }
         }
       }
     },
-    "Hex didn’t open this file: it isn’t text Hex can read." : {
+    "WormaBoard didn’t open this file: it isn’t text WormaBoard can read." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 没有打开此文件：它不是 Hex 能读取的文本。"
+            "value" : "WormaBoard 没有打开此文件：它不是 WormaBoard 能读取的文本。"
           }
         }
       }
     },
-    "Hex didn’t open this file: it’s empty." : {
+    "WormaBoard didn’t open this file: it’s empty." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 没有打开此文件：文件是空的。"
+            "value" : "WormaBoard 没有打开此文件：文件是空的。"
           }
         }
       }
     },
-    "Hex didn’t open this file: it’s nested too deeply to be a words file." : {
+    "WormaBoard didn’t open this file: it’s nested too deeply to be a words file." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 没有打开此文件：嵌套层级太深，不是词汇文件。"
+            "value" : "WormaBoard 没有打开此文件：嵌套层级太深，不是词汇文件。"
           }
         }
       }
     },
-    "Hex didn’t open this file: it names the same field twice." : {
+    "WormaBoard didn’t open this file: it names the same field twice." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 没有打开此文件：同一个字段出现了两次。"
+            "value" : "WormaBoard 没有打开此文件：同一个字段出现了两次。"
           }
         }
       }
     },
-    "Hex didn’t open this file: it’s damaged or isn’t a words file." : {
+    "WormaBoard didn’t open this file: it’s damaged or isn’t a words file." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 没有打开此文件：文件已损坏，或不是词汇文件。"
+            "value" : "WormaBoard 没有打开此文件：文件已损坏，或不是词汇文件。"
           }
         }
       }
     },
-    "Hex didn’t open this file: it isn’t a Hex words file." : {
+    "WormaBoard didn’t open this file: it isn’t a WormaBoard words file." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 没有打开此文件：它不是 Hex 词汇文件。"
+            "value" : "WormaBoard 没有打开此文件：它不是 WormaBoard 词汇文件。"
           }
         }
       }
     },
-    "Hex didn’t open this file: its version isn’t one Hex understands." : {
+    "WormaBoard didn’t open this file: its version isn’t one WormaBoard understands." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 没有打开此文件：Hex 不认识它的版本。"
+            "value" : "WormaBoard 没有打开此文件：WormaBoard 不认识它的版本。"
           }
         }
       }
@@ -7617,12 +7607,12 @@
         }
       }
     },
-    "fields this Hex doesn’t know" : {
+    "fields this WormaBoard doesn’t know" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此版本 Hex 不认识的字段"
+            "value" : "此版本 WormaBoard 不认识的字段"
           }
         }
       }
@@ -7717,12 +7707,12 @@
         }
       }
     },
-    "Words Hex hears, and what to write instead" : {
+    "Words WormaBoard hears, and what to write instead" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 听到的词，以及要改写成什么"
+            "value" : "WormaBoard 听到的词，以及要改写成什么"
           }
         }
       }
@@ -7757,22 +7747,22 @@
         }
       }
     },
-    "Hex writes these instead of the words it hears, matching whole words, up to 8. Yours win over fixes Hex learned." : {
+    "WormaBoard writes these instead of the words it hears, matching whole words, up to 8. Yours win over fixes WormaBoard learned." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 听到这些词时会改写成你设定的内容，按整词匹配，最多 8 个词。你的设定优先于 Hex 学到的修正。"
+            "value" : "WormaBoard 听到这些词时会改写成你设定的内容，按整词匹配，最多 8 个词。你的设定优先于 WormaBoard 学到的修正。"
           }
         }
       }
     },
-    "Words Hex hears" : {
+    "Words WormaBoard hears" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 听到的词"
+            "value" : "WormaBoard 听到的词"
           }
         }
       }
@@ -7787,7 +7777,7 @@
         }
       }
     },
-    "The words Hex hears need a letter or digit." : {
+    "The words WormaBoard hears need a letter or digit." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -7887,12 +7877,12 @@
         }
       }
     },
-    "Include fixes Hex learned" : {
+    "Include fixes WormaBoard learned" : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "包含 Hex 学到的修正"
+            "value" : "包含 WormaBoard 学到的修正"
           }
         }
       }
@@ -7927,12 +7917,12 @@
         }
       }
     },
-    "Hex couldn’t write the file." : {
+    "WormaBoard couldn’t write the file." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法写入该文件。"
+            "value" : "WormaBoard 无法写入该文件。"
           }
         }
       }
@@ -8089,12 +8079,12 @@
         }
       }
     },
-    "Hex couldn’t open that file." : {
+    "WormaBoard couldn’t open that file." : {
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hex 无法打开该文件。"
+            "value" : "WormaBoard 无法打开该文件。"
           }
         }
       }

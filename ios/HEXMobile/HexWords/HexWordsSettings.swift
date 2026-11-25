@@ -17,7 +17,7 @@ struct HexWordsRows: View {
                 SettingsDivider()
                 row(
                     String(localized: "Word replacements"),
-                    count == 0 ? String(localized: "Words Hex hears, and what to write instead") : HexWordsReviewSheet.replacements(count)
+                    count == 0 ? String(localized: "Words WormaBoard hears, and what to write instead") : HexWordsReviewSheet.replacements(count)
                 ) { showsReplacements = true }
                 SettingsDivider()
                 row(String(localized: "Words file"), String(localized: "Open, share or save your words")) { showsFile = true }
@@ -92,14 +92,14 @@ struct WordReplacementsPage: View {
     @State private var problem: WordReplacementsSettings.Problem?
 
     var body: some View {
-        Text(String(localized: "Hex writes these instead of the words it hears, matching whole words, up to 8. Yours win over fixes Hex learned."))
+        Text(String(localized: "WormaBoard writes these instead of the words it hears, matching whole words, up to 8. Yours win over fixes WormaBoard learned."))
             .font(.system(size: 14))
             .foregroundStyle(HexTheme.textMuted)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 16)
 
         SettingsCard {
-            field(String(localized: "Words Hex hears"), text: $heard, axis: .horizontal)
+            field(String(localized: "Words WormaBoard hears"), text: $heard, axis: .horizontal)
             SettingsDivider()
             field(String(localized: "What to write"), text: $write, axis: .vertical)
             SettingsDivider()
@@ -187,7 +187,7 @@ struct WordReplacementsPage: View {
 
     static func text(for problem: WordReplacementsSettings.Problem) -> String {
         switch problem {
-        case .noLetters: String(localized: "The words Hex hears need a letter or digit.")
+        case .noLetters: String(localized: "The words WormaBoard hears need a letter or digit.")
         case .hiddenCharacters: String(localized: "This has a hidden character in it.")
         case .tooLong: String(localized: "Too long: up to 128 characters heard and 1,000 written.")
         case .tooManyWords: String(localized: "Up to 8 words heard.")
@@ -239,7 +239,7 @@ struct WordsFilePage: View {
             SettingsCard {
                 if learnedInUse {
                     SettingsToggleRow(
-                        title: String(localized: "Include fixes Hex learned"),
+                        title: String(localized: "Include fixes WormaBoard learned"),
                         detail: String(localized: "Adds the learned fixes in use, marked as learned"),
                         isOn: $includesLearned
                     )
@@ -277,7 +277,7 @@ struct WordsFilePage: View {
     private func share() {
         let written = Self.write(includeLearned: includesLearned && learnedInUse)
         guard let url = try? HexWordsWriter.temporaryFile(written.data) else {
-            status = String(localized: "Hex couldn’t write the file.")
+            status = String(localized: "WormaBoard couldn’t write the file.")
             return
         }
         ShareSheet.present([url]) { _ in

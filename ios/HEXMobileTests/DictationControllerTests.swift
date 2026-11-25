@@ -3522,7 +3522,7 @@ final class SpeechModelInstallTests: XCTestCase {
             // The second in a row hands its dictations to Hex.
             let shown = SpeechModelNeedsHex.keyboardError(for: error, language: "en-US", settings: settings)
             XCTAssertEqual(shown as? SpeechModelNeedsHex, SpeechModelNeedsHex(language: "en-US"), "\(error)")
-            XCTAssertEqual(UserFacingError.message(for: shown, context: .transcription), "Download English in Hex to dictate")
+            XCTAssertEqual(UserFacingError.message(for: shown, context: .transcription), "Download English in WormaBoard to dictate")
             XCTAssertTrue(settings.keyboardNeedsHex(), "a dictation tap says so with Open Hex, and Hex downloads it")
         }
         // Hebrew picked by hand on an English iPhone: the keyboard's install failing names
@@ -3532,7 +3532,7 @@ final class SpeechModelInstallTests: XCTestCase {
         let first = SpeechModelNeedsHex.keyboardError(for: hebrew, language: "he-IL", settings: settings)
         XCTAssertEqual(UserFacingError.message(for: first, context: .transcription), "WormaBoard couldn't transcribe that. Try again.")
         let shown = SpeechModelNeedsHex.keyboardError(for: hebrew, language: "he-IL", settings: settings)
-        XCTAssertEqual(UserFacingError.message(for: shown, context: .transcription), "Download Hebrew in Hex to dictate")
+        XCTAssertEqual(UserFacingError.message(for: shown, context: .transcription), "Download Hebrew in WormaBoard to dictate")
         XCTAssertTrue(settings.keyboardNeedsHex())
     }
 

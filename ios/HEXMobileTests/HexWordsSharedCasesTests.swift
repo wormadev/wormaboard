@@ -249,7 +249,7 @@ final class HexWordsSharedCasesTests: XCTestCase {
         for version in [HexWordsWriter.appVersion(), "1.0.7"] {
             let output = HexWordsWriter.phone(vocabulary: ["Rune"], replacements: [], appVersion: version)
             guard case .read(let file) = HexWordsReader.read(output.data) else { return XCTFail("refused") }
-            XCTAssertEqual(file.madeByApp, "Hex for iPhone")
+            XCTAssertEqual(file.madeByApp, "WormaBoard for iPhone")
             XCTAssertEqual(file.madeByVersion, version)
         }
     }

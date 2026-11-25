@@ -383,7 +383,7 @@ extension FullKeyboardEngineTests {
             }
         }
         let all = rows(in: menu)
-        XCTAssertEqual(all.last?.accessibilityLabel, "Open Hex", "the last row")
+        XCTAssertEqual(all.last?.accessibilityLabel, "Open WormaBoard", "the last row")
         XCTAssertTrue(opened.isEmpty, "opening the menu opens nothing")
         all.last?.sendActions(for: .touchUpInside)
         XCTAssertEqual(opened, [KeyboardLaunchRequest.home.url])

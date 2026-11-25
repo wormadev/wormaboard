@@ -773,7 +773,7 @@ final class HexStyleMenuView: UIView {
                 }
             }
             if onOpenHex != nil {
-                rows.append(makeRow(title: String(localized: "Open Hex"), selected: false, showsTopDivider: true) { [weak self] in
+                rows.append(makeRow(title: String(localized: "Open WormaBoard"), selected: false, showsTopDivider: true) { [weak self] in
                     self?.onOpenHex?()
                 })
             }

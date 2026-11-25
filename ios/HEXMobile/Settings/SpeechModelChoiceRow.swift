@@ -25,7 +25,7 @@ enum SpeechModelChoice: String, CaseIterable, Hashable {
         case .english:
             String(localized: "For English. A \(KeyboardParakeetDownload.format(KeyboardParakeetDownload.bytes)) download on Wi-Fi.")
         case .multilingual:
-            String(localized: "25 languages, even mixed in one sentence: \(Self.multilingualLanguages). A \(ParakeetUltraTranscriber.downloadSize) download on Wi-Fi. Hex dictates them with it too.")
+            String(localized: "25 languages, even mixed in one sentence: \(Self.multilingualLanguages). A \(ParakeetUltraTranscriber.downloadSize) download on Wi-Fi. WormaBoard dictates them with it too.")
         }
     }
 

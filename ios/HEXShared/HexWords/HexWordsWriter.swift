@@ -6,7 +6,7 @@ import Foundation
 /// says which and why, so it never writes a file its own reader would skip anything in.
 nonisolated enum HexWordsWriter {
     static let fileName = "hex-words.hexwords"
-    static let appName = "Hex for iPhone"
+    static let appName = "WormaBoard for iPhone"
 
     /// A learned dictation fix; only one in use (applied and not switched off) is exported.
     struct LearnedFix: Equatable, Sendable {

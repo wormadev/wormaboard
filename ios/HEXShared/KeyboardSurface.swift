@@ -635,7 +635,7 @@ struct KeyboardSurfaceView: View {
             case .dictationBlock: model.openHexForDictationBlock()
             }
         } label: {
-            Text("Open Hex")
+            Text("Open WormaBoard")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(p.textBase)
                 .lineLimit(1)
@@ -645,7 +645,7 @@ struct KeyboardSurfaceView: View {
                 .background(p.chipActiveFill, in: Capsule())
         }
         .buttonStyle(TopBarChipButtonStyle())
-        .accessibilityHint(note == .translation ? Text("Opens Hex's Settings") : Text("Opens Hex to dictate there"))
+        .accessibilityHint(note == .translation ? Text("Opens WormaBoard's Settings") : Text("Opens WormaBoard to dictate there"))
     }
 
     /// A dictation that didn't go in by itself, as the full keyboard's strip offers it: the

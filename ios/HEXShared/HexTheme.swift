@@ -281,7 +281,7 @@ nonisolated enum DictationWaveform: String, CaseIterable, Codable, Sendable {
     var label: String {
         switch self {
         case .braid: String(localized: "Braid")
-        case .hex: String(localized: "Hex dots")
+        case .hex: String(localized: "WormaBoard dots")
         case .ribbon: String(localized: "Ribbon")
         case .worm: String(localized: "Worm")
         }

@@ -121,7 +121,7 @@ struct TranslateDictationRow: View {
     /// Where the pair stands, said only for the pair Apple was asked about.
     @ViewBuilder private var state: some View {
         if spoken == nil {
-            note("Dictate once with the Hex keyboard, then check back here.")
+            note("Dictate once with the WormaBoard keyboard, then check back here.")
         } else if let pair {
             if checked == pair, let status {
                 switch status {
