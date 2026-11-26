@@ -8,6 +8,7 @@ import UIKit
 /// `--keyboard-layout nb|sv|es|de|it|fr|fr-CA|fr-CH|pt|pl|cs|sk|hu|nl|ro|ru|uk|el|sr-Latn|ko|ar|en` pins it; drafts are in the layout's language.
 /// `--keyboard-letters qwerty|qwertz|azerty|dvorak|own` arranges its letters (its own without it).
 /// `--accent-key ø` (or Cyrillic `е`, `ь`, `ʼ`, Greek `α`, `σ`, `t` on Romanian, `o` on Hungarian, or `j` on Dutch) picks the key the `accents` state holds; `--emoji-query kiss` what `emoji-search` types.
+/// `held` holds `--accent-key` without picking (Labs › Symbols on held keys); `domains` holds `.` in a web search field.
 /// Emoji states (`emoji`, `emoji-search`, `emoji-tones`, `emoji-food`, `emoji-strip`) turn
 /// Settings › Keyboard › Emoji on with a seeded history; `emoji-probe` prints the panel's
 /// footprint and latency (`EMOJI_PROBE` lines) for `simctl launch --console`. `emoji-gifs`
@@ -253,6 +254,7 @@ struct FullKeyboardSnapshotStage: View {
         case "shift": "Running 10 min late. "
         case "typing": "Running 10 min teh"
         case "accents": "Caf"
+        case "domains": "anoma"
         default: "Running 10 min late, "
         }
     }
@@ -357,6 +359,7 @@ private struct FullKeyboardFixture: UIViewRepresentable {
         }
 
         DictationLanguageFixture.apply(to: model)
+        if state == "domains" { context.coordinator.target.keyboardType = .webSearch }
         let view = FullKeyboardView(model: model, target: context.coordinator.target)
         if state.hasPrefix("emoji") {
             view.emojiOverride = true
@@ -404,6 +407,10 @@ private struct FullKeyboardFixture: UIViewRepresentable {
                     "i": "ì", "е": "ё", "ь": "ъ", "c": "ć", "ʼ": "’",
                 ][key]
                 view.debugHoldAccent(key, selecting: pick ?? key)
+            case "held":
+                view.debugHoldAccent(FullKeyboardSnapshotStage.accentKey)
+            case "domains":
+                view.debugHoldAccent(".")
             case "numbers":
                 view.engine.touchBegan(id: 900, at: center(of: .layerSwitch(.numbers), in: view))
                 view.engine.touchEnded(id: 900, at: center(of: .layerSwitch(.numbers), in: view))

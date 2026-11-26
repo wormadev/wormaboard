@@ -294,6 +294,8 @@ enum SettingsSnapshotFixture {
         keyboard.arabicKeyboard = on
         keyboard.dvorakPunctuation = on
         keyboard.clipboardHistory = on
+        keyboard.symbolHolds = on
+        keyboard.domainHolds = on
         keyboard.commaPeriodKeys = on
         keyboard.quickAccents = on
         keyboard.emojiShortcodes = on

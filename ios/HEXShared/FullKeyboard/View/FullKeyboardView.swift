@@ -304,6 +304,7 @@ final class FullKeyboardView: UIView {
         engine.trackpadSelectionState.enabled = FullKeyboardSettings().twoThumbSelection
         engine.deletesSwipedWordsLetterByLetter = FullKeyboardSettings().deletesSwipedWordsLetterByLetter
         engine.quickAccentsEnabled = FullKeyboardSettings().quickAccents
+        syncHeldExtras()
         syncEmojiShortcodes()
         hidesWordSuggestions = FullKeyboardSettings().hideWordSuggestions
         syncHexPlacement()
@@ -534,6 +535,7 @@ final class FullKeyboardView: UIView {
         engine.letterLayout = letters
         engine.language = list.current
         engine.partnerLanguage = list.partner(available: Self.spellCheckLanguages)
+        syncHeldExtras()
         syncSpatialAutocorrect()
         refreshSpaceLabel()
         syncSwipeTyping()
@@ -599,6 +601,7 @@ final class FullKeyboardView: UIView {
         engine.autoCapitalizes = FullKeyboardSettings().autoCapitalization
         engine.deletesSwipedWordsLetterByLetter = FullKeyboardSettings().deletesSwipedWordsLetterByLetter
         engine.quickAccentsEnabled = FullKeyboardSettings().quickAccents
+        syncHeldExtras()
         syncEmojiShortcodes()
         let selectionEnabled = FullKeyboardSettings().twoThumbSelection
         engine.trackpadSelectionState.enabled = selectionEnabled

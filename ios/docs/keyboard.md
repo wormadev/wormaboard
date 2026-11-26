@@ -940,7 +940,8 @@ autocorrect, swipe typing, suggestions, smart punctuation, the emoji key and emo
 shortcodes, Learn how I type and Adaptive touch work as the field's own traits allow, as
 they did before, and the Paste and Code chips read the field's content type as everywhere
 else. Holding the `.` offers `.` and `…` (the symbol pages' list); Apple's offers
-`.us .edu .com .net .org` there and in email fields, which Hex doesn't yet. Unit tests
+`.us .edu .com .net .org` there and in email fields, which Hex does only with Labs › Domains on
+held period (below). Unit tests
 (`KeyboardLayoutTests`, `FullKeyboardEngineTests`, `ShiftStateMachineTests`) and simulator
 screenshots beside Apple's in Safari; no physical iPhone run checks it.
 
@@ -1331,6 +1332,39 @@ going down while the callout is held commits the preselection. Only letters: the
 #+= pages' held symbols, and the mark keys ˇ and ʼ, keep the key's own selected. Off, the
 callout opens on the key's own letter. Unit tests only (`FullKeyboardEngineTests`): no CI
 compiles the iOS targets, and no physical iPhone run checks it.
+
+## Symbols on held keys (full keyboard, iPhone, Settings › Labs › WormaDev Experiments)
+
+Off by default (`experiments.symbolHolds`, App Group; upstream issue #2823). On an iPhone's
+letters page each letter with a symbol shows it small and grey in its top-right corner, and
+holding it opens a callout with that symbol beside the key's own, selected, so letting go
+types it; a letter with accents keeps Apple's arrangement with the symbol next to the letter,
+and Quick accents still moves the selection to the main accent. The map is Android's Symbols
+on letter keys (`LetterFeedback.letterSymbols`), keyed by letter so every layout keeps it:
+`a @ s # d $ f _ g & h - j + k ( l )`, `z * x " c ' v : b ; n ! m ?`, and on row 1 only
+`q % w \ e | r = t [ y ] u < i > o { p }` (`AccentCatalog.letterSymbol`). Letters outside
+a–z (Cyrillic, Greek, Korean, Arabic) have none. A held letters-page `.` (Comma and period
+keys, Dvorak punctuation, or a URL, email or web search field's) shows `!?` and opens
+`. ! ? , ' " - : …` with `.` selected (`AccentCatalog.periodSymbols`). The 123 and #+= pages
+and an iPad are unchanged. Unlike Android, a row-1 letter offers its symbol, not a digit,
+with the number row off. Off, every key holds what it did. Unit tests
+(`FullKeyboardEngineTests+HeldExtras`) and `--snap-state full-keyboard-held --accent-key q
+--experiment-symbol-holds` scenes; no physical iPhone run checks it.
+
+## Domains on held period (full keyboard, Settings › Labs › WormaDev Experiments)
+
+Off by default (`experiments.domainHolds`, App Group; upstream issue #2811, whose lists and
+lookup it uses). In web search and email fields (`KeyboardFieldKind.holdsDomains`; a URL
+field's `.` keeps its own holds, as Apple's) a held `.` offers the keyboard's domains, the
+first preselected over the key and the rest alternating right and left, as Apple's
+(`.us .edu .com .net .org` for US English), cells as wide as their text. The keyboard being
+typed on picks the list and the iPhone's region (`Locale.current.region`) its country:
+`<language>_<region>` for a language-only keyboard, else the language's usual locale, else
+its own file, else Apple's default `.com .org .edu .net` (`KeyboardDomains`; English in the
+UK gets `.co.uk .com .ie .org .edu .eu .uk`). There it takes the place of Symbols on held
+keys' punctuation row and `!?` hint. Unit tests (`FullKeyboardEngineTests+HeldExtras`) and a
+`--snap-state full-keyboard-domains --experiment-domain-holds` scene; whether Apple merges
+several keyboards' lists, and the docked iPad's menu, are unmeasured.
 
 ## Emoji shortcodes (full keyboard, Settings › Labs)
 

@@ -115,6 +115,23 @@ struct ExperimentsSettingsPage: View {
 
             SettingsDivider()
 
+            // Off by default: letters and the period key hold what they did before.
+            SettingsToggleRow(
+                title: String(localized: "Symbols on held keys"),
+                detail: String(localized: "Each letter shows a symbol in its corner; hold the letter to type it. Hold the period key for punctuation."),
+                isOn: keyboardBinding(\.symbolHolds)
+            )
+
+            SettingsDivider()
+
+            SettingsToggleRow(
+                title: String(localized: "Domains on held period"),
+                detail: String(localized: "In web addresses and email fields, hold the period key for .com and your region's domains."),
+                isOn: keyboardBinding(\.domainHolds)
+            )
+
+            SettingsDivider()
+
             // Off by default, and the only part of Hex that goes online for typing: what you
             // search is sent to KLIPY, and only with Full Access.
             SettingsToggleRow(

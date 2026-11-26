@@ -27,6 +27,10 @@ nonisolated extension KeyboardFieldKind {
 
     var isNumberPad: Bool { self == .numberPad || self == .decimalPad }
 
+    /// Where a held `.` offers domains, as Apple's does: web search and email fields. A URL
+    /// field's `.` keeps `.` and `…` (PR #2460's measurements).
+    var holdsDomains: Bool { self == .webSearch || self == .email }
+
     /// The keys right of the space bar, each `width` wide: Apple's `.` and `/` in a URL field,
     /// `@` and `.` in an email field, `.` in a web search field, and `@` and `#` in a twitter field.
     func keysRightOfSpace(width: CGFloat) -> [(KeyKind, CGFloat, String)] {
