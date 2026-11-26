@@ -694,7 +694,8 @@ final class AutocorrectEngine {
 
         partner?.beforeInput = beforeInput
         // Autocorrect off: your text replacements only.
-        let autoFix = replaced?.replacement ?? (allowAuto && isEnabled ? cautiousReplacement(for: token) : nil)
+        let autoFix = replaced?.replacement
+            ?? (allowAuto && isEnabled ? cautiousReplacement(for: token).flatMap { learning.blocks(token, to: $0) ? nil : $0 } : nil)
         var pool: [String] = autoFix.map { [$0] } ?? []
 
         if let partner = workingPartner {
@@ -864,7 +865,7 @@ final class AutocorrectEngine {
               !learnedWords.contains(lower) else { return nil }
         guard isEnabled, hasWords, !Self.shorthandAllowlist.contains(lower) else { return nil }
         guard let fix = cautiousReplacement(for: token) else { return nil }
-        return learning.blocksCorrection(to: fix) ? nil : (token, fix)
+        return learning.blocksCorrection(to: fix) || learning.blocks(token, to: fix) ? nil : (token, fix)
     }
 
     /// What space puts in place of `token`, if anything. With a partner (bilingual
@@ -1384,7 +1385,7 @@ final class AutocorrectEngine {
         guard let choice = contextChoice(
             for: word, previous: previous, next: nextWord.lowercased(),
             startsSentence: Self.startsSentence(before: before, token: word)
-        ), mayOffer(choice, after: previous), !learning.blocksCorrection(to: choice) else { return nil }
+        ), mayOffer(choice, after: previous), !learning.blocksCorrection(to: choice), !learning.blocks(word, to: choice) else { return nil }
         return addsCapitals || word.first?.isUppercase == true ? choice : choice.lowercased()
     }
 

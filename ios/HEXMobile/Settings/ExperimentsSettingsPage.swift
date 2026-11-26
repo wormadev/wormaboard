@@ -132,6 +132,15 @@ struct ExperimentsSettingsPage: View {
 
             SettingsDivider()
 
+            // Off by default: imported rules and blocks are kept but not applied, and Privacy shows nothing new.
+            SettingsToggleRow(
+                title: String(localized: "Manage autocorrect rules"),
+                detail: String(localized: "Forget or block learned fixes in Privacy, and import or export rules as CSV or JSON"),
+                isOn: keyboardBinding(\.manageAutocorrectRules)
+            )
+
+            SettingsDivider()
+
             // Off by default, and the only part of Hex that goes online for typing: what you
             // search is sent to KLIPY, and only with Full Access.
             SettingsToggleRow(

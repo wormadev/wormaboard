@@ -41,7 +41,14 @@ struct TypingInsightsView: View {
             if !topFixes.isEmpty {
                 section("Words you fix most") {
                     ForEach(topFixes, id: \.label) { fix in
-                        row(fix.label, detail: "\(fix.count)×")
+                        if managesRules {
+                            HStack(spacing: 10) {
+                                row(fix.label, detail: "\(fix.count)×")
+                                fixMenu(typed: fix.typed, final: fix.final)
+                            }
+                        } else {
+                            row(fix.label, detail: "\(fix.count)×")
+                        }
                     }
                 }
             }
@@ -128,14 +135,36 @@ struct TypingInsightsView: View {
         return "\(Int(percent))%"
     }
 
-    private var topFixes: [(label: String, count: Int)] {
-        var counts: [String: Int] = [:]
+    private var topFixes: [(label: String, typed: String, final: String, count: Int)] {
+        var counts: [String: (typed: String, final: String, count: Int)] = [:]
         for correction in snapshot.corrections where correction.kind != .undone && correction.kind != .keptTyped && correction.teaches {
-            counts["\(correction.typed) → \(correction.final)", default: 0] += 1
+            counts["\(correction.typed) → \(correction.final)", default: (correction.typed, correction.final, 0)].count += 1
         }
-        return counts.sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
+        return counts.sorted { $0.value.count == $1.value.count ? $0.key < $1.key : $0.value.count > $1.value.count }
             .prefix(5)
-            .map { (label: $0.key, count: $0.value) }
+            .map { (label: $0.key, typed: $0.value.typed, final: $0.value.final, count: $0.value.count) }
+    }
+
+    /// Labs › Manage autocorrect rules: forget one learned pair, or also never make it again.
+    private func fixMenu(typed: String, final: String) -> some View {
+        Menu {
+            Button("Forget this correction") {
+                TypingJournal.forget(typed: typed, final: final)
+                reload()
+            }
+            Button("Never change \(typed) to \(final)", role: .destructive) {
+                AutocorrectRules().block(AutocorrectBlock(typed: typed, correction: final))
+                TypingJournal.forget(typed: typed, final: final)
+                reload()
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(HexTheme.textMuted)
+                .frame(width: 26, height: 26)
+                .background(HexTheme.layer02, in: Circle())
+        }
+        .accessibilityLabel("Manage \(typed) → \(final)")
     }
 
     private var missedKeys: [(key: String, direction: String)] {
@@ -168,9 +197,11 @@ struct TypingInsightsView: View {
     }
 
     @State private var hasTypingConfigs = false
+    @State private var managesRules = false
 
     private func reload() {
         hasTypingConfigs = !TypingConfigHistory().entries.isEmpty
+        managesRules = FullKeyboardSettings().manageAutocorrectRules
         snapshot = TypingJournal.load(from: FileManager.default
             .containerURL(forSecurityApplicationGroupIdentifier: KeyboardBridge.appGroup)?
             .appendingPathComponent(TypingJournal.fileName))

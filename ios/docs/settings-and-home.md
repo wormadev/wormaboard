@@ -56,7 +56,9 @@ list starts at the top. The pages, one file each in `HEXMobile/Settings/`
   Emoji suggestions (Full only; the strip's emoji, with or without the key), Skin tone, and Clear
   emoji history while either is on, which asks first; and a field to try the keyboard in.
 - **Privacy:** "Everything stays on this iPhone" (and, while Labs › GIFs is on, that GIF searches go to KLIPY), Learn how I type (what it
-  learned below the switch), and under **Advanced**, Record typing logs (off
+  learned below the switch; with Labs › Manage autocorrect rules on, each "Words you fix
+  most" pair has Forget and Never change, and an Autocorrect rules row opens imported rules,
+  blocked replacements, Import and Export), and under **Advanced**, Record typing logs (off
   by default) with its Typing logs viewer while it's on; last, under **Feedback**, what
   Send feedback sends and when (only in a build with a report key).
 - **Labs**, in five groups: **Dictation**: Two-language dictation, Voice isolation and Clean up with Apple Intelligence;
@@ -69,7 +71,7 @@ list starts at the top. The pages, one file each in `HEXMobile/Settings/`
   **Typing**: Adaptive touch (its status and Reset touch learning below the switch),
   Two-thumb selection, Delete swiped words letter by letter, Hide word suggestions, Emoji
   shortcodes, Typing configs ([typing-configs.md](typing-configs.md); a config opened while
-  it's off opens this page at it) and Learn each language separately; **WormaDev Experiments**: Arabic keyboard, Clipboard history, Symbols on held keys, Domains on held period, GIFs (KLIPY search; disabled in a build without a key) and New dictation key (its shortcuts, one switch each, below it while it's on). 22 switches, 21 on an iPhone that doesn't fold, plus WormaDev's six.
+  it's off opens this page at it) and Learn each language separately; **WormaDev Experiments**: Arabic keyboard, Clipboard history, Symbols on held keys, Domains on held period, Manage autocorrect rules ([keyboard.md](keyboard.md#learn-how-i-type-settings--privacy--learn-how-i-type)), GIFs (KLIPY search; disabled in a build without a key) and New dictation key (its shortcuts, one switch each, below it while it's on). 22 switches, 21 on an iPhone that doesn't fold, plus WormaDev's seven.
   Last, **Send feedback**, for testers to say how an experiment went (only with a report key).
 
 Simulator scenes: `--snap-state settings-home` (ready), `setup` (keyboard
@@ -84,7 +86,10 @@ Dictation › Model with that model picked and its download in that state; waiti
 its page's switches to the App Group: off by default, on with `-on`; switches that are
 on by default (Spatial autocorrect, Swipe typing, Emoji key, Emoji suggestions) stay on.
 `-end` starts the page scrolled to the bottom. `settings-privacy-confirm`
-opens Record typing logs' consent dialog. `--experiment-keyboard-themes` turns
+opens Record typing logs' consent dialog. `settings-privacy-on-rules` seeds learned
+fixes, an imported rule and a block with Manage autocorrect rules on; `-rules-sheet`,
+`-rules-import` and `-rules-export` open Autocorrect rules, its import preview (a conflict of
+each kind and two rejected rows) or its export review. `--experiment-keyboard-themes` turns
 Key colors on, and `--keyboard-theme automatic|black|white|navy|forest|ember|burgundy`
 picks the theme. A theme colours the keys only (every keycap, special keys included, their
 pressed and held states, the key pop-ups and the labels), the same in light and dark; the

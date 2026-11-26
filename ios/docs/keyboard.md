@@ -173,6 +173,26 @@ autocorrect count (`TypingJournal.allows`). Nothing leaves the iPhone.
   counts against that fix in every language, and retyped words and picked suggestions
   are tagged with the keyboard's main language, never the bilingual partner's.
   Off, everything is the one shared list and learning it was before.
+- **Rules (Settings › Labs › Manage autocorrect rules):** Off by default
+  (`experiments.manageAutocorrectRules`, App Group). On, each "Words you fix most" pair in
+  Typing insights has Forget this correction (drops that pair's corrections from the journal,
+  `TypingJournal.forget`; rejections stay) and Never change (blocks the replacement and forgets
+  it). Privacy › Autocorrect rules lists imported rules and blocked replacements, each
+  removable, and imports and exports rules (`AutocorrectRulesFile`): JSON
+  `{"version":1,"rules":[{"language":"de","typed":"udn","correction":"und","count":3}]}` or CSV
+  `language,typed,correction,count`, pairs, counts and language only. Export lists every learned
+  pair with a switch and shows the exact file before the share sheet (a correction recorded
+  without a language goes under the first keyboard language). Import takes at most 256 KB and
+  1000 rules; each row is checked (known keyboard language, one typed word, a correction, a
+  whole-number count, no repeats) and a rejected row shows why; the preview flags an
+  already-imported rule (off by default), one replacing an imported rule, a different learned
+  fix and a block (applying the rule unblocks it). Rules and blocks live in the App Group
+  (`autocorrectRules.imported`, `autocorrectRules.blocked`, `AutocorrectRules`) and reach the
+  keys through `TypingLearning.adding(_:language:)` in `syncLearning`, with Learn how I type off
+  too: an imported rule is a learned typo of its own language only (it wins over a learned fix
+  and a kept word; still only suggested when what you typed is a word), and a block, any
+  language and case, stops space, the strip's autocorrection and the next-word revision from
+  making that replacement. Off, both are kept but not applied.
 
 ## Auto-capitalization (Settings › Keyboard › Auto-capitalization)
 

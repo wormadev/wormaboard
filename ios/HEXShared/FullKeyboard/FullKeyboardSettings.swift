@@ -109,6 +109,7 @@ struct FullKeyboardSettings {
         static let clipboardHistory = "experiments.clipboardHistory"
         static let symbolHolds = "experiments.symbolHolds"
         static let domainHolds = "experiments.domainHolds"
+        static let manageAutocorrectRules = "experiments.manageAutocorrectRules"
         static let wormaDictationKey = "experiments.wormaDictationKey"
         static let wormaDictationTray = "settings.wormaDictationTray"
         static let commaPeriodKeys = "experiments.commaPeriodKeys"
@@ -424,6 +425,14 @@ struct FullKeyboardSettings {
     var domainHolds: Bool {
         get { defaults?.bool(forKey: Key.domainHolds) ?? false }
         nonmutating set { defaults?.set(newValue, forKey: Key.domainHolds) }
+    }
+
+    /// Settings › Labs › Manage autocorrect rules (off by default): forget or block learned
+    /// fixes, and import and export rules (`AutocorrectRules`). Off, imported rules and blocks
+    /// are kept but not applied. Stored as `experiments.manageAutocorrectRules`.
+    var manageAutocorrectRules: Bool {
+        get { defaults?.bool(forKey: Key.manageAutocorrectRules) ?? false }
+        nonmutating set { defaults?.set(newValue, forKey: Key.manageAutocorrectRules) }
     }
 
     /// Settings › Labs › New dictation key (off by default): the strip's Hex key loses

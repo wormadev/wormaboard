@@ -94,6 +94,10 @@ final class FullKeyboardEngine {
     var journal: TypingJournal? {
         didSet { syncLearning() }
     }
+    /// Labs › Manage autocorrect rules: imported rules and blocks, on top of what the journal learned.
+    var autocorrectRules = AutocorrectRules() {
+        didSet { syncLearning() }
+    }
 
     private var learning: TypingJournal? {
         guard let journal, TypingJournal.allows(field: field, target: target) else { return nil }
@@ -1290,15 +1294,6 @@ final class FullKeyboardEngine {
         layerState.didInsert(text)
         rebuildLayoutIfNeeded()
         didEdit()
-    }
-
-    /// Hands what the journal learned (typos, rejected corrections) to autocorrect;
-    /// nothing while Learn how I type is off.
-    func syncLearning() {
-        autocorrect.applyLearning(
-            withTypingConfig(journal?.typingLearning(for: autocorrect.language) ?? TypingLearning()),
-            partner: withTypingConfig(journal?.typingLearning(for: autocorrect.partner?.language) ?? TypingLearning())
-        )
     }
 
     // MARK: - Swipe typing (Settings › Keyboard › Swipe typing; SwipeTyping.swift)
