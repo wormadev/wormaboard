@@ -72,6 +72,10 @@ struct FullKeyboardSettings {
     /// Simulator scenes pass `--experiment-quick-accents` for Settings › Labs ›
     /// Quick accents.
     static let quickAccentsLaunchArgument = "--experiment-quick-accents"
+    /// Simulator scenes pass `--experiment-symbol-holds` for Symbols on held keys and
+    /// `--experiment-domain-holds` for Domains on held period.
+    static let symbolHoldsLaunchArgument = "--experiment-symbol-holds"
+    static let domainHoldsLaunchArgument = "--experiment-domain-holds"
 
     private enum Key {
         static let fullKeyboard = "experiments.fullKeyboard"
@@ -103,6 +107,8 @@ struct FullKeyboardSettings {
         static let joinKeyboardWhenUnfolded = "experiments.joinKeyboardWhenUnfolded"
         static let dvorakPunctuation = "experiments.dvorakPunctuation"
         static let clipboardHistory = "experiments.clipboardHistory"
+        static let symbolHolds = "experiments.symbolHolds"
+        static let domainHolds = "experiments.domainHolds"
         static let wormaDictationKey = "experiments.wormaDictationKey"
         static let wormaDictationTray = "settings.wormaDictationTray"
         static let commaPeriodKeys = "experiments.commaPeriodKeys"
@@ -403,6 +409,23 @@ struct FullKeyboardSettings {
         }
     }
 
+    /// Settings › Labs › Symbols on held keys (off by default): on an iPhone's letters page each
+    /// letter shows a symbol in its corner and a held letter offers it first, and a held `.`
+    /// offers a row of punctuation (`AccentCatalog.letterSymbol`, `periodSymbols`). Stored as
+    /// `experiments.symbolHolds`.
+    var symbolHolds: Bool {
+        get { defaults?.bool(forKey: Key.symbolHolds) ?? false }
+        nonmutating set { defaults?.set(newValue, forKey: Key.symbolHolds) }
+    }
+
+    /// Settings › Labs › Domains on held period (off by default): in web search and email fields
+    /// a held `.` offers the keyboard's domains, `.com` first (`KeyboardDomains`). Stored as
+    /// `experiments.domainHolds`.
+    var domainHolds: Bool {
+        get { defaults?.bool(forKey: Key.domainHolds) ?? false }
+        nonmutating set { defaults?.set(newValue, forKey: Key.domainHolds) }
+    }
+
     /// Settings › Labs › New dictation key (off by default): the strip's Hex key loses
     /// its slide menu, and a chevron beside it opens a shortcut
     /// tray (`WormaDictationTrayView`).
@@ -505,6 +528,12 @@ struct FullKeyboardSettings {
         }
         if arguments.contains(Self.quickAccentsLaunchArgument) {
             quickAccents = true
+        }
+        if arguments.contains(Self.symbolHoldsLaunchArgument) {
+            symbolHolds = true
+        }
+        if arguments.contains(Self.domainHoldsLaunchArgument) {
+            domainHolds = true
         }
         if arguments.contains(Self.keyboardThemesLaunchArgument) {
             keyboardThemesEnabled = true

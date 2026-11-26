@@ -20,20 +20,52 @@ nonisolated enum AccentCatalog {
         "=": ["=", "≠", "≈"],
     ]
 
-    /// The options for a held key, base first; nil when it holds nothing.
+    /// Settings › Labs › Symbols on held keys, the same map as Android's Symbols on letter keys
+    /// (`LetterFeedback.letterSymbols`), keyed by letter so every layout keeps them wherever it
+    /// draws that letter; the top row's only for a letter drawn on row 1.
+    private static let letterSymbols: [String: String] = [
+        "a": "@", "s": "#", "d": "$", "f": "_", "g": "&", "h": "-", "j": "+", "k": "(", "l": ")",
+        "z": "*", "x": "\"", "c": "'", "v": ":", "b": ";", "n": "!", "m": "?",
+    ]
+    private static let topRowSymbols: [String: String] = [
+        "q": "%", "w": "\\", "e": "|", "r": "=", "t": "[", "y": "]", "u": "<", "i": ">", "o": "{", "p": "}",
+    ]
+
+    /// The symbol a held letter offers with Symbols on held keys, drawn in its corner.
+    static func letterSymbol(for letter: String, topRow: Bool) -> String? {
+        let key = letter.lowercased()
+        return letterSymbols[key] ?? (topRow ? topRowSymbols[key] : nil)
+    }
+
+    /// A held letters-page `.` with Symbols on held keys: a row of punctuation, `.` first.
+    static let periodSymbols = [".", "!", "?", ",", "'", "\"", "-", ":", "…"]
+
+    /// The options for a held key, base first; nil when it holds nothing. A held `.` in a
+    /// field that `holdsDomains` offers `domains` (`KeyboardDomains`) instead, never capitalized.
+    /// `symbols` (Symbols on held keys, letters page) puts a letter's symbol after it, and gives
+    /// `.` `periodSymbols`.
     static func options(
         for base: String,
         uppercase: Bool,
         language: KeyboardLanguage = .english,
-        letters: KeyboardLetterLayout? = nil
+        letters: KeyboardLetterLayout? = nil,
+        field: KeyboardFieldKind = .text,
+        domains: [String] = [],
+        symbols showsSymbols: Bool = false,
+        topRow: Bool = false
     ) -> [String]? {
+        if base == ".", field.holdsDomains, domains.count > 1 { return domains }
+        if base == ".", showsSymbols { return periodSymbols }
         let key = base.lowercased()
-        guard var list = language.letterHolds(on: language.offered(letters))[key] ?? language.symbolHolds[key] ?? symbols[key] else {
+        let symbol = showsSymbols ? letterSymbol(for: key, topRow: topRow) : nil
+        guard var list = language.letterHolds(on: language.offered(letters))[key] ?? language.symbolHolds[key] ?? symbols[key]
+            ?? symbol.map({ _ in [key] }) else {
             return nil
         }
         if uppercase, language == .greek {
             list.removeAll(where: greekWithoutCapitals.contains)
         }
+        if let symbol { list.insert(symbol, at: 1) }
         guard list.count > 1 else { return nil }
         return uppercase ? list.map(upper) : list
     }
@@ -166,8 +198,29 @@ nonisolated enum AccentCatalog {
         for base: String,
         uppercase: Bool,
         language: KeyboardLanguage = .english,
-        letters: KeyboardLetterLayout? = nil
+        letters: KeyboardLetterLayout? = nil,
+        field: KeyboardFieldKind = .text,
+        domains: [String] = [],
+        symbols showsSymbols: Bool = false,
+        topRow: Bool = false
     ) -> AccentArrangement? {
+        if let held = options(for: base, uppercase: false, field: field, domains: domains), held == domains {
+            // Apple's: the first over the key, then right, left, right… (`.us .edu .com .net .org`).
+            var row = [held[0]]
+            for (index, domain) in held.dropFirst().enumerated() {
+                if index.isMultiple(of: 2) { row.append(domain) } else { row.insert(domain, at: 0) }
+            }
+            return AccentArrangement(rows: [row], baseRow: 0, baseColumn: row.firstIndex(of: held[0]) ?? 0)
+        }
+        if showsSymbols, base == "." { return nil }
+        if showsSymbols, let symbol = letterSymbol(for: base, topRow: topRow) {
+            // Apple's arrangement with the symbol beside the key's own, toward the rest.
+            guard var plain = arrangement(for: base, uppercase: uppercase, language: language, letters: letters) else { return nil }
+            let atEnd = plain.baseColumn > 0 && plain.baseColumn == plain.rows[plain.baseRow].count - 1
+            plain.rows[plain.baseRow].insert(symbol, at: atEnd ? plain.baseColumn : plain.baseColumn + 1)
+            if atEnd { plain.baseColumn += 1 }
+            return plain
+        }
         let key = base.lowercased()
         guard let order = displayOrder(for: language)[key],
               let options = options(for: key, uppercase: false, language: language, letters: letters) else { return nil }
@@ -224,6 +277,16 @@ nonisolated struct AccentMenu: Equatable, Sendable {
     var fixedCells = false
 
     var selectedOption: String { options[selectedIndex] }
+
+    /// Apple's options are 21.5 pt, selected or not.
+    static let optionFont = UIFont.systemFont(ofSize: 21.5, weight: .regular)
+    static let textInset: CGFloat = 5
+
+    /// A cell as wide as the widest option's text plus `textInset` each side (`.co.uk`).
+    static func textWidth(of options: [String]) -> CGFloat {
+        let widest = options.map { ($0 as NSString).size(withAttributes: [.font: optionFont]).width }.max() ?? 0
+        return ceil(widest) + 2 * textInset
+    }
 
     /// A list with the key's own option first (a language's): it opens toward the middle of the
     /// keyboard, the key's own nearest the key.
@@ -403,8 +466,7 @@ final class AccentCalloutView: UIView {
         setNeedsDisplay()
     }
 
-    /// Apple's options are 21.5 pt, selected or not.
-    static let font = UIFont.systemFont(ofSize: 21.5, weight: .regular)
+    static let font = AccentMenu.optionFont
 
     override func draw(_ rect: CGRect) {
         guard let menu, let context = UIGraphicsGetCurrentContext() else { return }
@@ -449,7 +511,12 @@ final class AccentCalloutView: UIView {
                 context.fillPath()
                 context.restoreGState()
             }
-            let attributes: [NSAttributedString.Key: Any] = [.font: Self.font, .foregroundColor: palette.keyText]
+            // A row of domains wider than the keyboard narrows its cells (`build`): text that
+            // would spill out of its cell shrinks to fit.
+            let natural = (option as NSString).size(withAttributes: [.font: Self.font]).width
+            let room = cell.width - 2 * AccentMenu.textInset
+            let font = natural > cell.width ? Self.font.withSize(Self.font.pointSize * room / natural) : Self.font
+            let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: palette.keyText]
             let size = (option as NSString).size(withAttributes: attributes)
             (option as NSString).draw(
                 at: CGPoint(x: cell.midX - size.width / 2, y: cell.midY - size.height / 2),

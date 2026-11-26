@@ -158,6 +158,9 @@ final class KeyboardKeyPlaneView: UIView {
                 } else {
                     drawText(label, in: labelFrame, font: style.font, color: palette.keyText, yOffset: style.yOffset)
                 }
+                if let hint = engine.heldHint(for: key) {
+                    drawHint(hint, in: frame, scale: labelScale)
+                }
             case .space:
                 // Apple's space bar unshades as it becomes the trackpad.
                 let fill = pressed.contains(.space) && !hideGlyphs ? palette.spaceHeldFill : palette.keyFill
@@ -339,6 +342,17 @@ final class KeyboardKeyPlaneView: UIView {
         let flickFrame = CGRect(x: frame.minX, y: centre - frame.height / 2, width: frame.width, height: frame.height)
         let color = palette.keyText.withAlphaComponent(0.45 + 0.55 * min(1, 2 * p))
         drawText(flick, in: flickFrame, font: UIFont.systemFont(ofSize: size, weight: .regular), color: color)
+    }
+
+    /// Symbols on held keys' hint (`FullKeyboardEngine.heldHint`): small and grey in the key's
+    /// top-right corner.
+    private func drawHint(_ hint: String, in frame: CGRect, scale: CGFloat) {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 10 * scale, weight: .regular),
+            .foregroundColor: palette.keyTextMuted,
+        ]
+        let size = (hint as NSString).size(withAttributes: attributes)
+        (hint as NSString).draw(at: CGPoint(x: frame.maxX - size.width - 3 * scale, y: frame.minY + 1.5 * scale), withAttributes: attributes)
     }
 
     private func drawText(_ text: String, in frame: CGRect, font: UIFont, color: UIColor, yOffset: CGFloat = 0) {

@@ -58,6 +58,20 @@ extension FullKeyboardView {
         setNeedsLayout()
     }
 
+    /// Settings › Labs › Symbols on held keys and Domains on held period. The keyboard
+    /// being typed on picks the domains, and the iPhone's region its country (English in the UK:
+    /// `.co.uk`).
+    func syncHeldExtras() {
+        let settings = FullKeyboardSettings()
+        let extras = HeldKeyExtras(
+            symbols: settings.symbolHolds,
+            domains: settings.domainHolds ? KeyboardDomains.domains(for: engine.language, region: Locale.current.region?.identifier) : []
+        )
+        guard engine.heldExtras != extras else { return }
+        engine.heldExtras = extras
+        plane.setNeedsDisplay()
+    }
+
     /// Settings › Labs › Comma and period keys: a comma and a period join the space bar
     /// on an iPhone's letters page in a text field. No row changes height, so the host is asked
     /// for nothing.

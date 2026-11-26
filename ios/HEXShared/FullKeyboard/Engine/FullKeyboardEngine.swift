@@ -169,6 +169,7 @@ final class FullKeyboardEngine {
     /// on its language's preferred accent (`AccentCatalog.primaryVariant`, Spanish "o" → "ó"),
     /// so letting go types it; sliding into another cell still picks that one.
     var quickAccentsEnabled = false
+    var heldExtras = HeldKeyExtras()
     /// Whether the keys have the number row's band: its switch is on and this is an iPhone (the
     /// iPad keeps Apple's rows; `KeyboardMetrics.for`).
     var hasNumberRow: Bool { showsNumberRow && pad == nil }
@@ -550,8 +551,7 @@ final class FullKeyboardEngine {
         let dx = touch.point.x - touch.startPoint.x
         let dy = touch.point.y - touch.startPoint.y
         guard (dx * dx + dy * dy).squareRoot() <= Self.accentSlop else { return false }
-        guard let options = AccentCatalog.options(for: base, uppercase: isUppercase, language: layout.language, letters: layout.letters),
-              options.count > 1 else { return false }
+        guard let options = heldOptions(for: base, key: touch.key), options.count > 1 else { return false }
         if let cell = layout.metrics.accentCellWidth {
             // Docked on an iPad: Apple's iPad menu, two rows, in place of the iPhone's arrangement.
             let arrangement = AccentMenu.padArrangement(options, opensLeft: touch.key.frame.midX > layout.width * 0.52)
@@ -559,12 +559,13 @@ final class FullKeyboardEngine {
                 for: touch.key.frame, arrangement: arrangement, in: layout.width, horizontalInset: layout.horizontalInset,
                 cellWidth: cell, cellHeight: AccentMenu.padCellHeight
             )
-        } else if let arrangement = AccentCatalog.arrangement(for: base, uppercase: isUppercase, language: layout.language, letters: layout.letters) {
+        } else if let arrangement = heldArrangement(for: base, key: touch.key) {
             activeAccentMenu = AccentMenu.build(
                 for: touch.key.frame,
                 arrangement: arrangement,
                 in: layout.width,
-                horizontalInset: layout.horizontalInset
+                horizontalInset: layout.horizontalInset,
+                cellWidth: heldCellWidth(for: options, key: touch.key)
             )
         } else {
             activeAccentMenu = AccentMenu.build(
@@ -576,6 +577,7 @@ final class FullKeyboardEngine {
         }
         activeAccentTouchID = id
         accentOpenCell = activeAccentMenu?.index(for: touch.point)
+        activeAccentMenu = activeAccentMenu.map { selectingHeldSymbol($0, on: touch.key) }
         preselectQuickAccent(for: base)
         typingLog?.ui("accent_open", [
             TypingLogField("id", .int(id)),
