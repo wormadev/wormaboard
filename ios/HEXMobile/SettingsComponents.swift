@@ -232,6 +232,8 @@ struct SettingsSegments<Item: Hashable>: View {
 ///   every switch at its default; `-on` turns the switches on, `-end` starts scrolled to the end.
 ///   `settings-keyboard-languages[-on]` opens Keyboard › Languages.
 ///   `settings-privacy-confirm` opens Record typing logs' consent dialog.
+///   `settings-privacy-on-rules` has Labs › Manage autocorrect rules on with learned fixes,
+///   rules and a block; `-sheet`, `-import` or `-export` after it opens Autocorrect rules there.
 ///
 /// `KeyboardSetupMonitor.refresh` and `DictationController` supply the matching state.
 enum SettingsSnapshotFixture {
@@ -259,6 +261,44 @@ enum SettingsSnapshotFixture {
 
     static var scrollsToEnd: Bool {
         scene?.hasSuffix("-end") == true
+    }
+
+    enum AutocorrectRulesScreen { case main, importing, export }
+
+    /// `settings-privacy-on-rules-<sheet|import|export>`: which Autocorrect rules screen is open.
+    static var autocorrectRulesScreen: AutocorrectRulesScreen? {
+        guard let scene, scene.contains("-rules-") else { return nil }
+        if scene.hasSuffix("-import") { return .importing }
+        return scene.hasSuffix("-export") ? .export : .main
+    }
+
+    /// The import preview's rows for `-rules-import`: one of each conflict and rejection.
+    static var autocorrectRulesImportRows: [AutocorrectRulesFile.Row]? {
+        guard autocorrectRulesScreen == .importing else { return nil }
+        let csv = "language,typed,correction,count\nen,adn,and,5\nde,udn,und,3\nen,wrok,wrong,2\nen,Figmaly,Figma,1\nen,teh,teh,1\nxx,foo,bar,1\n"
+        return try? AutocorrectRulesFile.parse(Data(csv.utf8)).get()
+    }
+
+    /// `-rules` scenes: learned fixes, an imported rule and a block, as a phone that used them has.
+    @MainActor
+    private static func seedAutocorrectRules() {
+        let rules = AutocorrectRules()
+        rules.imported = [AutocorrectRule(language: "de", typed: "udn", correction: "und", count: 3)]
+        rules.blocked = [AutocorrectBlock(typed: "Figmaly", correction: "Figma")]
+        let pairs: [(TypingJournalCorrection.Kind, String, String, String, Int)] = [
+            (.autocorrected, "teh", "the", "en", 4), (.retyped, "recieve", "receive", "en", 3),
+            (.retyped, "wrok", "work", "en", 2), (.picked, "nciht", "nicht", "de", 2),
+        ]
+        var snapshot = TypingJournalSnapshot()
+        for (kind, typed, final, language, count) in pairs {
+            for _ in 0..<count {
+                snapshot.corrections.append(TypingJournalCorrection(kind: kind, typed: typed, final: final, at: 0, language: language))
+            }
+        }
+        guard let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: KeyboardBridge.appGroup)?
+            .appendingPathComponent(TypingJournal.fileName),
+            let data = try? JSONEncoder().encode(snapshot) else { return }
+        try? data.write(to: url, options: .atomic)
     }
 
     /// `settings-experiments-on`: Adaptive touch partway through learning, as a keyboard with
@@ -296,6 +336,8 @@ enum SettingsSnapshotFixture {
         keyboard.clipboardHistory = on
         keyboard.symbolHolds = on
         keyboard.domainHolds = on
+        keyboard.manageAutocorrectRules = on
+        if scene.contains("-rules") { seedAutocorrectRules() }
         keyboard.commaPeriodKeys = on
         keyboard.quickAccents = on
         keyboard.emojiShortcodes = on

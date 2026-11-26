@@ -7,6 +7,7 @@ struct PrivacySettingsPage: View {
     @State private var learnTyping = TypingJournalSettings().isEnabled
     @State private var typingLogs = TypingLogSettings().isEnabled
     @State private var showTypingLogs = false
+    @State private var showAutocorrectRules = SettingsSnapshotFixture.autocorrectRulesScreen != nil
     @State private var confirmingTypingLogs = SettingsSnapshotFixture.confirmsTypingLogs
 
     var body: some View {
@@ -45,6 +46,17 @@ struct PrivacySettingsPage: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
+                }
+
+                // Labs › Manage autocorrect rules: imported rules and blocks apply with Learn how I type off too.
+                if FullKeyboardSettings().manageAutocorrectRules {
+                    SettingsDivider()
+                    Button {
+                        showAutocorrectRules = true
+                    } label: {
+                        SettingsLinkLabel(title: String(localized: "Autocorrect rules"))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
@@ -101,6 +113,9 @@ struct PrivacySettingsPage: View {
         .animation(HexMotion.settleAnimation(reduceMotion: reduceMotion), value: typingLogs)
         .sheet(isPresented: $showTypingLogs) {
             TypingLogsView()
+        }
+        .sheet(isPresented: $showAutocorrectRules) {
+            AutocorrectRulesView()
         }
         .onChange(of: learnTyping) { _, enabled in
             TypingJournalSettings().isEnabled = enabled

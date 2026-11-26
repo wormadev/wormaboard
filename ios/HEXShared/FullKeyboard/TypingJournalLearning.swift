@@ -165,6 +165,8 @@ nonisolated struct TypingLearning: Equatable, Sendable {
     var suggestedFixes: [String: String] = [:]
     /// Words a typing config says autocorrect may never put in place of what you typed.
     var neverCorrectTo: [String] = []
+    /// Replacements you blocked (`AutocorrectBlock.key`): never made, in any language.
+    var blockedFixes: Set<String> = []
 
     /// Whether autocorrect may not replace a word with `fix` (`neverCorrectTo`): exactly, for
     /// one with capitals ("DONT"), else in any case.

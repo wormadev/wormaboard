@@ -201,6 +201,23 @@ final class TypingJournal {
         shared?.refreshFromDisk()
     }
 
+    /// Labs › Manage autocorrect rules: drops every correction of `typed` to `final` (as
+    /// "Words you fix most" lists them) and keeps the rest; a running keyboard picks it up from disk.
+    static func forget(
+        typed: String,
+        final: String,
+        in directory: URL? = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: KeyboardBridge.appGroup
+        )
+    ) {
+        guard let url = directory?.appendingPathComponent(fileName) else { return }
+        var snapshot = load(from: url)
+        snapshot.corrections.removeAll { $0.typed == typed && $0.final == final && $0.kind != .undone && $0.kind != .keptTyped }
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        try? data.write(to: url, options: .atomic)
+        shared?.refreshFromDisk()
+    }
+
     /// The learned dictation fixes on disk, for the app's dictation; empty while off.
     static func storedDictationCorrections(
         settings: TypingJournalSettings = TypingJournalSettings(),
